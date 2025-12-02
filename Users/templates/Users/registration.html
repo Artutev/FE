@@ -1,0 +1,60 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">EventHub</h1>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="{% url 'base' %}">Главная</a></li>
+                    <li><a href="{% url 'Users:login' %}" class="btn-login">Вход</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+        <section class="auth">
+            <div class="container">
+                <div class="form-box">
+                    <h2>Регистрация</h2>
+                    {% if messages %}
+                      <div class="messages">
+                        {% for message in messages %}
+                          <div class="alert {{ message.tags }}">
+                            {{ message }}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <form action="{% url 'Users:registration' %}" method="post">
+                        {% csrf_token %}
+                        {{form.username}}
+                        {{form.email}}
+                        {{form.birthDate}}
+                        {{form.password1}}
+                        {{form.password2}}
+                        <button type="submit" class="btn">Зарегистрироваться</button>
+                    </form>
+                    <p>Уже есть аккаунт? <a href="{% url 'Users:login' %}">Войти</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 EventHub. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event.name }} | EventHub</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">EventHub</h1>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="{% url 'Event:event_list' %}">Мероприятия</a></li>
+                    <li><a href="{% url 'Event:create_event' %}">Создать</a></li>
+                    <li><a href="{% url 'about' %}">О нас</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="event-detail">
+        <div class="container">
+            <div class="event-card">
+                <h2>{{ event.name }}</h2>
+                <div class="event-meta">
+                    <p><strong>Дата:</strong> {{ event.date }}</p>
+                    <p><strong>Время:</strong> {{ event.time }}</p>
+                    <p><strong>Место:</strong> {{ event.location }}</p>
+                    <p><strong>Тип мероприятия:</strong> {{ event.get_event_type_display }}</p>
+                </div>
+                <div class="event-description">
+                    <h3>Описание</h3>
+                    <p>{{ event.description }}</p>
+                </div>
+                <a href="{% url 'Event:event_list' %}" class="btn-back">← Вернуться к списку</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 EventHub. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

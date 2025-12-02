@@ -1,0 +1,77 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Главная</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">EventHub</h1>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="{% url 'Event:create_event' %}">Создать мероприятие</a></li>
+                    <li><a href="{% url 'Event:event_list' %}">Мероприятия</a></li>
+                    <li><a href="{% url 'about' %}">О нас</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'Users:profile' %}" class="btn-login">Профиль</a></li>
+                {% else %}
+                    <li><a href="{% url 'Users:login' %}" class="btn-login">Вход</a></li>
+                {% endif %}
+                {% if user.is_superuser %}
+                <li><a href="{% url 'admin:index' %}" class="btn-login">Admin</a></li>
+                {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="hero">
+            <div class="container">
+                <h2>Создавай и участвуй в мероприятиях легко!</h2>
+                <p>Находите интересные события или создавайте свои с помощью EventHub.</p>
+                <a href="{% url 'Event:create_event' %}" class="btn">Создать мероприятие</a>
+            </div>
+        </section>
+
+        <section id="active-events" class="active-events">
+            <div class="container">
+                <h2>Действующие мероприятия</h2>
+                <div class="event-list">
+                    <div class="event">
+                        <h3>Мастер-класс по фотографии</h3>
+                        <p>Дата: 20 января 2025</p>
+                        <p>Место: Москва</p>
+                        <a href="#" class="btn">Подробнее</a>
+                    </div>
+                    <div class="event">
+                        <h3>Беговой марафон</h3>
+                        <p>Дата: 25 января 2025</p>
+                        <p>Место: Санкт-Петербург</p>
+                        <a href="#" class="btn">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about">
+            <div class="container">
+                <h2>О нас</h2>
+                <p>EventHub - это платформа для создания и поиска мероприятий.
+                Мы помогаем людям находить друг друга через интересы и увлечения.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 EventHub. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать мероприятие</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">EventHub</h1>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="{% url 'base' %}">Главная</a></li>
+                    <li><a href="{% url 'Users:profile' %}">Профиль</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="create-event-container">
+        <h2>Редактировать мероприятие: {{ event.name }}</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Сохранить</button>
+            <a href="{% url 'Users:profile' %}" class="btn-cancel">Отмена</a>
+        </form>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 EventHub. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

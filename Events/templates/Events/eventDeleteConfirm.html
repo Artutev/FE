@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Удалить мероприятие</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <div class="delete-confirm-container">
+        <h2>Удалить мероприятие "{{ event.name }}"?</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn-delete">Удалить</button>
+            <a href="{% url 'Users:profile' %}" class="btn-cancel">Отмена</a>
+        </form>
+    </div>
+</body>
+</html>

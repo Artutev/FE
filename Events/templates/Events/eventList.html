@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мероприятия | EventHub</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/event_list.css' %}">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <h1 class="logo">EventHub</h1>
+        <nav class="navigation">
+            <ul>
+                <li><a href="{% url 'base' %}">Главная</a></li>
+                <li><a href="{% url 'Event:create_event' %}">Создать мероприятие</a></li>
+                <li><a href="{% url 'about' %}">О нас</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="events-container">
+    <h2>Ближайшие мероприятия</h2>
+
+    {% if events %}
+        <div class="events-grid">
+            {% for event in events %}
+               <div class="event-card">
+                <div class="event-info">
+                    <h3>{{ event.name }}</h3>
+                    <p><strong>Дата:</strong> {{ event.date }}</p>
+                    <p><strong>Время:</strong> {{ event.time }}</p>
+                    <p><strong>Место:</strong> {{ event.location }}</p>
+                    <p class="desc">{{ event.description|truncatewords:20 }}</p>
+                </div>
+                <a href="{% url 'Event:event_detail' event.id %}" class="btn">Подробнее</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Пока нет запланированных мероприятий 😢</p>
+    {% endif %}
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2025 EventHub. Все права защищены.</p>
+    </div>
+</footer>
+</body>
+</html>
