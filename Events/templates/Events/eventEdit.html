@@ -1,38 +1,28 @@
+{% extends 'Users/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Редактировать мероприятие</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-</head>
-<body>
-    <header class="header">
-        <div class="container">
-            <h1 class="logo">EventHub</h1>
-            <nav class="navigation">
-                <ul>
-                    <li><a href="{% url 'base' %}">Главная</a></li>
-                    <li><a href="{% url 'Users:profile' %}">Профиль</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
 
-    <div class="create-event-container">
-        <h2>Редактировать мероприятие: {{ event.name }}</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn">Сохранить</button>
-            <a href="{% url 'Users:profile' %}" class="btn-cancel">Отмена</a>
-        </form>
+{% block title %}Редактировать мероприятие | EventHub{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/event.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-section event-form-section">
+    <div class="container form-layout">
+        <div class="content-card form-card event-form-card">
+            <span class="section-badge">Редактирование</span>
+            <h1>Редактировать мероприятие</h1>
+            <p class="section-lead">Обновите данные события «{{ event.name }}», чтобы информация оставалась актуальной.</p>
+
+            <form method="POST" class="styled-form event-form">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="card-actions form-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 EventHub. Все права защищены.</p>
-        </div>
-    </footer>
-</body>
-</html>
+</section>
+{% endblock %}

@@ -1,68 +1,63 @@
+{% extends 'Users/base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль пользователя - EventHub</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+{% block title %}Профиль | EventHub{% endblock %}
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
-</head>
-<body>
-    <header class="header">
-        <div class="container">
-            <h1 class="logo">EventHub</h1>
-            <nav class="navigation">
-                <ul>
-                    <li><a href="{% url 'base' %}">Главная</a></li>
-                    <li><a href="{% url 'Events:event_list' %}">Мероприятия</a></li>
-                    <li><a href="{% url 'about' %}">О нас</a></li>
-                    <li><a href="{% url 'Users:logout' %}" class="btn-login">Выход</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+{% endblock %}
 
-    <main>
-        <section class="profile-container">
-            <h2>Профиль пользователя</h2>
-            <input type="image" name="profileImage" value="">
+{% block content %}
+<section class="page-section profile-section">
+    <div class="container profile-layout">
+        <div class="content-card profile-card">
+            <span class="section-badge">Личный кабинет</span>
+            <h1>Профиль пользователя</h1>
+            <p class="section-lead">Обновите основные данные аккаунта и держите информацию в актуальном состоянии.</p>
 
-            <form action="{% url 'Users:profile' %}" method="post">
+            <form action="{% url 'Users:profile' %}" method="post" class="styled-form profile-form">
                 {% csrf_token %}
                 {{ form.username }}
                 {{ form.email }}
                 {{ form.birthDate }}
-                <button type="submit" class="btn">Сохранить изменения</button>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
             </form>
+        </div>
 
-            <div class="user-events">
-                <h2>Мои мероприятия</h2>
-                {% if my_events %}
-                    <div class="event-list">
-                        {% for event in my_events %}
-                            <div class="event-card">
+        <div class="content-card events-card">
+            <div class="section-header">
+                <div>
+                    <span class="section-badge">Мои события</span>
+                    <h2>Созданные мероприятия</h2>
+                </div>
+                <a href="{% url 'Event:create_event' %}" class="btn btn-primary">Новое мероприятие</a>
+            </div>
+
+            {% if my_events %}
+                <div class="cards-grid profile-events-grid">
+                    {% for event in my_events %}
+                        <article class="info-card event-card">
+                            <div class="card-content">
                                 <h3>{{ event.name }}</h3>
                                 <p><strong>Дата:</strong> {{ event.date }}</p>
+                                <p><strong>Время:</strong> {{ event.time }}</p>
                                 <p><strong>Место:</strong> {{ event.location }}</p>
-                                <a href="{% url 'Event:event_detail' event.id %}" class="btn">Подробнее</a>
-                                <a href="{% url 'Event:edit_event' event.id %}" class="btn-edit">Изменить</a>
-                                <a href="{% url 'Event:delete_event' event.id %}" class="btn-delete">Удалить</a>
+                                <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
                             </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p>Вы пока не создали ни одного мероприятия.</p>
-                {% endif %}
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 EventHub. Все права защищены.</p>
+                            <div class="card-actions">
+                                <a href="{% url 'Event:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                                <a href="{% url 'Event:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
+                                <a href="{% url 'Event:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>Пока пусто</h3>
+                    <p>Вы ещё не создали ни одного мероприятия. Начните с первого события.</p>
+                </div>
+            {% endif %}
         </div>
-    </footer>
-</body>
-</html>
+    </div>
+</section>
+{% endblock %}

@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 def base(request):
     latest_events = Event.objects.order_by('-date')[:2]
 
-    return render(request, 'Users/base.html', {'latest_events': latest_events})
+    return render(request, 'Users/base.html', {'latest_events': latest_events, 'is_home': True})
 
 def login(request):
     if request.method == "POST":
@@ -55,7 +55,7 @@ def profile(request):
         form = UserProfileForm(instance= request.user, data=request.POST)
         if form.is_valid():
             form.save()
-            HttpResponseRedirect(reverse('Users:profile'))
+            return HttpResponseRedirect(reverse('Users:profile'))
         else:
             print(form.errors)
     else:

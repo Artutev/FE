@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from Events.models import Event
 from Events.forms import EventForm
 
@@ -18,8 +19,30 @@ def create_event(request):
     return render(request, 'Events/event.html', context)
 
 def event_list(request):
-    events = Event.objects.all().order_by('date', 'time')  # сортировка по дате и времени
-    context = {'events': events}
+    events = Event.objects.all().order_by('date', 'time')
+    
+    # Фильтр по типу события
+    event_type = request.GET.get('type', '')
+    if event_type and event_type != 'all':
+        events = events.filter(event_type=event_type)
+    
+    # Поиск мероприятий (исправлено для работы с Cyrillic символами)
+    search_query = request.GET.get('search', '')
+    if search_query:
+        search_lower = search_query.lower()
+        events = [
+            event for event in events
+            if (search_lower in event.name.lower() or
+                search_lower in event.description.lower() or
+                search_lower in event.location.lower())
+        ]
+    
+    context = {
+        'events': events,
+        'search_query': search_query,
+        'event_type': event_type,
+        'event_types': Event.event_types
+    }
     return render(request, 'Events/eventList.html', context)
 
 def event_detail(request, event_id):

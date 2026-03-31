@@ -1,19 +1,23 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Удалить мероприятие</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-</head>
-<body>
-    <div class="delete-confirm-container">
-        <h2>Удалить мероприятие "{{ event.name }}"?</h2>
-        <form method="POST">
-            {% csrf_token %}
-            <button type="submit" class="btn-delete">Удалить</button>
-            <a href="{% url 'Users:profile' %}" class="btn-cancel">Отмена</a>
-        </form>
+{% extends 'Users/base.html' %}
+
+{% block title %}Удаление мероприятия | EventHub{% endblock %}
+
+{% block content %}
+<section class="page-section delete-section">
+    <div class="container form-layout">
+        <div class="content-card delete-card">
+            <span class="section-badge">Подтверждение</span>
+            <h1>Удалить мероприятие?</h1>
+            <p class="section-lead">Вы собираетесь удалить событие «{{ event.name }}». Это действие нельзя отменить.</p>
+
+            <form method="POST" class="delete-form">
+                {% csrf_token %}
+                <div class="card-actions delete-actions">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}
