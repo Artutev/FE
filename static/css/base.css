@@ -400,6 +400,15 @@ html.dark-mode .hero-copy p {
     background: #e2e8f0;
 }
 
+.btn-warning {
+    background: #b91c1c;
+    color: #fff;
+}
+
+.btn-warning:hover {
+    background: #b91c1c;
+}
+
 .btn-danger {
     background: var(--danger);
     color: #fff;
@@ -508,6 +517,15 @@ html.dark-mode .btn-secondary:hover {
     background: #475569;
 }
 
+html.dark-mode .btn-warning {
+    background: #ca8a04;
+    color: #fff;
+}
+
+html.dark-mode .btn-warning:hover {
+    background: #a16207;
+}
+
 html.dark-mode .styled-form input,
 html.dark-mode .styled-form textarea,
 html.dark-mode .styled-form select,
@@ -527,6 +545,105 @@ html.dark-mode .section-badge {
 .messages-stack {
     display: grid;
     gap: 16px;
+}
+
+.global-messages {
+    position: fixed;
+    top: calc(78px + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(100%, 600px);
+    display: grid;
+    gap: 12px;
+    padding: 0 16px;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.flash-message {
+    pointer-events: auto;
+    animation: flashIn 0.25s ease-out;
+}
+
+.flash-message--hide {
+    animation: flashOut 0.35s ease-in forwards;
+}
+
+@keyframes flashIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes flashOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+        height: 0;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.alert {
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.alert-success {
+    background: #0f5132;
+    color: #f8fafc;
+    border-color: #166534;
+}
+
+.alert-error,
+.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.alert-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+html.dark-mode .alert-success {
+    background: rgba(22, 101, 52, 0.18);
+    color: #d8f3dc;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+html.dark-mode .alert-danger,
+html.dark-mode .alert-error {
+    background: rgba(220, 38, 38, 0.18);
+    color: #fecaca;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+html.dark-mode .alert-warning {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fef9c3;
+    border-color: rgba(250, 204, 21, 0.3);
+}
+
+html.dark-mode .alert-info {
+    background: rgba(59, 130, 246, 0.16);
+    color: #bfdbfe;
+    border-color: rgba(96, 165, 250, 0.3);
 }
 
 .empty-state {

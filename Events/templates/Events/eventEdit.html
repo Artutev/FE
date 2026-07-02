@@ -16,12 +16,98 @@
 
             <form method="POST" class="styled-form event-form">
                 {% csrf_token %}
-                {{ form.as_p }}
+                {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p>Пожалуйста, исправьте ошибки в форме:</p>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ form.event_type.label_tag }}
+                    {{ form.event_type }}
+                    {{ form.event_type.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ form.date.label_tag }}
+                    {{ form.date }}
+                    {{ form.date.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ form.time.label_tag }}
+                    {{ form.time }}
+                    {{ form.time.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ form.location.label_tag }}
+                    {{ form.location }}
+                    {{ form.location.errors }}
+                </div>
+
+                <div class="wedding-only" style="display: none;">
+                    <div class="form-group">
+                        {{ form.bride_name.label_tag }}
+                        {{ form.bride_name }}
+                        {{ form.bride_name.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.groom_name.label_tag }}
+                        {{ form.groom_name }}
+                        {{ form.groom_name.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.wedding_theme.label_tag }}
+                        {{ form.wedding_theme }}
+                        {{ form.wedding_theme.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.guest_count.label_tag }}
+                        {{ form.guest_count }}
+                        {{ form.guest_count.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+
+                <div class="form-group privacy-toggle">
+                    <label class="privacy-card" for="{{ form.is_private.id_for_label }}">
+                        {{ form.is_private }}
+                        <span class="privacy-card__content">
+                            <span class="privacy-card__title">{{ form.is_private.label }}</span>
+                            <span class="privacy-card__hint">Сделайте событие скрытым от общей ленты</span>
+                        </span>
+                    </label>
+                    {{ form.is_private.errors }}
+                </div>
+
                 <div class="card-actions form-actions">
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-primary btn-small">Сохранить</button>
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary btn-small">Отмена</a>
                 </div>
             </form>
+            <script src="{% static 'js/wedding-fields.js' %}"></script>
         </div>
     </div>
 </section>

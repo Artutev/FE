@@ -17,8 +17,8 @@
             <nav class="navigation" aria-label="Основная навигация">
                 <ul class="nav-links">
                     <li><a href="{% url 'base' %}">Главная</a></li>
-                    <li><a href="{% url 'Event:event_list' %}">Мероприятия</a></li>
-                    <li><a href="{% url 'Event:create_event' %}">Создать мероприятие</a></li>
+                    <li><a href="{% url 'Events:event_list' %}">Мероприятия</a></li>
+                    <li><a href="{% url 'Events:create_event' %}">Создать мероприятие</a></li>
                     <li><a href="{% url 'about' %}">О нас</a></li>
                 </ul>
             </nav>
@@ -42,6 +42,14 @@
     </header>
 
     <main class="site-main">
+        <div id="globalMessages" class="global-messages" aria-live="polite" aria-atomic="true">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
         {% block hero %}
         {% if is_home %}
         <section class="hero-section">
@@ -51,8 +59,8 @@
                     <h1>Создавай и находи мероприятия без лишней сложности</h1>
                     <p>EventHub помогает публиковать события, делиться ими с другими и быстро находить интересные активности рядом.</p>
                     <div class="hero-actions">
-                        <a href="{% url 'Event:create_event' %}" class="btn btn-primary">Создать мероприятие</a>
-                        <a href="{% url 'Event:event_list' %}" class="btn btn-secondary">Смотреть афишу</a>
+                        <a href="{% url 'Events:create_event' %}" class="btn btn-primary">Создать мероприятие</a>
+                        <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">Смотреть афишу</a>
                     </div>
                 </div>
                 <div class="hero-panel content-card">
@@ -67,16 +75,6 @@
         </section>
         {% endif %}
         {% endblock %}
-
-        {% if messages %}
-            <section class="page-section section-compact">
-                <div class="container messages-stack">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
 
         {% block content %}
         {% if is_home %}
@@ -93,15 +91,22 @@
                 {% if latest_events %}
                     <div class="cards-grid home-events-grid">
                         {% for event in latest_events %}
-                            <article class="info-card event-card">
+                            {% if event.date < now|date:"Y-m-d" %}
+                                <article class="info-card event-card event-card--passed">
+                            {% else %}
+                                <article class="info-card event-card">
+                            {% endif %}
                                 <div class="card-content">
+                                    {% if event.date < now|date:"Y-m-d" %}
+                                        <span class="event-status">Прошедшее мероприятие</span>
+                                    {% endif %}
                                     <h3>{{ event.name }}</h3>
-                                    <p><strong>Дата:</strong> {{ event.date }}</p>
-                                    <p><strong>Время:</strong> {{ event.time }}</p>
+                                    <p><strong>Дата:</strong> {{ event.date|date:"j E Y" }}</p>
+                                    <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
                                     <p><strong>Место:</strong> {{ event.location }}</p>
                                     <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
                                 </div>
-                                <a href="{% url 'Event:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
                             </article>
                         {% endfor %}
                     </div>
@@ -133,5 +138,22 @@
             <p>&copy; 2025 EventHub. Все права защищены.</p>
         </div>
     </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flashMessages = document.querySelectorAll('.flash-message');
+            if (flashMessages.length === 0) return;
+
+            flashMessages.forEach(function (message, index) {
+                setTimeout(function () {
+                    message.classList.add('flash-message--hide');
+                }, 4000 + index * 200);
+                setTimeout(function () {
+                    message.remove();
+                }, 4800 + index * 200);
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

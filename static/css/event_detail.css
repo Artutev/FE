@@ -13,11 +13,53 @@
     gap: 20px;
 }
 
+.card-actions.detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.card-actions.detail-actions .btn {
+    min-width: 180px;
+}
+
 .detail-item {
     padding: 20px 24px;
     border-radius: var(--radius-md);
     background: var(--surface-soft);
     border: 1px solid var(--border);
+}
+
+..private-event-note {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+html.dark-mode .private-event-note {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(100, 116, 139, 0.6);
+}
+
+html.dark-mode .private-event-note strong {
+    color: #f8fafc;
+}
+
+html.dark-mode .private-event-note a {
+    color: #93c5fd;
+}
+
+.private-event-note strong {
+    display: block;
+    margin-top: 8px;
+}
+
+.private-event-note a {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--primary);
+    text-decoration: underline;
 }
 
 .detail-item span {
@@ -30,4 +72,62 @@
 .detail-description {
     border-top: 1px solid var(--border);
     padding-top: 32px;
+}
+
+.wedding-highlight {
+    background: rgba(254, 226, 226, 0.4);
+    border-color: #fca5a5;
+}
+
+.wedding-tips {
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+}
+
+.wedding-tips h2 {
+    margin-top: 0;
+}
+
+.wedding-tips ul {
+    margin: 16px 0 0;
+    padding-left: 20px;
+}
+
+.wedding-tips li {
+    margin-bottom: 0.75rem;
+}
+
+/* Passed Event Detail Styling */
+.detail-card--passed {
+    opacity: 0.85;
+    border-color: var(--border);
+}
+
+.detail-card--passed h1 {
+    text-decoration: line-through;
+    color: var(--muted);
+}
+
+.detail-card--passed .detail-item {
+    opacity: 0.8;
+}
+
+.passed-event-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+}
+
+html.dark-mode .passed-event-banner {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
 }
