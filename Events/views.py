@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
@@ -5,13 +7,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.urls import reverse
-from Events.models import Event
+from Events.models import Event, EventType
 from Events.forms import EventForm
 
 @login_required(login_url='Users:login')
 def create_event(request):
+    language = request.session.get('language', 'ru')
     if request.method == 'POST':
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, language=language)
         if form.is_valid():
             event = form.save(commit=False)
             event.creator = request.user
@@ -26,14 +29,14 @@ def create_event(request):
                 redirect_url += f'?token={event.access_token}'
             return redirect(redirect_url)
     else:
-        form = EventForm()
+        form = EventForm(language=language)
     context = {'form': form}
 
     return render(request, 'Events/event.html', context)
 
 def event_list(request):
-    # Показываем только непрошедшие публичные мероприятия
-    events = Event.objects.filter(is_past=False, is_private=False).order_by('date', 'time')
+    # Показываем только мероприятия, которые еще не прошли
+    events = Event.objects.filter(date__gte=date.today(), is_private=False).order_by('date', 'time')
 
     # Фильтр по типу события
     event_type = request.GET.get('type', '')
@@ -54,14 +57,15 @@ def event_list(request):
         'events': events,
         'search_query': search_query,
         'event_type': event_type,
-        'event_types': Event.event_types
+        'event_types': EventType.localized_choices(request.session.get('language', 'ru'))
     }
     return render(request, 'Events/eventList.html', context)
 
 
 def event_archive(request):
     """Показывает прошедшие/архивные мероприятия."""
-    events = Event.objects.filter(is_past=True, is_private=False).order_by('-date', '-time')
+    today = date.today()
+    events = Event.objects.filter(date__lt=today, is_private=False).order_by('-date', '-time')
 
     event_type = request.GET.get('type', '')
     if event_type and event_type != 'all':
@@ -80,7 +84,7 @@ def event_archive(request):
         'events': events,
         'search_query': search_query,
         'event_type': event_type,
-        'event_types': Event.event_types
+        'event_types': EventType.localized_choices(request.session.get('language', 'ru'))
     }
     return render(request, 'Events/eventArchive.html', context)
 
@@ -135,14 +139,15 @@ def download_invitation(request, event_id):
 @login_required(login_url='Users:login')
 def edit_event(request, event_id):
     event = get_object_or_404(Event, id=event_id, creator=request.user)
+    language = request.session.get('language', 'ru')
 
     if request.method == 'POST':
-        form = EventForm(request.POST, instance=event)
+        form = EventForm(request.POST, instance=event, language=language)
         if form.is_valid():
             form.save()
             return redirect('Users:profile')
     else:
-        form = EventForm(instance=event)
+        form = EventForm(instance=event, language=language)
 
     return render(request, 'Events/eventEdit.html', {'form': form, 'event': event})
 

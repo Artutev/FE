@@ -32,6 +32,21 @@
     border: 1px solid var(--border);
 }
 
+.event-location-map {
+    margin-top: 16px;
+    width: 100%;
+    min-height: 200px;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.event-location-map-iframe {
+    width: 100%;
+    min-height: 200px;
+    border: none;
+}
+
 ..private-event-note {
     background: #fff7ed;
     border-color: #fed7aa;

@@ -1,0 +1,17 @@
+{% if language == 'ru' %}Здравствуйте, {{ username }}!
+
+Подтвердите адрес электронной почты для аккаунта EventHub:
+{{ confirmation_url }}
+
+Или введите код подтверждения на странице:
+{{ confirmation_code }}
+{% else %}Hello, {{ username }}!
+
+Confirm the email address for your EventHub account:
+{{ confirmation_url }}
+
+Or enter this confirmation code on the website:
+{{ confirmation_code }}
+
+If you did not create this account, you can ignore this email.
+{% endif %}

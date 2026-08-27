@@ -13,6 +13,11 @@
     font-size: 0.9rem;
 }
 
+.event-form .form-group:has([required]) > label::after {
+    content: ' *';
+    color: #ef4444;
+}
+
 .wedding-hint {
     margin-top: 8px;
     color: #64748b;
@@ -124,4 +129,284 @@ html.dark-mode .privacy-card input[type="checkbox"] {
 
 .event-form .card-actions .btn {
     flex: none;
+}
+
+.location-map-group {
+    display: grid;
+    gap: 10px;
+}
+
+.location-map-wrapper {
+    width: 100%;
+    min-height: 300px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+.location-map-div {
+    width: 100%;
+    height: 300px;
+}
+
+.location-map-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.date-picker-input,
+.time-picker-input {
+    position: relative;
+    padding-right: 48px;
+    cursor: pointer;
+}
+
+.date-picker-input::after,
+.time-picker-input::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.date-picker-input::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23636bdf'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10m-11 8h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' /%3E%3C/svg%3E");
+}
+
+.time-picker-input::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23636bdf'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' /%3E%3C/svg%3E");
+}
+
+.picker-popup {
+    position: absolute;
+    z-index: 9999;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    padding: 16px;
+    min-width: 280px;
+    max-width: 320px;
+    color: var(--text);
+}
+
+.picker-popup.hidden {
+    display: none;
+}
+
+.picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.picker-header button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.picker-header .picker-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.picker-title-group {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+}
+
+.picker-year-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.picker-header .picker-year-prev,
+.picker-header .picker-year-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-secondary);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.picker-header > .picker-prev,
+.picker-header > .picker-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.picker-header .picker-year-prev:hover,
+.picker-header .picker-year-next:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.picker-year {
+    width: 76px;
+    min-height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text);
+    font-weight: 600;
+    text-align: center;
+}
+
+.picker-year::-webkit-outer-spin-button,
+.picker-year::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.picker-year {
+    -moz-appearance: textfield;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(32px, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.calendar-grid span,
+.calendar-grid button {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.calendar-grid .weekday {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.calendar-grid button {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.calendar-grid button:hover {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.calendar-grid button.active {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-grid button.empty {
+    visibility: hidden;
+}
+
+.time-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.spinner-group {
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+}
+
+.spinner-title {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.spinner-control {
+    display: grid;
+    grid-template-rows: repeat(3, 56px);
+    gap: 10px;
+    align-items: center;
+    justify-items: center;
+    width: 100%;
+}
+
+.spinner-nav,
+.spinner-current {
+    width: 76px;
+    height: 56px;
+    border-radius: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+.spinner-nav {
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.spinner-nav:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.spinner-current {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    color: var(--text);
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.picker-actions .btn {
+    min-width: 90px;
+    padding: 10px 16px;
 }

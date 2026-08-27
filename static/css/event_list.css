@@ -16,6 +16,15 @@
     margin: 0 0 8px 0;
 }
 
+.event-type.wedding {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.event-card .event-type.wedding {
+    background: rgba(254, 226, 226, 0.4);
+}
+
 html.dark-mode .event-type {
     background: rgba(59, 130, 246, 0.15);
 }
@@ -144,4 +153,51 @@ html.dark-mode .search-clear:hover {
     margin: 0;
     color: var(--text);
     font-weight: 500;
+}
+
+/* Passed Events Styling */
+.event-card--passed {
+    opacity: 0.7;
+    border-color: var(--border);
+}
+
+html.dark-mode .event-card--passed {
+    border-color: rgba(156, 163, 175, 0.2);
+}
+
+.event-card--passed h3 {
+    text-decoration: line-through;
+    color: var(--muted);
+}
+
+.event-card--passed p {
+    color: var(--muted);
+}
+
+.event-card--passed .event-type {
+    opacity: 0.6;
+}
+
+.event-card--passed .btn {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.event-status {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+html.dark-mode .event-status {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
 }

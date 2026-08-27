@@ -1,0 +1,28 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% lang "Архив | EventHub" "Archive | EventHub" %}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/event_list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/event.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-section events-section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <span class="section-badge">{% lang "Архив" "Archive" %}</span>
+                <h1>{% lang "Прошедшие мероприятия" "Past events" %}</h1>
+                <p class="section-lead">{% lang "Здесь собраны все мероприятия, которые уже прошли." "Here are all the events that have already taken place." %}</p>
+            </div>
+            <div class="section-actions">
+                <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Создать мероприятие" "Create event" %}</a>
+                <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">{% lang "Афиша" "Poster" %}</a>
+            </div>
+        </div>
+
+        {% include 'Events/eventListSection.html' %}
+    </div>
+</section>
+{% endblock %}

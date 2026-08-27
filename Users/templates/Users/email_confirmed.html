@@ -1,0 +1,24 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% lang "Подтверждение email | EventHub" "Email confirmation | EventHub" %}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-section auth-section">
+    <div class="container auth-container">
+        <div class="content-card form-card">
+            {% if invalid %}
+                <h1>{% lang "Ссылка недействительна" "Invalid link" %}</h1>
+                <p class="section-lead">{% lang "Ссылка подтверждения устарела или уже использована." "This confirmation link is expired or has already been used." %}</p>
+            {% else %}
+                <h1>{% lang "Email подтверждён" "Email confirmed" %}</h1>
+                <p class="section-lead">{% lang "Ваш аккаунт активирован. Теперь можно войти." "Your account is active. You can now log in." %}</p>
+                <a href="{% url 'Users:login' %}" class="btn btn-primary btn-block">{% lang "Войти" "Log in" %}</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

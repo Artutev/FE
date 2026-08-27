@@ -8,7 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('Users/', include('Users.urls', namespace='Users')),
     path('', base, name='base'),
-    path('Event/', include('Events.urls', namespace='Event')),
+    path('Event/', include('Events.urls', namespace='Events')),
     path('About/', about, name='about'),
 
 ]

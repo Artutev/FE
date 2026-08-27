@@ -1,7 +1,7 @@
 {% extends 'Users/base.html' %}
-{% load static %}
+{% load static language_tags %}
 
-{% block title %}Вход | EventHub{% endblock %}
+{% block title %}{% lang "Вход | EventHub" "Login | EventHub" %}{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 {% endblock %}
@@ -10,18 +10,18 @@
 <section class="page-section auth-section">
     <div class="container auth-container">
         <div class="content-card form-card">
-            <span class="section-badge">Добро пожаловать</span>
-            <h1>Вход в аккаунт</h1>
-            <p class="section-lead">Войдите, чтобы управлять своими мероприятиями и отслеживать обновления.</p>
+            <span class="section-badge">{% lang "Добро пожаловать" "Welcome" %}</span>
+            <h1>{% lang "Вход в аккаунт" "Login to your account" %}</h1>
+            <p class="section-lead">{% lang "Войдите, чтобы управлять своими мероприятиями и отслеживать обновления." "Sign in to manage your events and stay updated." %}</p>
 
             <form action="{% url 'Users:login' %}" method="post" class="styled-form">
                 {% csrf_token %}
                 {{ form.username }}
                 {{ form.password }}
-                <button type="submit" class="btn btn-primary btn-block">Войти</button>
+                <button type="submit" class="btn btn-primary btn-block">{% lang "Войти" "Login" %}</button>
             </form>
 
-            <p class="auth-footer-text">Нет аккаунта? <a href="{% url 'Users:registration' %}">Зарегистрируйтесь</a></p>
+            <p class="auth-footer-text">{% lang "Нет аккаунта?" "No account?" %} <a href="{% url 'Users:registration' %}">{% lang "Зарегистрируйтесь" "Register" %}</a></p>
         </div>
     </div>
 </section>

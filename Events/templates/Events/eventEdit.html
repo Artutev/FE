@@ -1,24 +1,27 @@
 {% extends 'Users/base.html' %}
-{% load static %}
+{% load static language_tags %}
 
-{% block title %}Редактировать мероприятие | EventHub{% endblock %}
+{% block title %}{% lang "Редактировать мероприятие | EventHub" "Edit event | EventHub" %}{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/event.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 {% endblock %}
 
 {% block content %}
 <section class="page-section event-form-section">
     <div class="container form-layout">
         <div class="content-card form-card event-form-card">
-            <span class="section-badge">Редактирование</span>
-            <h1>Редактировать мероприятие</h1>
-            <p class="section-lead">Обновите данные события «{{ event.name }}», чтобы информация оставалась актуальной.</p>
+            <span class="section-badge">{% lang "Редактирование" "Editing" %}</span>
+            <h1>{% lang "Редактировать мероприятие" "Edit event" %}</h1>
+            <p class="section-lead">{% lang "Обновите данные события «{{ event.name }}», чтобы информация оставалась актуальной." "Update the event details for \"{{ event.name }}\" to keep information current." %}</p>
 
             <form method="POST" class="styled-form event-form">
                 {% csrf_token %}
+                {{ form.latitude }}
+                {{ form.longitude }}
                 {% if form.errors %}
                     <div class="alert alert-danger" role="alert">
-                        <p>Пожалуйста, исправьте ошибки в форме:</p>
+                        <p>{% lang "Пожалуйста, исправьте ошибки в форме:" "Please fix the form errors:" %}</p>
                         <ul>
                             {% for field in form %}
                                 {% for error in field.errors %}
@@ -62,6 +65,14 @@
                     {{ form.location.errors }}
                 </div>
 
+                <div class="form-group location-map-group">
+                    <label>{% lang "Выбрать место на карте" "Pick location on map" %}</label>
+                    <div class="location-map-wrapper">
+                        <div id="locationMap" class="location-map-div"></div>
+                    </div>
+                    <p class="location-map-hint">{% lang "Кликните по карте, чтобы выбрать место или введите адрес." "Click on the map to pick a place or type an address." %}</p>
+                </div>
+
                 <div class="wedding-only" style="display: none;">
                     <div class="form-group">
                         {{ form.bride_name.label_tag }}
@@ -96,18 +107,21 @@
                         {{ form.is_private }}
                         <span class="privacy-card__content">
                             <span class="privacy-card__title">{{ form.is_private.label }}</span>
-                            <span class="privacy-card__hint">Сделайте событие скрытым от общей ленты</span>
+                            <span class="privacy-card__hint">{% lang "Сделайте событие скрытым от общей ленты" "Make the event hidden from the public feed" %}</span>
                         </span>
                     </label>
                     {{ form.is_private.errors }}
                 </div>
 
                 <div class="card-actions form-actions">
-                    <button type="submit" class="btn btn-primary btn-small">Сохранить</button>
-                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary btn-small">Отмена</a>
+                    <button type="submit" class="btn btn-primary btn-small">{% lang "Сохранить" "Save" %}</button>
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary btn-small">{% lang "Отмена" "Cancel" %}</a>
                 </div>
             </form>
             <script src="{% static 'js/wedding-fields.js' %}"></script>
+            <script src="{% static 'js/date-time-picker.js' %}"></script>
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+            <script src="{% static 'js/location-map.js' %}"></script>
         </div>
     </div>
 </section>

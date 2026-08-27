@@ -1,31 +1,37 @@
 {% extends 'Users/base.html' %}
-{% load static %}
+{% load static language_tags %}
 
-{% block title %}Регистрация | EventHub{% endblock %}
+{% block title %}{% lang "Регистрация | EventHub" "Registration | EventHub" %}{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/event.css' %}">
 {% endblock %}
 
 {% block content %}
 <section class="page-section auth-section">
     <div class="container auth-container">
         <div class="content-card form-card">
-            <span class="section-badge">Новый аккаунт</span>
-            <h1>Регистрация</h1>
-            <p class="section-lead">Создайте профиль, чтобы публиковать свои события и участвовать в мероприятиях других пользователей.</p>
+            <span class="section-badge">{% lang "Новый аккаунт" "New account" %}</span>
+            <h1>{% lang "Регистрация" "Register" %}</h1>
+            <p class="section-lead">{% lang "Создайте профиль, чтобы публиковать свои события и участвовать в мероприятиях других пользователей." "Create an account to publish events and join others' activities." %}</p>
 
             <form action="{% url 'Users:registration' %}" method="post" class="styled-form">
                 {% csrf_token %}
                 {{ form.username }}
                 {{ form.email }}
-                {{ form.birthDate }}
+                <div class="form-group">
+                    {{ form.birthDate.label_tag }}
+                    {{ form.birthDate }}
+                    {{ form.birthDate.errors }}
+                </div>
                 {{ form.password1 }}
                 {{ form.password2 }}
-                <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
+                <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
             </form>
 
-            <p class="auth-footer-text">Уже есть аккаунт? <a href="{% url 'Users:login' %}">Войти</a></p>
+            <p class="auth-footer-text">{% lang "Уже есть аккаунт?" "Already have an account?" %} <a href="{% url 'Users:login' %}">{% lang "Войти" "Login" %}</a></p>
         </div>
     </div>
 </section>
+<script src="{% static 'js/date-time-picker.js' %}"></script>
 {% endblock %}

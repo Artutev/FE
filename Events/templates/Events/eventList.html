@@ -1,7 +1,7 @@
 {% extends 'Users/base.html' %}
-{% load static %}
+{% load static language_tags %}
 
-{% block title %}Мероприятия | EventHub{% endblock %}
+{% block title %}{% lang "Мероприятия | EventHub" "Events | EventHub" %}{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/event_list.css' %}">
 {% endblock %}
@@ -11,11 +11,14 @@
     <div class="container">
         <div class="section-header">
             <div>
-                <span class="section-badge">Афиша</span>
-                <h1>Ближайшие мероприятия</h1>
-                <p class="section-lead">Выбирайте интересные события, изучайте подробности и находите новые активности.</p>
+                <span class="section-badge">{% lang "Афиша" "Poster" %}</span>
+                <h1>{% lang "Ближайшие мероприятия" "Upcoming events" %}</h1>
+                <p class="section-lead">{% lang "Выбирайте интересные события, изучайте подробности и находите новые активности." "Choose interesting events, check details, and discover new activities." %}</p>
             </div>
-            <a href="{% url 'Event:create_event' %}" class="btn btn-primary">Создать мероприятие</a>
+            <div class="section-actions">
+                <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Создать мероприятие" "Create event" %}</a>
+                <a href="{% url 'Events:event_archive' %}" class="btn btn-secondary">{% lang "Архив" "Archive" %}</a>
+            </div>
         </div>
 
         <!-- Search Form -->
@@ -25,21 +28,21 @@
                     type="text" 
                     name="search" 
                     class="search-input" 
-                    placeholder="Поиск мероприятий..." 
+                    placeholder="{% lang "Поиск мероприятий..." "Search events..." %}" 
                     value="{{ search_query }}"
-                    aria-label="Поиск мероприятий"
+                    aria-label="{% lang "Поиск мероприятий" "Search events" %}"
                 >
-                <select name="type" class="filter-select" aria-label="Фильтр по типу">
-                    <option value="">Все типы</option>
+                <select name="type" class="filter-select" aria-label="{% lang "Фильтр по типу" "Filter by type" %}">
+                    <option value="">{% lang "Все типы" "All types" %}</option>
                     {% for code, label in event_types %}
                         <option value="{{ code }}" {% if event_type == code %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="search-btn" title="Поиск">
+                <button type="submit" class="search-btn" title="{% lang "Поиск" "Search" %}">
                     🔍
                 </button>
                 {% if search_query or event_type %}
-                    <a href="{% url 'Event:event_list' %}" class="search-clear" title="Очистить фильтры">✕</a>
+                    <a href="{% url 'Events:event_list' %}" class="search-clear" title="{% lang "Очистить фильтры" "Clear filters" %}">✕</a>
                 {% endif %}
             </div>
         </form>
@@ -47,32 +50,47 @@
         {% if events %}
             {% if search_query %}
                 <div class="search-results-info">
-                    <p>Найдено мероприятий: <strong>{{ events.count }}</strong></p>
+                    <p>{% lang "Найдено мероприятий:" "Events found:" %} <strong>{{ events.count }}</strong></p>
                 </div>
             {% endif %}
             <div class="cards-grid events-grid">
                 {% for event in events %}
-                    <article class="info-card event-card">
+                    {% if event.date < now|date:"Y-m-d" %}
+                        <article class="info-card event-card event-card--passed">
+                    {% else %}
+                        <article class="info-card event-card">
+                    {% endif %}
                         <div class="card-content event-info">
-                            <span class="event-type">{{ event.get_event_type_display }}</span>
+                            {% if event.date < now|date:"Y-m-d" %}
+                                <span class="event-status">{% lang "Прошедшее мероприятие" "Past event" %}</span>
+                            {% endif %}
+                            <span class="event-type{% if event.event_type == 'wedding' %} wedding{% endif %}">{% event_type_label event.event_type %}</span>
                             <h3>{{ event.name }}</h3>
-                            <p><strong>Дата:</strong> {{ event.date }}</p>
-                            <p><strong>Время:</strong> {{ event.time }}</p>
-                            <p><strong>Место:</strong> {{ event.location }}</p>
+                            {% if event.event_type == 'wedding' %}
+                                <p><strong>{% lang "Пара:" "Couple:" %}</strong>
+                                    {% if event.bride_name %}{{ event.bride_name }}{% else %}{% lang "Невеста" "Bride" %}{% endif %} —
+                                    {% if event.groom_name %}{{ event.groom_name }}{% else %}{% lang "Жених" "Groom" %}{% endif %}
+                                </p>
+                                {% if event.wedding_theme %}<p><strong>{% lang "Тема:" "Theme:" %}</strong> {{ event.wedding_theme }}</p>{% endif %}
+                            {% endif %}
+                            <p><strong>{% lang "Дата:" "Date:" %}</strong> {% event_date event.date %}</p>
+                            <p><strong>{% lang "Время:" "Time:" %}</strong> {{ event.time|time:"H:i" }}</p>
+                            <p><strong>{% lang "Место:" "Location:" %}</strong> {{ event.location }}</p>
                             <p class="muted-text desc">{{ event.description|truncatewords:20 }}</p>
                         </div>
-                        <a href="{% url 'Event:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                        <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">{% lang "Подробнее" "Details" %}</a>
+                        <div class="event-type-label">{% event_type_label event.event_type %}</div>
                     </article>
                 {% endfor %}
             </div>
         {% else %}
             <div class="empty-state">
                 {% if search_query %}
-                    <h3>По запросу "{{ search_query }}" ничего не найдено</h3>
-                    <p>Попробуйте другой поиск или <a href="{% url 'Event:event_list' %}">просмотрите все мероприятия</a>.</p>
+                    <h3>{% lang "По запросу" "No results for" %} "{{ search_query }}" {% lang "ничего не найдено" "were found" %}</h3>
+                    <p>{% lang "Попробуйте другой поиск или" "Try another search or" %} <a href="{% url 'Events:event_list' %}">{% lang "просмотрите все мероприятия" "browse all events" %}</a>.</p>
                 {% else %}
-                    <h3>Пока нет запланированных мероприятий</h3>
-                    <p>Станьте первым, кто создаст новое событие в EventHub.</p>
+                    <h3>{% lang "Пока нет запланированных мероприятий" "No upcoming events yet" %}</h3>
+                    <p>{% lang "Станьте первым, кто создаст новое событие в EventHub." "Be the first to create a new event on EventHub." %}</p>
                 {% endif %}
             </div>
         {% endif %}

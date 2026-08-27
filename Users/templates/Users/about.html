@@ -1,7 +1,7 @@
 {% extends 'Users/base.html' %}
-{% load static %}
+{% load static language_tags %}
 
-{% block title %}О нас | EventHub{% endblock %}
+{% block title %}{% lang "О нас | EventHub" "About | EventHub" %}{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/aboutus.css' %}">
 {% endblock %}
@@ -10,27 +10,27 @@
 <section class="page-section about-section">
     <div class="container about-layout">
         <div class="content-card about-card">
-            <span class="section-badge">О платформе</span>
-            <h1>Мы делаем поиск событий проще</h1>
-            <p class="section-lead">EventHub — это удобное пространство для поиска, создания и продвижения мероприятий в одном месте.</p>
+            <span class="section-badge">{% lang "О платформе" "About the platform" %}</span>
+            <h1>{% lang "Мы делаем поиск событий проще" "We make event discovery easier" %}</h1>
+            <p class="section-lead">{% lang "EventHub — это удобное пространство для поиска, создания и продвижения мероприятий в одном месте." "EventHub is a convenient space for searching, creating, and promoting events in one place." %}</p>
         </div>
 
         <div class="cards-grid about-grid">
             <article class="info-card">
-                <h2>Наша миссия</h2>
-                <p>Мы хотим сделать процесс организации и поиска мероприятий простым и понятным для каждого пользователя.</p>
+                <h2>{% lang "Наша миссия" "Our mission" %}</h2>
+                <p>{% lang "Мы хотим сделать процесс организации и поиска мероприятий простым и понятным для каждого пользователя." "We want to make the event organization and discovery process simple and understandable for every user." %}</p>
             </article>
             <article class="info-card">
-                <h2>Как это работает</h2>
-                <p>Пользователь создаёт событие, заполняет детали, а остальные быстро находят интересные мероприятия в общем каталоге.</p>
+                <h2>{% lang "Как это работает" "How it works" %}</h2>
+                <p>{% lang "Пользователь создаёт событие, заполняет детали, а остальные быстро находят интересные мероприятия в общем каталоге." "A user creates an event, fills in the details, and others quickly find interesting events in the shared catalog." %}</p>
             </article>
             <article class="info-card">
-                <h2>Для кого сервис</h2>
-                <p>Для тех, кто хочет организовать встречу, концерт, лекцию, локальную активность или просто найти событие по интересам.</p>
+                <h2>{% lang "Для кого сервис" "Who the service is for" %}</h2>
+                <p>{% lang "Для тех, кто хочет организовать встречу, концерт, лекцию, локальную активность или просто найти событие по интересам." "For those who want to organize a meeting, concert, lecture, local activity, or simply find an event by interest." %}</p>
             </article>
             <article class="info-card contact-card">
-                <h2>Контакты</h2>
-                <p>Если у вас есть вопросы или предложения, напишите нам на <a href="mailto:info@example.com">info@example.com</a>.</p>
+                <h2>{% lang "Контакты" "Contacts" %}</h2>
+                <p>{% lang "Если у вас есть вопросы или предложения, напишите нам на" "If you have questions or suggestions, write to us at" %} <a href="mailto:info@example.com">info@example.com</a>.</p>
             </article>
         </div>
     </div>

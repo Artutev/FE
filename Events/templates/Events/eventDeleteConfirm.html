@@ -1,20 +1,21 @@
 {% extends 'Users/base.html' %}
+{% load language_tags %}
 
-{% block title %}Удаление мероприятия | EventHub{% endblock %}
+{% block title %}{% lang "Удаление мероприятия | EventHub" "Delete event | EventHub" %}{% endblock %}
 
 {% block content %}
 <section class="page-section delete-section">
     <div class="container form-layout">
         <div class="content-card delete-card">
-            <span class="section-badge">Подтверждение</span>
-            <h1>Удалить мероприятие?</h1>
-            <p class="section-lead">Вы собираетесь удалить событие «{{ event.name }}». Это действие нельзя отменить.</p>
+            <span class="section-badge">{% lang "Подтверждение" "Confirmation" %}</span>
+            <h1>{% lang "Удалить мероприятие?" "Delete event?" %}</h1>
+            <p class="section-lead">{% lang "Вы собираетесь удалить событие «{{ event.name }}». Это действие нельзя отменить." "You are about to delete the event \"{{ event.name }}\". This action cannot be undone." %}</p>
 
             <form method="POST" class="delete-form">
                 {% csrf_token %}
                 <div class="card-actions delete-actions">
-                    <button type="submit" class="btn btn-danger">Удалить</button>
-                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-danger">{% lang "Удалить" "Delete" %}</button>
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">{% lang "Отмена" "Cancel" %}</a>
                 </div>
             </form>
         </div>

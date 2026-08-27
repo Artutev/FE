@@ -19,7 +19,70 @@
 }
 
 .auth-footer-text {
-    margin: 0;
+    margin: 18px 0 0;
     color: var(--muted);
     text-align: center;
+}
+
+.friends-search-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 28px;
+}
+
+.friends-search-form input {
+    min-width: 0;
+    flex: 1;
+}
+
+.friends-search-form .btn {
+    flex: 0 0 auto;
+    min-height: 50px;
+    padding: 0 22px;
+}
+
+.form-card h2 {
+    margin: 24px 0 12px;
+    font-size: 1.25rem;
+}
+
+.friend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 54px;
+    margin-top: 8px;
+    padding: 8px 10px 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.friend-user-name {
+    flex: 1;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.friend-row form {
+    margin: 0;
+}
+
+.friend-row .btn {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 520px) {
+    .friends-search-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .friends-search-form .btn {
+        width: 100%;
+    }
 }

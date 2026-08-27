@@ -11,6 +11,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+LOCAL_ENV_FILE = Path(__file__).resolve().parent.parent / '.env.local'
+if LOCAL_ENV_FILE.exists():
+    for line in LOCAL_ENV_FILE.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"\''))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,9 +71,10 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                        'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'Users.context_processors.current_language',
             ],
         },
     },
@@ -76,12 +86,24 @@ WSGI_APPLICATION = 'FE.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.getenv('POSTGRES_DB'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB'),
+            'USER': os.getenv('POSTGRES_USER', ''),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', '127.0.0.1'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -106,11 +128,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Almaty'
 
 USE_I18N = True
+
+LANGUAGES = [
+    ('ru', 'Русский'),
+    ('en', 'English'),
+]
 
 USE_TZ = True
 
@@ -127,3 +154,16 @@ STATICFILES_DIRS = (BASE_DIR / 'static', )
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'Users.User'
+
+# Email settings. Console backend is used locally until Brevo credentials are set.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND') or (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if os.getenv('BREVO_SMTP_LOGIN') and os.getenv('BREVO_SMTP_KEY')
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-relay.brevo.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('BREVO_SMTP_LOGIN', '')
+EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_KEY', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')

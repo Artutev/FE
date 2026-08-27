@@ -1,0 +1,44 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% lang "Друзья | EventHub" "Friends | EventHub" %}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-section auth-section">
+    <div class="container auth-container">
+        <div class="content-card form-card">
+            <h1>{% lang "Друзья" "Friends" %}</h1>
+            <form method="get" class="friends-search-form">
+                <input type="search" name="q" value="{{ query }}" placeholder="{% lang 'Найти пользователя' 'Find a user' %}">
+                <button type="submit" class="btn btn-primary">{% lang "Найти" "Search" %}</button>
+            </form>
+
+            {% if users %}
+                <h2>{% lang "Пользователи" "Users" %}</h2>
+                {% for person in users %}
+                    <div class="friend-row friend-user-row">
+                        <a class="friend-user-name" href="{% url 'Users:public_profile' person.username %}">{{ person.username }}</a>
+                        <form method="post" action="{% url 'Users:send_friend_request' person.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary">{% lang "Добавить" "Add" %}</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <h2>{% lang "Заявки" "Requests" %}</h2>
+            {% for friend_request in friend_requests %}
+                <div class="friend-row friend-request-row">
+                    <span>{{ friend_request.from_user.username }} → {{ friend_request.to_user.username }}</span>
+                    <span>{{ friend_request.get_status_display }}</span>
+                </div>
+            {% empty %}
+                <p class="section-lead">{% lang "Заявок пока нет." "No requests yet." %}</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

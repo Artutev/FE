@@ -1,0 +1,31 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{{ profile_user.username }} | EventHub{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="container public-profile">
+        <div class="content-card profile-card">
+            <span class="section-badge">Профиль пользователя</span>
+            <h1>{{ profile_user.username }}</h1>
+            {% if is_private %}
+                <p class="section-lead">Этот профиль закрыт для просмотра.</p>
+            {% else %}
+                <p class="section-lead">Мероприятия пользователя</p>
+                {% for event in events %}
+                    <article class="public-event-row">
+                        <a href="{% url 'Events:event_detail' event.id %}">{{ event.name }}</a>
+                        <span>{% event_date event.date %}</span>
+                    </article>
+                {% empty %}
+                    <p class="section-lead">Пользователь ещё не создал мероприятий.</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

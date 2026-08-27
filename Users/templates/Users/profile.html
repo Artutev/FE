@@ -1,9 +1,12 @@
 {% extends 'Users/base.html' %}
 {% load static %}
+{% load custom_filters %}
+{% load language_tags %}
 
 {% block title %}Профиль | EventHub{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/calendar-new.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -19,8 +22,40 @@
                 {{ form.username }}
                 {{ form.email }}
                 {{ form.birthDate }}
+                <label class="profile-privacy-toggle">
+                    {{ form.is_profile_private }}
+                    <span>Закрыть профиль для просмотра другими пользователями</span>
+                </label>
                 <button type="submit" class="btn btn-primary">Сохранить изменения</button>
             </form>
+
+            <h2>Друзья</h2>
+            <a href="{% url 'Users:friends' %}" class="btn btn-secondary">Найти пользователей</a>
+            {% if incoming_friend_requests %}
+                <h3>Входящие заявки</h3>
+                {% for friend_request in incoming_friend_requests %}
+                    <div class="friend-row">
+                        <strong>{{ friend_request.from_user.username }}</strong>
+                        <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Принять</button>
+                        </form>
+                        <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'decline' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Отклонить</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% for friend in friends %}
+                <div class="friend-row">
+                    <span>{{ friend.username }}</span>
+                    <form method="post" action="{% url 'Users:remove_friend' friend.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Удалить</button>
+                    </form>
+                </div>
+            {% endfor %}
         </div>
 
         <div class="content-card events-card">
@@ -29,28 +64,60 @@
                     <span class="section-badge">Мои события</span>
                     <h2>Созданные мероприятия</h2>
                 </div>
-                <a href="{% url 'Event:create_event' %}" class="btn btn-primary">Новое мероприятие</a>
+                <a href="{% url 'Events:create_event' %}" class="btn btn-primary">Новое мероприятие</a>
             </div>
 
             {% if my_events %}
                 <div class="cards-grid profile-events-grid">
                     {% for event in my_events %}
-                        <article class="info-card event-card">
+                        {% if forloop.counter <= 2 %}
+                        {% if event.date < now|date:"Y-m-d" %}
+                            <article class="info-card event-card event-card--passed">
+                        {% else %}
+                            <article class="info-card event-card">
+                        {% endif %}
                             <div class="card-content">
+                                {% if event.date < now|date:"Y-m-d" %}
+                                    <span class="event-status">Прошедшее мероприятие</span>
+                                {% endif %}
                                 <h3>{{ event.name }}</h3>
-                                <p><strong>Дата:</strong> {{ event.date }}</p>
-                                <p><strong>Время:</strong> {{ event.time }}</p>
+                                <p><strong>Дата:</strong> {% event_date event.date %}</p>
+                                <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
                                 <p><strong>Место:</strong> {{ event.location }}</p>
                                 <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
                             </div>
                             <div class="card-actions">
-                                <a href="{% url 'Event:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
-                                <a href="{% url 'Event:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
-                                <a href="{% url 'Event:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
+                                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                                <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
+                                <a href="{% url 'Events:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
                             </div>
                         </article>
+                        {% endif %}
                     {% endfor %}
                 </div>
+                {% if my_events|length > 2 %}
+                    <div class="profile-more-events" id="profileMoreEvents">
+                        {% for event in my_events %}
+                            {% if forloop.counter > 2 %}
+                                <article class="info-card event-card">
+                                    <div class="card-content">
+                                        <h3>{{ event.name }}</h3>
+                                        <p><strong>Дата:</strong> {% event_date event.date %}</p>
+                                        <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
+                                        <p><strong>Место:</strong> {{ event.location }}</p>
+                                        <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
+                                    </div>
+                                    <div class="card-actions">
+                                        <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                                        <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
+                                        <a href="{% url 'Events:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
+                                    </div>
+                                </article>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary profile-more-button" id="profileMoreButton">Показать ещё</button>
+                {% endif %}
             {% else %}
                 <div class="empty-state">
                     <h3>Пока пусто</h3>
@@ -58,6 +125,60 @@
                 </div>
             {% endif %}
         </div>
+
+        <div class="content-card events-card registration-card">
+            <div class="section-header">
+                <div>
+                    <span class="section-badge">Регистрация</span>
+                    <h2>События, на которые я зарегистрирован</h2>
+                </div>
+            </div>
+
+            <div class="calendar-widget">
+                <div class="calendar-header">
+                    <h3 id="calendarTitle">{{ calendar_data.month }} {{ calendar_data.year }}</h3>
+                    <div class="calendar-nav" data-month="{{ current_month }}" data-year="{{ current_year }}">
+                        <button class="prev-month" type="button">← Назад</button>
+                        <button class="next-month" type="button">Вперед →</button>
+                    </div>
+                </div>
+                <div id="calendarRoot"></div>
+            </div>
+            <script id="registeredEventsData" type="application/json">{{ registered_events_json|safe }}</script>
+
+        </div>
     </div>
 </section>
+
+<!-- Event Details Popup Modal -->
+<div class="event-popup" id="eventPopup">
+    <div class="popup-content">
+        <button class="popup-close">✕</button>
+        <div class="popup-header">
+            <h2 class="popup-title" id="popupEventName">Название события</h2>
+            <p class="popup-date" id="popupEventDate">Дата</p>
+        </div>
+        <div class="popup-details">
+            <div class="detail-row">
+                <strong>Время:</strong>
+                <span id="popupEventTime">—</span>
+            </div>
+            <div class="detail-row">
+                <strong>Место:</strong>
+                <span id="popupEventLocation">—</span>
+            </div>
+        </div>
+        <div class="popup-actions">
+            <a href="#" class="btn btn-secondary" id="detailBtn">Подробнее</a>
+            <button type="button" class="btn btn-primary" id="registerBtn">Зарегистрироваться</button>
+            <button type="button" class="btn btn-danger" id="unregisterBtn">Отменить</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/calendar.js' %}"></script>
+    <script src="{% static 'js/profile.js' %}"></script>
 {% endblock %}

@@ -1,6 +1,6 @@
-{% load static %}
+{% load static language_tags %}
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ current_language }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,24 +14,28 @@
         <div class="container header-inner">
             <a href="{% url 'base' %}" class="logo">EventHub</a>
 
-            <nav class="navigation" aria-label="Основная навигация">
+            <nav class="navigation" aria-label="{% lang "Основная навигация" "Main navigation" %}">
                 <ul class="nav-links">
-                    <li><a href="{% url 'base' %}">Главная</a></li>
-                    <li><a href="{% url 'Events:event_list' %}">Мероприятия</a></li>
-                    <li><a href="{% url 'Events:create_event' %}">Создать мероприятие</a></li>
-                    <li><a href="{% url 'about' %}">О нас</a></li>
+                    <li><a href="{% url 'base' %}">{% lang "Главная" "Home" %}</a></li>
+                    <li><a href="{% url 'Events:event_list' %}">{% lang "Мероприятия" "Events" %}</a></li>
+                    <li><a href="{% url 'Events:create_event' %}">{% lang "Создать мероприятие" "Create event" %}</a></li>
+                    <li><a href="{% url 'about' %}">{% lang "О нас" "About" %}</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'Users:friends' %}">{% lang "Друзья" "Friends" %}</a></li>
+                    {% endif %}
                 </ul>
             </nav>
 
             <div class="header-actions">
-                <button id="theme-toggle-btn" class="theme-toggle" onclick="window.themeToggle.toggle()" title="Переключить тему">🌙</button>
+                <button id="theme-toggle-btn" class="theme-toggle" onclick="window.themeToggle.toggle()" title="{% lang "Переключить тему" "Toggle theme" %}">🌙</button>
+                <a href="{% url 'Users:set_language' alternate_language %}?next={{ request.path }}" class="nav-pill nav-pill--ghost">{{ alternate_language_label }}</a>
                 
                 {% if user.is_authenticated %}
-                    <a href="{% url 'Users:profile' %}" class="nav-pill">Профиль</a>
-                    <a href="{% url 'Users:logout' %}" class="nav-pill nav-pill--ghost">Выход</a>
+                    <a href="{% url 'Users:profile' %}" class="nav-pill">{% lang "Профиль" "Profile" %}</a>
+                    <a href="{% url 'Users:logout' %}" class="nav-pill nav-pill--ghost">{% lang "Выход" "Logout" %}</a>
                 {% else %}
-                    <a href="{% url 'Users:login' %}" class="nav-pill">Вход</a>
-                    <a href="{% url 'Users:registration' %}" class="nav-pill nav-pill--ghost">Регистрация</a>
+                    <a href="{% url 'Users:login' %}" class="nav-pill">{% lang "Вход" "Login" %}</a>
+                    <a href="{% url 'Users:registration' %}" class="nav-pill nav-pill--ghost">{% lang "Регистрация" "Register" %}</a>
                 {% endif %}
 
                 {% if user.is_superuser %}
@@ -55,20 +59,20 @@
         <section class="hero-section">
             <div class="container hero-grid">
                 <div class="hero-copy">
-                    <span class="section-badge">Платформа для событий</span>
-                    <h1>Создавай и находи мероприятия без лишней сложности</h1>
-                    <p>EventHub помогает публиковать события, делиться ими с другими и быстро находить интересные активности рядом.</p>
+                    <span class="section-badge">{% lang "Платформа для событий" "Events platform" %}</span>
+                    <h1>{% lang "Создавай и находи мероприятия без лишней сложности" "Create and discover events effortlessly" %}</h1>
+                    <p>{% lang "EventHub помогает публиковать события, делиться ими с другими и быстро находить интересные активности рядом." "EventHub helps publish events, share them, and discover activities quickly." %}</p>
                     <div class="hero-actions">
-                        <a href="{% url 'Events:create_event' %}" class="btn btn-primary">Создать мероприятие</a>
-                        <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">Смотреть афишу</a>
+                        <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Создать мероприятие" "Create event" %}</a>
+                        <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">{% lang "Смотреть афишу" "View events" %}</a>
                     </div>
                 </div>
                 <div class="hero-panel content-card">
-                    <h2>Почему удобно</h2>
+                    <h2>{% lang "Почему удобно" "Why it works" %}</h2>
                     <ul class="feature-list">
-                        <li>Простое создание мероприятий</li>
-                        <li>Единый каталог событий</li>
-                        <li>Управление своими публикациями в профиле</li>
+                        <li>{% lang "Простое создание мероприятий" "Easy event creation" %}</li>
+                        <li>{% lang "Единый каталог событий" "Unified event catalog" %}</li>
+                        <li>{% lang "Управление своими публикациями в профиле" "Manage your posts in profile" %}</li>
                     </ul>
                 </div>
             </div>
@@ -82,9 +86,9 @@
             <div class="container">
                 <div class="section-header">
                     <div>
-                        <span class="section-badge">Сейчас в EventHub</span>
-                        <h2>Актуальные мероприятия</h2>
-                        <p class="section-lead">Подборка ближайших событий, которые уже доступны пользователям.</p>
+                        <span class="section-badge">{% lang "Сейчас в EventHub" "Now on EventHub" %}</span>
+                        <h2>{% lang "Актуальные мероприятия" "Featured events" %}</h2>
+                        <p class="section-lead">{% lang "Подборка ближайших событий, которые уже доступны пользователям." "A selection of upcoming events available now." %}</p>
                     </div>
                 </div>
 
@@ -98,22 +102,22 @@
                             {% endif %}
                                 <div class="card-content">
                                     {% if event.date < now|date:"Y-m-d" %}
-                                        <span class="event-status">Прошедшее мероприятие</span>
+                                        <span class="event-status">{% lang "Прошедшее мероприятие" "Past event" %}</span>
                                     {% endif %}
                                     <h3>{{ event.name }}</h3>
-                                    <p><strong>Дата:</strong> {{ event.date|date:"j E Y" }}</p>
-                                    <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
-                                    <p><strong>Место:</strong> {{ event.location }}</p>
+                                    <p><strong>{% lang "Дата:" "Date:" %}</strong> {% event_date event.date %}</p>
+                                    <p><strong>{% lang "Время:" "Time:" %}</strong> {{ event.time|time:"H:i" }}</p>
+                                    <p><strong>{% lang "Место:" "Location:" %}</strong> {{ event.location }}</p>
                                     <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
                                 </div>
-                                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">{% lang "Подробнее" "Details" %}</a>
                             </article>
                         {% endfor %}
                     </div>
                 {% else %}
                     <div class="empty-state">
-                        <h3>Пока нет активных мероприятий</h3>
-                        <p>Создайте первое событие и заполните афишу EventHub.</p>
+                        <h3>{% lang "Пока нет активных мероприятий" "No active events yet" %}</h3>
+                        <p>{% lang "Создайте первое событие и заполните афишу EventHub." "Create the first event to fill the EventHub feed." %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -122,10 +126,10 @@
         <section class="page-section section-soft">
             <div class="container about-preview">
                 <div class="content-card about-preview-card">
-                    <span class="section-badge">О сервисе</span>
-                    <h2>Платформа, которая объединяет людей по интересам</h2>
-                    <p class="section-lead">Мы помогаем быстро запускать события, находить единомышленников и держать всю информацию в одном месте.</p>
-                    <a href="{% url 'about' %}" class="btn btn-secondary">Узнать больше</a>
+                    <span class="section-badge">{% lang "О сервисе" "About the service" %}</span>
+                    <h2>{% lang "Платформа, которая объединяет людей по интересам" "A platform that brings people together." %}</h2>
+                    <p class="section-lead">{% lang "Мы помогаем быстро запускать события, находить единомышленников и держать всю информацию в одном месте." "We help launch events quickly, find like-minded people, and keep information in one place." %}</p>
+                    <a href="{% url 'about' %}" class="btn btn-secondary">{% lang "Узнать больше" "Learn more" %}</a>
                 </div>
             </div>
         </section>
@@ -135,7 +139,7 @@
 
     <footer class="site-footer">
         <div class="container footer-inner">
-            <p>&copy; 2025 EventHub. Все права защищены.</p>
+            <p>{% lang "© 2025 EventHub. Все права защищены." "© 2025 EventHub. All rights reserved." %}</p>
         </div>
     </footer>
     

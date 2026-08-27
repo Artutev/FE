@@ -75,7 +75,7 @@ img {
 .site-header {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 2000;
     backdrop-filter: blur(14px);
     background: rgba(255, 255, 255, 0.88);
     border-bottom: 1px solid rgba(219, 228, 240, 0.9);
@@ -285,12 +285,17 @@ html.dark-mode .hero-copy p {
 }
 
 .hero-actions,
+.section-actions,
 .card-actions,
 .form-actions,
 .delete-actions {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+.section-actions {
+    gap: 8px;
 }
 
 .hero-actions {
@@ -446,6 +451,18 @@ html.dark-mode .hero-copy p {
     background: #fbfdff;
     font-size: 1rem;
     color: var(--text);
+}
+
+.styled-form input[type="text"],
+.form-card input[type="text"] {
+    appearance: none;
+}
+
+.styled-form input[type="date"],
+.form-card input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
 }
 
 .styled-form textarea,
