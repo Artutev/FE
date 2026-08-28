@@ -80,6 +80,24 @@
     }
 }
 
+@media (max-width: 640px) {
+    .profile-events-grid,
+    .profile-more-events {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .profile-privacy-toggle {
+        align-items: flex-start;
+    }
+
+    .public-event-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+}
+
 .registration-card {
     grid-column: 1 / -1;
 }

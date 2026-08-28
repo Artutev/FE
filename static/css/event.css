@@ -341,6 +341,52 @@ html.dark-mode .privacy-card input[type="checkbox"] {
     gap: 16px;
 }
 
+@media (max-width: 640px) {
+    .location-map-wrapper,
+    .location-map-div {
+        height: 260px;
+        min-height: 260px;
+    }
+
+    .picker-popup {
+        width: min(320px, calc(100vw - 20px));
+        min-width: 0;
+    }
+
+    .picker-header {
+        gap: 6px;
+    }
+
+    .picker-title-group {
+        min-width: 0;
+    }
+
+    .picker-year-control {
+        gap: 3px;
+    }
+
+    .time-list {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 420px) {
+    .event-form .card-actions .btn,
+    .event-form > .btn {
+        width: 100%;
+    }
+
+    .calendar-grid {
+        gap: 3px;
+    }
+
+    .calendar-grid span,
+    .calendar-grid button {
+        min-height: 32px;
+        font-size: 0.78rem;
+    }
+}
+
 .spinner-group {
     display: grid;
     gap: 10px;

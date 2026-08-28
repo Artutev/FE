@@ -103,8 +103,35 @@ html.dark-mode .site-header {
     letter-spacing: -0.03em;
 }
 
+.header-top {
+    display: contents;
+}
+
 .navigation {
     min-width: 0;
+}
+
+.header-menu {
+    display: contents;
+}
+
+.menu-toggle {
+    display: none;
+    width: 44px;
+    height: 44px;
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    cursor: pointer;
+}
+
+.menu-toggle span {
+    display: block;
+    height: 2px;
+    margin: 4px 0;
+    border-radius: 2px;
+    background: var(--text);
 }
 
 .navigation ul,
@@ -701,6 +728,7 @@ html.dark-mode .site-footer {
     .navigation ul,
     .header-actions {
         justify-content: center;
+        width: 100%;
     }
 }
 
@@ -716,15 +744,106 @@ html.dark-mode .site-footer {
 }
 
 @media (max-width: 640px) {
+    .container {
+        width: min(calc(100% - 20px), var(--container));
+    }
+
+    .site-header {
+        position: relative;
+    }
+
+    .header-inner {
+        position: relative;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 12px;
+        padding: 12px 0;
+    }
+
+    .logo {
+        font-size: 1.65rem;
+        letter-spacing: 0;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .header-top {
+        position: relative;
+        grid-column: 1 / -1;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .menu-toggle {
+        display: block;
+        position: absolute;
+        right: 0;
+        justify-self: end;
+    }
+
+    .header-menu {
+        display: none;
+        grid-column: 1 / -1;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+    }
+
+    .header-menu.is-open {
+        display: grid;
+        gap: 10px;
+    }
+
+    .header-menu .navigation ul,
+    .header-menu .header-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .header-menu .navigation ul {
+        display: grid;
+        gap: 4px;
+    }
+
+    .header-menu .navigation a,
+    .header-menu .header-actions a,
+    .header-menu .header-actions .theme-toggle {
+        width: 100%;
+    }
+
+    .header-menu .header-actions {
+        display: grid;
+        gap: 8px;
+    }
+
     .site-main {
-        padding-top: 24px;
+        padding: 0 0 32px;
     }
 
     .hero-copy,
     .content-card,
     .info-card,
     .empty-state {
-        padding: 24px;
+        padding: 20px;
+    }
+
+    .hero-section,
+    .page-section {
+        padding: 20px 0;
+    }
+
+    .hero-grid,
+    .form-layout,
+    .detail-layout,
+    .about-layout,
+    .profile-layout {
+        gap: 16px;
     }
 
     .navigation ul,
@@ -737,5 +856,88 @@ html.dark-mode .site-footer {
         min-height: 38px;
         padding: 0 12px;
         font-size: 0.95rem;
+    }
+
+    .navigation ul,
+    .header-actions {
+        flex-wrap: wrap;
+    }
+
+    .section-header,
+    .section-actions,
+    .hero-actions,
+    .card-actions,
+    .form-actions {
+        width: 100%;
+    }
+
+    .section-actions .btn,
+    .hero-actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .cards-grid,
+    .home-events-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .btn {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 420px) {
+    .container {
+        width: calc(100% - 20px);
+    }
+
+    .hero-copy,
+    .content-card,
+    .info-card,
+    .empty-state {
+        padding: 18px 16px;
+        border-radius: var(--radius-md);
+    }
+
+    .hero-section,
+    .page-section {
+        padding: 14px 0;
+    }
+
+    .hero-copy h1 {
+        font-size: 2rem;
+        line-height: 1.12;
+    }
+
+    .hero-copy p,
+    .section-lead {
+        line-height: 1.45;
+    }
+
+    .hero-actions,
+    .section-actions {
+        gap: 8px;
+    }
+
+    .hero-actions .btn,
+    .section-actions .btn {
+        width: 100%;
+    }
+
+    .menu-toggle {
+        justify-self: end;
+    }
+
+    .navigation ul,
+    .header-actions {
+        gap: 6px;
+    }
+
+    .navigation a,
+    .header-actions a,
+    .nav-pill {
+        padding: 0 9px;
+        font-size: 0.85rem;
     }
 }

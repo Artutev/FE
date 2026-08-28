@@ -12,8 +12,14 @@
 <body class="{% block body_class %}{% endblock %}">
     <header class="site-header">
         <div class="container header-inner">
-            <a href="{% url 'base' %}" class="logo">EventHub</a>
+            <div class="header-top">
+                <a href="{% url 'base' %}" class="logo">EventHub</a>
+                <button class="menu-toggle" id="menuToggle" type="button" aria-controls="headerMenu" aria-expanded="false" aria-label="{% lang "Открыть меню" "Open menu" %}">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
 
+            <div class="header-menu" id="headerMenu">
             <nav class="navigation" aria-label="{% lang "Основная навигация" "Main navigation" %}">
                 <ul class="nav-links">
                     <li><a href="{% url 'base' %}">{% lang "Главная" "Home" %}</a></li>
@@ -41,6 +47,7 @@
                 {% if user.is_superuser %}
                     <a href="{% url 'admin:index' %}" class="nav-pill nav-pill--admin">Admin</a>
                 {% endif %}
+            </div>
             </div>
         </div>
     </header>
@@ -158,6 +165,7 @@
             });
         });
     </script>
+    <script src="{% static 'js/menu.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

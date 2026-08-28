@@ -219,4 +219,13 @@
     .friends-search-form .btn {
         width: 100%;
     }
+
+    .friends-requests-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .friends-tab {
+        flex: none;
+    }
 }
