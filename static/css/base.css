@@ -146,6 +146,7 @@ html.dark-mode .site-header {
 
 .navigation ul {
     flex-wrap: wrap;
+    max-width: 500px;
 }
 
 .header-actions {
