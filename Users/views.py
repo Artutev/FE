@@ -76,8 +76,9 @@ def base(request):
     return render(request, 'Users/base.html', {'latest_events': latest_events, 'is_home': True})
 
 def login(request):
+    language = request.session.get('language', 'ru')
     if request.method == "POST":
-        form = UserLoginForm(data= request.POST)
+        form = UserLoginForm(data=request.POST, language=language)
         if form.is_valid():
             username = request.POST['username']
             password = request.POST['password']
@@ -85,10 +86,8 @@ def login(request):
             if user:
                 auth.login(request, user)
                 return HttpResponseRedirect(reverse('base'))
-        else:
-            messages.error(request, 'Неправильное имя пользователя или пароль.')
     else:
-        form = UserLoginForm(language=request.session.get('language', 'ru'))
+        form = UserLoginForm(language=language)
     context = {'form': form}
     return render(request, 'Users/login.html', context)
 
@@ -167,8 +166,6 @@ def registration(request):
             )
             confirm_url = reverse('Users:confirm_email_code')
             return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": user.email})}')
-        else:
-            messages.error(request, 'Чет не так')
     else:
         form = UserRegistrationForm(language=request.session.get('language', 'ru'))
     context = {'form': form}
@@ -178,7 +175,9 @@ def registration(request):
 #     return render(request, 'Users/../Events/templates/event.html')
 
 def about(request):
-    return render(request, 'Users/about.html')
+    return render(request, 'Users/about.html', {
+        'contact_email': settings.DEFAULT_FROM_EMAIL,
+    })
 
 @login_required(login_url='Users:login')
 def profile(request):

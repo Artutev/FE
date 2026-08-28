@@ -146,7 +146,7 @@ html.dark-mode .site-header {
 
 .navigation ul {
     flex-wrap: wrap;
-    max-width: 500px;
+    max-width: 1080px;
 }
 
 .header-actions {
@@ -617,22 +617,22 @@ html.dark-mode .section-badge {
 @keyframes flashIn {
     from {
         opacity: 0;
-        transform: translateX(-50%) translateY(-10px);
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;
-        transform: translateX(-50%) translateY(0);
+        transform: translateY(0);
     }
 }
 
 @keyframes flashOut {
     from {
         opacity: 1;
-        transform: translateX(-50%) translateY(0);
+        transform: translateY(0);
     }
     to {
         opacity: 0;
-        transform: translateX(-50%) translateY(-10px);
+        transform: translateY(-10px);
         height: 0;
         margin: 0;
         padding: 0;

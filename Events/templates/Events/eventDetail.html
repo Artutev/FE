@@ -1,42 +1,43 @@
 {% extends 'Users/base.html' %}
 {% load static language_tags %}
+{% load l10n %}
 
 {% block title %}{{ event.name }} | EventHub{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/event_detail.css' %}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 {% endblock %}
 
 {% block content %}
 <section class="page-section event-detail-section">
     <div class="container detail-layout">
         <article class="content-card detail-card{% if event.date < now|date:"Y-m-d" %} detail-card--passed{% endif %}">
-            <span class="section-badge">{% lang "Карточка события" "Event card" %}</span>
             {% if event.date < now|date:"Y-m-d" %}
                 <div class="passed-event-banner">⏰ {% lang "Это событие уже прошло" "This event has already passed" %}</div>
             {% endif %}
-            <h1>{{ event.name }}</h1>
+            <h1 class="event-detail-title">{{ event.name }}</h1>
             <div class="detail-grid event-meta">
-                <div class="detail-item">
+                <div class="detail-item detail-item--date">
                     <span>{% lang "Дата" "Date" %}</span>
                     <strong>{% event_date event.date %}</strong>
                 </div>
-                <div class="detail-item">
+                <div class="detail-item detail-item--time">
                     <span>{% lang "Время" "Time" %}</span>
                     <strong>{{ event.time|time:"H:i" }}</strong>
                 </div>
                 <div class="detail-item detail-item--location">
                     <span>{% lang "Место" "Location" %}</span>
-                    <strong>{{ event.location }}</strong>
-                    <div class="event-location-map">
-                        <div id="detailMap" class="event-location-map-iframe"></div>
-                    </div>
+                    {% if event.location %}
+                        <a class="event-address-link" href="https://www.google.com/maps/search/?api=1&query={{ event.location|urlencode }}" target="_blank" rel="noopener noreferrer">{{ event.location }}</a>
+                    {% else %}
+                        <strong>{% lang "Место не указано" "Location not specified" %}</strong>
+                    {% endif %}
                 </div>
-                <div class="detail-item">
+                <div class="detail-item detail-item--type">
                     <span>{% lang "Тип" "Type" %}</span>
                     <strong>{% event_type_label event.event_type %}</strong>
                 </div>
-                <div class="detail-item">
+                <div class="detail-item detail-item--registered">
                     <span>{% lang "Зарегистрировано" "Registered" %}</span>
                     <strong>{{ registration_count }} {% lang "человек" "people" %}</strong>
                 </div>
@@ -73,6 +74,25 @@
                 {% endif %}
             </div>
 
+            <div class="event-people-section">
+                <div class="detail-item event-people-block">
+                    <span>{% lang "Организатор" "Organizer" %}</span>
+                    {% if event.creator %}
+                        <a class="event-person-link" href="{% url 'Users:public_profile' event.creator.username %}">{{ event.creator.username }}</a>
+                    {% else %}
+                        <span>{% lang "Не указан" "Not specified" %}</span>
+                    {% endif %}
+                </div>
+                <div class="detail-item event-people-block">
+                    <span>{% lang "Друзья на мероприятии" "Friends attending" %}</span>
+                    {% for registration in registered_friends %}
+                        <a class="event-person-link" href="{% url 'Users:public_profile' registration.user.username %}">{{ registration.user.username }}</a>{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <span>{% lang "Пока никто из друзей не зарегистрирован." "None of your friends are registered yet." %}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
             {% if event.event_type == 'wedding' %}
                 <div class="detail-description wedding-tips">
                     <h2>{% lang "Идеи для свадьбы" "Wedding ideas" %}</h2>
@@ -89,6 +109,15 @@
                 <h2>{% lang "Описание" "Description" %}</h2>
                 <p>{{ event.description }}</p>
             </div>
+
+            {% if event.latitude and event.longitude %}
+                <div class="event-map-section">
+                    <h2>{% lang "Карта" "Map" %}</h2>
+                    <div class="event-location-map">
+                        <div id="detailMap" class="event-location-map-iframe"></div>
+                    </div>
+                </div>
+            {% endif %}
 
             <div class="card-actions detail-actions">
                 <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">{% lang "К списку мероприятий" "Back to events" %}</a>
@@ -136,11 +165,11 @@
 </script>
 {% endif %}
 {% if event.latitude and event.longitude %}
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const lat = {{ event.latitude }};
-        const lon = {{ event.longitude }};
+        const lat = {{ event.latitude|unlocalize }};
+        const lon = {{ event.longitude|unlocalize }};
         const mapDiv = document.getElementById('detailMap');
         if (!mapDiv || typeof L === 'undefined') return;
         const map = L.map(mapDiv).setView([lat, lon], 15);
@@ -148,6 +177,7 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
         L.marker([lat, lon]).addTo(map);
+        window.setTimeout(() => map.invalidateSize(), 100);
     });
 </script>
 {% else %}

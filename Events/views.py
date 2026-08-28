@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.urls import reverse
 from Events.models import Event, EventType
 from Events.forms import EventForm
+from Users.models import FriendRequest
 
 @login_required(login_url='Users:login')
 def create_event(request):
@@ -103,6 +104,19 @@ def event_detail(request, event_id):
     # Получаем количество зарегистрированных
     from Events.models import EventRegistration
     registration_count = event.registrations.count()
+    friend_relations = FriendRequest.objects.filter(
+        Q(from_user=request.user, status='accepted') |
+        Q(to_user=request.user, status='accepted')
+    ).values_list('from_user_id', 'to_user_id') if request.user.is_authenticated else []
+    friend_user_ids = {
+        user_id
+        for relation in friend_relations
+        for user_id in relation
+        if request.user.is_authenticated and user_id != request.user.id
+    }
+    registered_friends = event.registrations.filter(
+        user_id__in=friend_user_ids
+    ).select_related('user')
     
     private_link = None
     token_param = ''
@@ -120,6 +134,7 @@ def event_detail(request, event_id):
         'event': event,
         'is_registered': is_registered,
         'registration_count': registration_count,
+        'registered_friends': registered_friends,
         'private_link': private_link,
         'token_param': token_param
     }

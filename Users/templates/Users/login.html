@@ -16,8 +16,14 @@
 
             <form action="{% url 'Users:login' %}" method="post" class="styled-form">
                 {% csrf_token %}
-                {{ form.username }}
-                {{ form.password }}
+                {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+                {% for field in form %}
+                    <div class="auth-field">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
                 <button type="submit" class="btn btn-primary btn-block">{% lang "Войти" "Login" %}</button>
             </form>
 
@@ -25,4 +31,5 @@
         </div>
     </div>
 </section>
+<script src="{% static 'js/password-toggle.js' %}"></script>
 {% endblock %}

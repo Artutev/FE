@@ -10,7 +10,6 @@
 <section class="page-section about-section">
     <div class="container about-layout">
         <div class="content-card about-card">
-            <span class="section-badge">{% lang "О платформе" "About the platform" %}</span>
             <h1>{% lang "Мы делаем поиск событий проще" "We make event discovery easier" %}</h1>
             <p class="section-lead">{% lang "EventHub — это удобное пространство для поиска, создания и продвижения мероприятий в одном месте." "EventHub is a convenient space for searching, creating, and promoting events in one place." %}</p>
         </div>
@@ -19,6 +18,7 @@
             <article class="info-card">
                 <h2>{% lang "Наша миссия" "Our mission" %}</h2>
                 <p>{% lang "Мы хотим сделать процесс организации и поиска мероприятий простым и понятным для каждого пользователя." "We want to make the event organization and discovery process simple and understandable for every user." %}</p>
+                <p>{% lang "Помогаем находить людей, места и события, которые превращают обычный день во что-то особенное." "We help people discover places and events that turn an ordinary day into something special." %}</p>
             </article>
             <article class="info-card">
                 <h2>{% lang "Как это работает" "How it works" %}</h2>
@@ -30,7 +30,7 @@
             </article>
             <article class="info-card contact-card">
                 <h2>{% lang "Контакты" "Contacts" %}</h2>
-                <p>{% lang "Если у вас есть вопросы или предложения, напишите нам на" "If you have questions or suggestions, write to us at" %} <a href="mailto:info@example.com">info@example.com</a>.</p>
+                <p>{% lang "Если у вас есть вопросы или предложения, напишите нам на" "If you have questions or suggestions, write to us at" %} <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
             </article>
         </div>
     </div>

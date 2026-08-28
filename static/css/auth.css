@@ -18,6 +18,93 @@
     font-size: clamp(1.9rem, 3vw, 2.5rem);
 }
 
+.auth-field {
+    display: grid;
+    gap: 7px;
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 52px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    background: var(--surface-soft);
+    color: var(--primary);
+}
+
+.password-toggle.is-visible {
+    color: var(--primary);
+}
+
+.auth-field label,
+.form-group label {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.auth-field .errorlist,
+.form-group .errorlist,
+.styled-form > .errorlist {
+    margin: 4px 0 2px;
+    padding: 9px 12px;
+    list-style: none;
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 10px;
+    background: rgba(220, 38, 38, 0.12);
+    color: #991b1b;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.auth-error-summary {
+    padding: 12px 14px;
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 10px;
+    background: rgba(220, 38, 38, 0.12);
+    color: #991b1b;
+    line-height: 1.4;
+}
+
+.auth-error-summary strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.auth-error-summary ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+html.dark-mode .auth-field .errorlist,
+html.dark-mode .form-group .errorlist,
+html.dark-mode .styled-form > .errorlist,
+html.dark-mode .auth-error-summary {
+    color: #fecaca;
+}
+
 .auth-footer-text {
     margin: 18px 0 0;
     color: var(--muted);
@@ -204,6 +291,16 @@
 
 .friends-modal-close:hover {
     background: var(--surface-soft);
+}
+
+@media (max-width: 640px) {
+    .global-messages {
+        position: static;
+        transform: none;
+        width: auto;
+        margin: 12px auto 0;
+        padding: 0 10px;
+    }
 }
 
 @media (max-width: 520px) {

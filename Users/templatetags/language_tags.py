@@ -14,6 +14,19 @@ MONTH_LABELS = {
     ),
 }
 
+FRIEND_REQUEST_STATUS_LABELS = {
+    'ru': {
+        'pending': 'Ожидает ответа',
+        'accepted': 'Принята',
+        'declined': 'Отклонена',
+    },
+    'en': {
+        'pending': 'Pending',
+        'accepted': 'Accepted',
+        'declined': 'Declined',
+    },
+}
+
 @register.simple_tag(takes_context=True)
 def lang(context, ru_text, en_text):
     language = context.get('LANGUAGE_CODE', 'ru')
@@ -35,3 +48,9 @@ def event_date(context, value):
     language = context.get('LANGUAGE_CODE', 'ru')
     months = MONTH_LABELS.get(language, MONTH_LABELS['ru'])
     return f'{value.day} {months[value.month]} {value.year}'
+
+@register.simple_tag(takes_context=True)
+def friend_request_status(context, status):
+    language = context.get('LANGUAGE_CODE', 'ru')
+    labels = FRIEND_REQUEST_STATUS_LABELS.get(language, FRIEND_REQUEST_STATUS_LABELS['ru'])
+    return labels.get(status, status)

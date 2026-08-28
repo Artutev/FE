@@ -1,10 +1,56 @@
 .about-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
+    align-items: stretch;
+}
+
+.about-grid .info-card:nth-child(1) {
+    grid-row: span 2;
+}
+
+.about-grid .info-card:nth-child(2) {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.about-grid .info-card:nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.about-grid .info-card:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
 }
 
 .about-card {
-    text-align: left;
+    text-align: center;
+    display: grid;
+    align-content: center;
+    min-height: 230px;
+}
+
+.about-grid .info-card {
+    min-height: 170px;
+    display: grid;
+    align-content: center;
+}
+
+.about-grid .info-card:nth-child(2) {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+    .about-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .about-grid .info-card:nth-child(n) {
+        grid-column: auto;
+        grid-row: auto;
+        min-height: 220px;
+    }
+
 }
 
 .contact-card a {
