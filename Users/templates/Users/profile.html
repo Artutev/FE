@@ -31,22 +31,6 @@
 
             <h2>Друзья</h2>
             <a href="{% url 'Users:friends' %}" class="btn btn-secondary">Найти пользователей</a>
-            {% if incoming_friend_requests %}
-                <h3>Входящие заявки</h3>
-                {% for friend_request in incoming_friend_requests %}
-                    <div class="friend-row">
-                        <strong>{{ friend_request.from_user.username }}</strong>
-                        <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary">Принять</button>
-                        </form>
-                        <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'decline' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Отклонить</button>
-                        </form>
-                    </div>
-                {% endfor %}
-            {% endif %}
             {% for friend in friends %}
                 <div class="friend-row">
                     <span>{{ friend.username }}</span>

@@ -19,6 +19,7 @@ from Events.models import Event, EventRegistration
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 from datetime import date, datetime
 from calendar import monthcalendar, month_name
 # Create your views here.
@@ -263,16 +264,40 @@ def public_profile(request, username):
 @login_required(login_url='Users:login')
 def friends(request):
     query = request.GET.get('q', '').strip()
-    users = User.objects.exclude(pk=request.user.pk)
+    users_queryset = User.objects.exclude(pk=request.user.pk).order_by('username')
     if query:
-        users = users.filter(username__icontains=query)
+        users_queryset = users_queryset.filter(username__icontains=query)
+    users_page = Paginator(users_queryset, 8).get_page(request.GET.get('page'))
+    users = users_page.object_list
+    relationship_statuses = {}
+    for person in users:
+        relation = FriendRequest.objects.filter(
+            Q(from_user=request.user, to_user=person) |
+            Q(from_user=person, to_user=request.user)
+        ).order_by('-status', '-created_at').first()
+        if relation:
+            if relation.status == 'accepted':
+                relationship_statuses[person.id] = 'friend'
+            elif relation.from_user_id == request.user.id:
+                relationship_statuses[person.id] = 'sent'
+            else:
+                relationship_statuses[person.id] = 'received'
+        else:
+            relationship_statuses[person.id] = 'none'
     requests = FriendRequest.objects.filter(
         Q(from_user=request.user) | Q(to_user=request.user)
     ).select_related('from_user', 'to_user')
+    friend_users = User.objects.filter(
+        Q(sent_friend_requests__to_user=request.user, sent_friend_requests__status='accepted') |
+        Q(received_friend_requests__from_user=request.user, received_friend_requests__status='accepted')
+    ).distinct()
     return render(request, 'Users/friends.html', {
         'users': users,
+        'users_page': users_page,
         'query': query,
         'friend_requests': requests,
+        'friend_users': friend_users,
+        'relationship_statuses': relationship_statuses,
     })
 
 
@@ -281,11 +306,25 @@ def friends(request):
 def send_friend_request(request, user_id):
     target = get_object_or_404(User, pk=user_id)
     if target != request.user:
-        FriendRequest.objects.update_or_create(
-            from_user=request.user,
-            to_user=target,
-            defaults={'status': 'pending'},
-        )
+        existing = FriendRequest.objects.filter(
+            from_user=request.user, to_user=target
+        ).first()
+        reverse_request = FriendRequest.objects.filter(
+            from_user=target, to_user=request.user
+        ).first()
+        if existing and existing.status == 'accepted':
+            return redirect('Users:friends')
+        if reverse_request and reverse_request.status == 'pending':
+            reverse_request.status = 'accepted'
+            reverse_request.save(update_fields=['status'])
+            if existing:
+                existing.delete()
+        else:
+            FriendRequest.objects.update_or_create(
+                from_user=request.user,
+                to_user=target,
+                defaults={'status': 'pending'},
+            )
     return redirect('Users:friends')
 
 
