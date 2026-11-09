@@ -1,0 +1,17 @@
+{% load language_tags %}
+<div class="owner-card">
+    {% include "Events/_event_card.html" %}
+    <div class="owner-actions">
+        <span class="owner-count">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+            {{ event.reg_count }}
+        </span>
+        {% if event.is_private %}<span class="ecard-flag">{% lang "Приватное событие" "Private event" %}</span>{% endif %}
+        <a href="{% url 'Events:edit_event' event.id %}" class="icon-btn" title="{% lang "Изменить" "Edit" %}" aria-label="{% lang "Изменить" "Edit" %}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>
+        </a>
+        <a href="{% url 'Events:delete_event' event.id %}" class="icon-btn icon-btn--danger" title="{% lang "Удалить" "Delete" %}" aria-label="{% lang "Удалить" "Delete" %}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></svg>
+        </a>
+    </div>
+</div>

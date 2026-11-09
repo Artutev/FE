@@ -1,50 +1,33 @@
-{% extends 'Users/base.html' %}
+{% extends 'Users/auth_base.html' %}
 {% load static language_tags %}
 
-{% block title %}{% lang "Регистрация | EventHub" "Registration | EventHub" %}{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <link rel="stylesheet" href="{% static 'css/event.css' %}">
+{% block title %}{% lang "Регистрация | EventTown" "Registration | EventTown" %}{% endblock %}
+{% block auth_css %}
+    <link rel="stylesheet" href="{% static 'css/event.css' %}?v=3">
 {% endblock %}
 
-{% block content %}
-<section class="page-section auth-section">
-    <div class="container auth-container">
-        <div class="content-card form-card">
-            <span class="section-badge">{% lang "Новый аккаунт" "New account" %}</span>
-            <h1>{% lang "Регистрация" "Register" %}</h1>
-            <p class="section-lead">{% lang "Создайте профиль, чтобы публиковать свои события и участвовать в мероприятиях других пользователей." "Create an account to publish events and join others' activities." %}</p>
+{% block auth_form %}
+<h1>{% lang "Создать аккаунт" "Create an account" %}</h1>
+<p class="section-lead">{% lang "Создайте профиль, чтобы публиковать свои события и участвовать в мероприятиях других пользователей." "Create an account to publish events and join others' activities." %}</p>
 
-            <form action="{% url 'Users:registration' %}" method="post" class="styled-form">
-                {% csrf_token %}
-                {% if form.errors %}
-                    <div class="auth-error-summary" role="alert">
-                        <strong>{% lang "Пожалуйста, исправьте ошибки:" "Please fix the following errors:" %}</strong>
-                        <ul>
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-                {% for field in form %}
-                    <div class="auth-field">
-                        {{ field.label_tag }}
-                        {{ field }}
-                    </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
-            </form>
-
-            <p class="auth-footer-text">{% lang "Уже есть аккаунт?" "Already have an account?" %} <a href="{% url 'Users:login' %}">{% lang "Войти" "Login" %}</a></p>
-        </div>
+<form action="{% url 'Users:registration' %}" method="post" class="styled-form auth-form" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }} {% endfor %}</div>
+    {% endif %}
+    <div class="auth-grid">
+        {% for field in form %}
+            <div class="auth-field{% if field.name == 'username' or field.name == 'email' %} auth-span-2{% endif %}{% if field.errors %} has-error{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+                {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+        {% endfor %}
     </div>
-</section>
-<script src="{% static 'js/date-time-picker.js' %}"></script>
-<script src="{% static 'js/password-toggle.js' %}"></script>
+    <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
+</form>
+
+<p class="auth-footer-text">{% lang "Уже есть аккаунт?" "Already have an account?" %} <a href="{% url 'Users:login' %}">{% lang "Войти" "Login" %}</a></p>
+<script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
+<script src="{% static 'js/password-toggle.js' %}?v=4"></script>
 {% endblock %}

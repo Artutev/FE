@@ -1,168 +1,202 @@
 {% extends 'Users/base.html' %}
-{% load static %}
-{% load custom_filters %}
-{% load language_tags %}
+{% load static custom_filters language_tags %}
 
-{% block title %}Профиль | EventHub{% endblock %}
+{% block title %}{% lang "Профиль | EventTown" "Profile | EventTown" %}{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
-    <link rel="stylesheet" href="{% static 'css/calendar-new.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/calendar-new.css' %}?v=3">
 {% endblock %}
 
 {% block content %}
-<section class="page-section profile-section">
-    <div class="container profile-layout">
-        <div class="content-card profile-card">
-            <span class="section-badge">Личный кабинет</span>
-            <h1>Профиль пользователя</h1>
-            <p class="section-lead">Обновите основные данные аккаунта и держите информацию в актуальном состоянии.</p>
+<section class="page-section">
+    <div class="container">
+        <header class="pf-head">
+            <span class="pf-avatar" aria-hidden="true">{{ user.username|slice:":1"|upper }}</span>
+            <div class="pf-id">
+                <h1>{{ user.username }}</h1>
+                <p class="muted-text">{{ user.email }}{% if user.is_profile_private %} · {% lang "Закрытый профиль" "Private profile" %}{% endif %}</p>
+                <ul class="pf-stats">
+                    <li><b>{{ my_events|length }}</b> {% lang "создано" "created" %}</li>
+                    <li><b>{{ registered_events|length }}</b> {% lang "иду" "going" %}</li>
+                    <li><b>{{ friends|length }}</b> {% lang "друзей" "friends" %}</li>
+                </ul>
+            </div>
+            <div class="pf-head-actions">
+                <a href="{% url 'Users:public_profile' user.username %}" class="btn btn-secondary">{% lang "Публичный профиль" "Public profile" %}</a>
+                <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Новое мероприятие" "New event" %}</a>
+            </div>
+        </header>
 
-            <form action="{% url 'Users:profile' %}" method="post" class="styled-form profile-form">
-                {% csrf_token %}
-                {{ form.username }}
-                {{ form.email }}
-                {{ form.birthDate }}
-                <label class="profile-privacy-toggle">
-                    {{ form.is_profile_private }}
-                    <span>Закрыть профиль для просмотра другими пользователями</span>
-                </label>
-                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-            </form>
+        <div class="pf-layout">
+            <div class="pf-main">
+                <section class="pf-block">
+                    <div class="pf-block-head">
+                        <h2>{% lang "Мои мероприятия" "My events" %}</h2>
+                    </div>
+                    {% if my_events %}
+                        <div class="cards-grid pf-grid">
+                            {% for event in my_events %}
+                                {% if forloop.counter <= 4 %}{% include "Users/_owner_card.html" %}{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if my_events|length > 4 %}
+                            <div class="cards-grid pf-grid profile-more-events" id="profileMoreEvents">
+                                {% for event in my_events %}
+                                    {% if forloop.counter > 4 %}{% include "Users/_owner_card.html" %}{% endif %}
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-secondary profile-more-button" id="profileMoreButton">{% lang "Показать ещё" "Show more" %}</button>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <h3>{% lang "Пока пусто" "Nothing here yet" %}</h3>
+                            <p>{% lang "Вы ещё не создали ни одного мероприятия. Начните с первого события." "You haven't created any events yet. Start with your first one." %}</p>
+                            <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Создать мероприятие" "Create event" %}</a>
+                        </div>
+                    {% endif %}
+                </section>
 
-            <h2>Друзья</h2>
-            <a href="{% url 'Users:friends' %}" class="btn btn-secondary">Найти пользователей</a>
-            {% for friend in friends %}
-                <div class="friend-row">
-                    <span>{{ friend.username }}</span>
-                    <form method="post" action="{% url 'Users:remove_friend' friend.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Удалить</button>
-                    </form>
-                </div>
-            {% endfor %}
-        </div>
+                <section class="pf-block">
+                    <div class="pf-block-head">
+                        <h2>{% lang "Я иду" "I'm going" %}</h2>
+                    </div>
+                    {% if registered_events %}
+                        <ul class="pf-going">
+                            {% for registration in registered_events %}
+                                {% with event=registration.event %}
+                                <li class="{% if event.has_passed %}is-past{% endif %}">
+                                    <a href="{% url 'Events:event_detail' event.id %}">
+                                        <span class="pf-going-date">{% if event.date %}<b>{{ event.date.day }}</b>{% month_short event.date %}{% else %}—{% endif %}</span>
+                                        <span class="pf-going-body">
+                                            <strong>{{ event.name }}</strong>
+                                            <em>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</em>
+                                        </span>
+                                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                                    </a>
+                                </li>
+                                {% endwith %}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted-text">{% lang "Вы пока никуда не записались." "You haven't signed up for anything yet." %} <a href="{% url 'Events:event_list' %}">{% lang "Смотреть афишу" "Explore events" %}</a></p>
+                    {% endif %}
+                </section>
 
-        <div class="content-card events-card">
-            <div class="section-header">
-                <div>
-                    <span class="section-badge">Мои события</span>
-                    <h2>Созданные мероприятия</h2>
-                </div>
-                <a href="{% url 'Events:create_event' %}" class="btn btn-primary">Новое мероприятие</a>
+                <section class="pf-block registration-card">
+                    <div class="calendar-widget">
+                        <div class="calendar-header">
+                            <h2 id="calendarTitle">{{ calendar_data.month }} {{ calendar_data.year }}</h2>
+                            <div class="calendar-nav" data-month="{{ current_month }}" data-year="{{ current_year }}">
+                                <button class="prev-month icon-btn" type="button" aria-label="{% lang "← Назад" "← Back" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+                                <button class="next-month icon-btn" type="button" aria-label="{% lang "Вперёд →" "Next →" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+                            </div>
+                        </div>
+                        <div id="calendarRoot"></div>
+                    </div>
+                    <script id="registeredEventsData" type="application/json">{{ registered_events_json|safe }}</script>
+                </section>
             </div>
 
-            {% if my_events %}
-                <div class="cards-grid profile-events-grid">
-                    {% for event in my_events %}
-                        {% if forloop.counter <= 2 %}
-                        {% if event.date < now|date:"Y-m-d" %}
-                            <article class="info-card event-card event-card--passed">
-                        {% else %}
-                            <article class="info-card event-card">
-                        {% endif %}
-                            <div class="card-content">
-                                {% if event.date < now|date:"Y-m-d" %}
-                                    <span class="event-status">Прошедшее мероприятие</span>
-                                {% endif %}
-                                <h3>{{ event.name }}</h3>
-                                <p><strong>Дата:</strong> {% event_date event.date %}</p>
-                                <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
-                                <p><strong>Место:</strong> {{ event.location }}</p>
-                                <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
-                            </div>
-                            <div class="card-actions">
-                                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
-                                <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
-                                <a href="{% url 'Events:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
-                            </div>
-                        </article>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                {% if my_events|length > 2 %}
-                    <div class="profile-more-events" id="profileMoreEvents">
-                        {% for event in my_events %}
-                            {% if forloop.counter > 2 %}
-                                <article class="info-card event-card">
-                                    <div class="card-content">
-                                        <h3>{{ event.name }}</h3>
-                                        <p><strong>Дата:</strong> {% event_date event.date %}</p>
-                                        <p><strong>Время:</strong> {{ event.time|time:"H:i" }}</p>
-                                        <p><strong>Место:</strong> {{ event.location }}</p>
-                                        <p class="muted-text">{{ event.description|truncatewords:20 }}</p>
-                                    </div>
-                                    <div class="card-actions">
-                                        <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
-                                        <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">Изменить</a>
-                                        <a href="{% url 'Events:delete_event' event.id %}" class="btn btn-danger">Удалить</a>
-                                    </div>
-                                </article>
-                            {% endif %}
+            <aside class="pf-side">
+                {% if incoming_friend_requests %}
+                <section class="pf-card pf-card--accent">
+                    <h2>{% lang "Заявки в друзья" "Friend requests" %} <span class="pf-badge">{{ incoming_friend_requests|length }}</span></h2>
+                    <ul class="pf-people">
+                        {% for friend_request in incoming_friend_requests %}
+                            <li>
+                                <a href="{% url 'Users:public_profile' friend_request.from_user.username %}" class="pf-person">
+                                    <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend_request.from_user.username|slice:":1"|upper }}</span>{{ friend_request.from_user.username }}
+                                </a>
+                                <div class="pf-person-actions">
+                                    <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">{% lang "Принять" "Accept" %}</button></form>
+                                    <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'decline' %}">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm">{% lang "Отклонить" "Decline" %}</button></form>
+                                </div>
+                            </li>
                         {% endfor %}
-                    </div>
-                    <button type="button" class="btn btn-secondary profile-more-button" id="profileMoreButton">Показать ещё</button>
+                    </ul>
+                </section>
                 {% endif %}
-            {% else %}
-                <div class="empty-state">
-                    <h3>Пока пусто</h3>
-                    <p>Вы ещё не создали ни одного мероприятия. Начните с первого события.</p>
-                </div>
-            {% endif %}
-        </div>
 
-        <div class="content-card events-card registration-card">
-            <div class="section-header">
-                <div>
-                    <span class="section-badge">Регистрация</span>
-                    <h2>События, на которые я зарегистрирован</h2>
-                </div>
-            </div>
-
-            <div class="calendar-widget">
-                <div class="calendar-header">
-                    <h3 id="calendarTitle">{{ calendar_data.month }} {{ calendar_data.year }}</h3>
-                    <div class="calendar-nav" data-month="{{ current_month }}" data-year="{{ current_year }}">
-                        <button class="prev-month" type="button">← Назад</button>
-                        <button class="next-month" type="button">Вперед →</button>
+                <section class="pf-card">
+                    <div class="pf-card-head">
+                        <h2>{% lang "Друзья" "Friends" %}</h2>
+                        <a href="{% url 'Users:friends' %}" class="link-arrow">{% lang "Найти" "Find" %} →</a>
                     </div>
-                </div>
-                <div id="calendarRoot"></div>
-            </div>
-            <script id="registeredEventsData" type="application/json">{{ registered_events_json|safe }}</script>
+                    {% if friends %}
+                        <ul class="pf-people">
+                            {% for friend in friends %}
+                                <li>
+                                    <a href="{% url 'Users:public_profile' friend.username %}" class="pf-person">
+                                        <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend.username|slice:":1"|upper }}</span>{{ friend.username }}
+                                    </a>
+                                    <form method="post" action="{% url 'Users:remove_friend' friend.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="icon-btn" title="{% lang "Удалить" "Remove" %}" aria-label="{% lang "Удалить" "Remove" %} {{ friend.username }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted-text">{% lang "Пока нет друзей." "No friends yet." %}</p>
+                    {% endif %}
+                </section>
 
+                <section class="pf-card">
+                    <h2>{% lang "Настройки" "Settings" %}</h2>
+                    <form action="{% url 'Users:profile' %}" method="post" class="styled-form pf-form">
+                        {% csrf_token %}
+                        <div class="pf-field">
+                            <label for="{{ form.username.id_for_label }}">{% lang "Имя пользователя" "Username" %}</label>
+                            {{ form.username }}
+                            {% for error in form.username.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                        </div>
+                        <div class="pf-field">
+                            <label for="{{ form.email.id_for_label }}">{% lang "Электронная почта" "Email" %}</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="pf-field">
+                            <label for="{{ form.birthDate.id_for_label }}">{% lang "Дата рождения" "Birth date" %}</label>
+                            {{ form.birthDate }}
+                        </div>
+                        <label class="pf-switch">
+                            {{ form.is_profile_private }}
+                            <span>{% lang "Закрыть профиль для просмотра другими пользователями" "Hide my profile from other users" %}</span>
+                        </label>
+                        <button type="submit" class="btn btn-primary btn-block">{% lang "Сохранить изменения" "Save changes" %}</button>
+                    </form>
+                </section>
+            </aside>
         </div>
     </div>
 </section>
 
-<!-- Event Details Popup Modal -->
-<div class="event-popup" id="eventPopup">
+<div class="event-popup" id="eventPopup" role="dialog" aria-modal="true" aria-labelledby="popupEventName">
     <div class="popup-content">
-        <button class="popup-close">✕</button>
+        <button class="popup-close icon-btn" type="button" aria-label="{% lang "Закрыть" "Close" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         <div class="popup-header">
-            <h2 class="popup-title" id="popupEventName">Название события</h2>
-            <p class="popup-date" id="popupEventDate">Дата</p>
+            <h2 class="popup-title" id="popupEventName">{% lang "Название события" "Event name" %}</h2>
+            <p class="popup-date" id="popupEventDate">{% lang "Дата" "Date" %}</p>
         </div>
         <div class="popup-details">
             <div class="detail-row">
-                <strong>Время:</strong>
+                <strong>{% lang "Время" "Time" %}</strong>
                 <span id="popupEventTime">—</span>
             </div>
             <div class="detail-row">
-                <strong>Место:</strong>
+                <strong>{% lang "Место" "Location" %}</strong>
                 <span id="popupEventLocation">—</span>
             </div>
         </div>
         <div class="popup-actions">
-            <a href="#" class="btn btn-secondary" id="detailBtn">Подробнее</a>
-            <button type="button" class="btn btn-primary" id="registerBtn">Зарегистрироваться</button>
-            <button type="button" class="btn btn-danger" id="unregisterBtn">Отменить</button>
+            <a href="#" class="btn btn-secondary" id="detailBtn">{% lang "Подробнее" "Details" %}</a>
+            <button type="button" class="btn btn-primary" id="registerBtn">{% lang "Зарегистрироваться" "Register" %}</button>
+            <button type="button" class="btn btn-danger" id="unregisterBtn">{% lang "Отменить регистрацию" "Unregister" %}</button>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/calendar.js' %}"></script>
-    <script src="{% static 'js/profile.js' %}"></script>
+    <script src="{% static 'js/calendar.js' %}?v=4"></script>
+    <script src="{% static 'js/profile.js' %}?v=3"></script>
 {% endblock %}

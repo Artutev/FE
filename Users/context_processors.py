@@ -1,10 +1,13 @@
+from Users.i18n import LANGUAGE_LABELS, SUPPORTED_LANGUAGES, get_language
+
+
 def current_language(request):
-    language = request.session.get('language', 'ru')
-    alternate = 'en' if language == 'ru' else 'ru'
-    alternate_label = 'English' if language == 'ru' else 'Русский'
+    language = get_language(request)
     return {
         'LANGUAGE_CODE': language,
         'current_language': language,
-        'alternate_language': alternate,
-        'alternate_language_label': alternate_label,
+        'current_language_label': LANGUAGE_LABELS[language],
+        'available_languages': [
+            (code, LANGUAGE_LABELS[code]) for code in SUPPORTED_LANGUAGES
+        ],
     }

@@ -1,9 +1,8 @@
-from tkinter import image_types
-
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, UserChangeForm
 
 from Users.models import User
+from Users.i18n import CS, tr
 
 PLACEHOLDERS = {
     'ru': {
@@ -25,6 +24,7 @@ PLACEHOLDERS = {
         'password2': 'Confirm password',
     },
 }
+PLACEHOLDERS['cs'] = {key: CS.get(value, value) for key, value in PLACEHOLDERS['en'].items()}
 
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput())
@@ -35,19 +35,18 @@ class UserLoginForm(AuthenticationForm):
         fields = ('username', 'password')
 
     def __init__(self, *args, language='ru', **kwargs):
+        kwargs.setdefault('label_suffix', '')
         self.language = language if language in PLACEHOLDERS else 'ru'
         super().__init__(*args, **kwargs)
         lang = self.language
-        self.error_messages['invalid_login'] = (
-            'Неверное имя пользователя или пароль.'
-            if lang == 'ru' else
-            'Please enter a correct username and password.'
+        self.error_messages['invalid_login'] = tr(
+            lang, 'Неверное имя пользователя или пароль.', 'Please enter a correct username and password.'
         )
         self.fields['username'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['username']
         })
-        self.fields['username'].label = 'Имя пользователя' if lang == 'ru' else 'Username'
-        self.fields['password'].label = 'Пароль' if lang == 'ru' else 'Password'
+        self.fields['username'].label = tr(lang, 'Имя пользователя', 'Username')
+        self.fields['password'].label = tr(lang, 'Пароль', 'Password')
         self.fields['password'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['password']
         })
@@ -73,20 +72,21 @@ class UserRegistrationForm(UserCreationForm):
         fields = ('username', 'email', 'birthDate', 'password1', 'password2')
 
     def __init__(self, *args, language='ru', **kwargs):
+        kwargs.setdefault('label_suffix', '')
         self.language = language if language in PLACEHOLDERS else 'ru'
         super().__init__(*args, **kwargs)
         lang = self.language
         self.fields['username'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['name']
         })
-        self.fields['username'].label = 'Имя пользователя' if lang == 'ru' else 'Username'
-        self.fields['email'].label = 'Электронная почта' if lang == 'ru' else 'Email'
+        self.fields['username'].label = tr(lang, 'Имя пользователя', 'Username')
+        self.fields['email'].label = tr(lang, 'Электронная почта', 'Email')
         self.fields['email'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['email']
         })
-        self.fields['birthDate'].label = 'Дата рождения' if lang == 'ru' else 'Birth date'
-        self.fields['password1'].label = 'Пароль' if lang == 'ru' else 'Password'
-        self.fields['password2'].label = 'Подтверждение пароля' if lang == 'ru' else 'Confirm password'
+        self.fields['birthDate'].label = tr(lang, 'Дата рождения', 'Birth date')
+        self.fields['password1'].label = tr(lang, 'Пароль', 'Password')
+        self.fields['password2'].label = tr(lang, 'Подтверждение пароля', 'Confirm password')
         self.fields['birthDate'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['birthDate']
         })

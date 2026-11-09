@@ -1,22 +1,21 @@
 {% extends 'Users/base.html' %}
 {% load language_tags %}
 
-{% block title %}{% lang "Удаление мероприятия | EventHub" "Delete event | EventHub" %}{% endblock %}
+{% block title %}{% lang "Удаление мероприятия | EventTown" "Delete event | EventTown" %}{% endblock %}
 
 {% block content %}
-<section class="page-section delete-section">
-    <div class="container form-layout">
-        <div class="content-card delete-card">
-            <span class="section-badge">{% lang "Подтверждение" "Confirmation" %}</span>
+<section class="page-section">
+    <div class="container narrow-container">
+        <div class="dialog-card">
+            <span class="dialog-icon dialog-icon--danger" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></svg>
+            </span>
             <h1>{% lang "Удалить мероприятие?" "Delete event?" %}</h1>
-            <p class="section-lead">{% lang "Вы собираетесь удалить событие «{{ event.name }}». Это действие нельзя отменить." "You are about to delete the event \"{{ event.name }}\". This action cannot be undone." %}</p>
-
-            <form method="POST" class="delete-form">
+            <p class="section-lead">{% lang "Вы собираетесь удалить событие" "You are about to delete the event" %} «<strong>{{ event.name }}</strong>». {% lang "Это действие нельзя отменить." "This action cannot be undone." %}</p>
+            <form method="POST" class="dialog-actions">
                 {% csrf_token %}
-                <div class="card-actions delete-actions">
-                    <button type="submit" class="btn btn-danger">{% lang "Удалить" "Delete" %}</button>
-                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">{% lang "Отмена" "Cancel" %}</a>
-                </div>
+                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-secondary">{% lang "Отмена" "Cancel" %}</a>
+                <button type="submit" class="btn btn-danger">{% lang "Удалить" "Delete" %}</button>
             </form>
         </div>
     </div>

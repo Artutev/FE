@@ -1,6 +1,7 @@
 from django import forms
 from django.utils import timezone
 from Events.models import Event, EventType
+from Users.i18n import CS, SUPPORTED_LANGUAGES, tr
 
 PLACEHOLDERS = {
     'ru': {
@@ -57,6 +58,10 @@ LABELS = {
         'description': 'Description',
     },
 }
+
+PLACEHOLDERS['cs'] = {key: CS.get(value, value) for key, value in PLACEHOLDERS['en'].items()}
+LABELS['cs'] = {key: CS.get(value, value) for key, value in LABELS['en'].items()}
+
 
 class EventForm(forms.ModelForm):
     date = forms.DateField(
@@ -144,7 +149,8 @@ class EventForm(forms.ModelForm):
         }
 
     def __init__(self, *args, language='ru', **kwargs):
-        self.language = language if language in ('ru', 'en') else 'ru'
+        kwargs.setdefault('label_suffix', '')
+        self.language = language if language in SUPPORTED_LANGUAGES else 'ru'
         super().__init__(*args, **kwargs)
 
         lang = self.language
@@ -181,11 +187,7 @@ class EventForm(forms.ModelForm):
         location = cleaned_data.get('location')
 
         if event_type != 'other' and not location:
-            message = (
-                'Укажите место проведения.'
-                if self.language == 'ru'
-                else 'Please enter a location.'
-            )
+            message = tr(self.language, 'Укажите место проведения.', 'Please enter a location.')
             self.add_error('location', message)
 
         if event_date and event_time:
@@ -194,9 +196,11 @@ class EventForm(forms.ModelForm):
                 timezone.get_current_timezone()
             )
             if event_datetime < timezone.now():
-                raise forms.ValidationError(
-                    "Невозможно создать мероприятие в прошлом. Пожалуйста, выберите дату и время в будущем."
-                )
+                raise forms.ValidationError(tr(
+                    self.language,
+                    'Нельзя создать мероприятие в прошлом. Выберите дату и время в будущем.',
+                    'You can’t create an event in the past. Choose a future date and time.',
+                ))
 
         return cleaned_data
 

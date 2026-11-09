@@ -5,15 +5,34 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.urls import reverse
 from Events.models import Event, EventType
 from Events.forms import EventForm
 from Users.models import FriendRequest
+from Users.i18n import get_language, tr
+
+def _has_access(request, event):
+    """Приватное событие доступно только создателю или по ссылке с токеном."""
+    if not event.is_private:
+        return True
+    if request.user.is_authenticated and request.user == event.creator:
+        return True
+    token = request.POST.get('token') or request.GET.get('token')
+    return bool(token) and token == event.access_token
+
+
+def _detail_redirect(event):
+    url = reverse('Events:event_detail', args=[event.id])
+    if event.is_private and event.access_token:
+        url += f'?token={event.access_token}'
+    return redirect(url)
+
 
 @login_required(login_url='Users:login')
 def create_event(request):
-    language = request.session.get('language', 'ru')
+    language = get_language(request)
     if request.method == 'POST':
         form = EventForm(request.POST, language=language)
         if form.is_valid():
@@ -24,7 +43,7 @@ def create_event(request):
             from Events.models import EventRegistration
             EventRegistration.objects.get_or_create(user=request.user, event=event)
 
-            messages.success(request, 'Мероприятие успешно создано!')
+            messages.success(request, tr(language, 'Мероприятие создано.', 'Event created.'))
             redirect_url = reverse('Events:event_detail', args=[event.id])
             if event.is_private and event.access_token:
                 redirect_url += f'?token={event.access_token}'
@@ -53,12 +72,12 @@ def event_list(request):
             Q(description__icontains=search_query) |
             Q(location__icontains=search_query)
         )
-    
+
     context = {
         'events': events,
         'search_query': search_query,
         'event_type': event_type,
-        'event_types': EventType.localized_choices(request.session.get('language', 'ru'))
+        'event_types': EventType.localized_choices(get_language(request))
     }
     return render(request, 'Events/eventList.html', context)
 
@@ -85,22 +104,20 @@ def event_archive(request):
         'events': events,
         'search_query': search_query,
         'event_type': event_type,
-        'event_types': EventType.localized_choices(request.session.get('language', 'ru'))
+        'event_types': EventType.localized_choices(get_language(request))
     }
     return render(request, 'Events/eventArchive.html', context)
 
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    if event.is_private and request.user != event.creator:
-        token = request.GET.get('token')
-        if token != event.access_token:
-            raise Http404()
+    if not _has_access(request, event):
+        raise Http404()
 
     is_registered = False
     if request.user.is_authenticated:
         from Events.models import EventRegistration
         is_registered = EventRegistration.objects.filter(user=request.user, event=event).exists()
-    
+
     # Получаем количество зарегистрированных
     from Events.models import EventRegistration
     registration_count = event.registrations.count()
@@ -117,7 +134,7 @@ def event_detail(request, event_id):
     registered_friends = event.registrations.filter(
         user_id__in=friend_user_ids
     ).select_related('user')
-    
+
     private_link = None
     token_param = ''
     token = request.GET.get('token')
@@ -142,11 +159,13 @@ def event_detail(request, event_id):
 
 def download_invitation(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    if not _has_access(request, event):
+        raise Http404()
     if event.event_type != 'wedding':
         return redirect('Events:event_detail', event_id=event_id)
 
     filename = f"invite-{event.id}.html"
-    content = render_to_string('Events/invitation.html', {'event': event})
+    content = render_to_string('Events/invitation.html', {'event': event}, request=request)
     response = HttpResponse(content, content_type='text/html; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
@@ -154,13 +173,14 @@ def download_invitation(request, event_id):
 @login_required(login_url='Users:login')
 def edit_event(request, event_id):
     event = get_object_or_404(Event, id=event_id, creator=request.user)
-    language = request.session.get('language', 'ru')
+    language = get_language(request)
 
     if request.method == 'POST':
         form = EventForm(request.POST, instance=event, language=language)
         if form.is_valid():
             form.save()
-            return redirect('Users:profile')
+            messages.success(request, tr(language, 'Изменения сохранены.', 'Event updated.'))
+            return redirect('Events:event_detail', event_id=event.id)
     else:
         form = EventForm(instance=event, language=language)
 
@@ -173,6 +193,7 @@ def delete_event(request, event_id):
 
     if request.method == 'POST':
         event.delete()
+        messages.success(request, tr(get_language(request), 'Мероприятие удалено.', 'Event deleted.'))
         return redirect('Users:profile')
     context = {'event': event}
 
@@ -180,41 +201,34 @@ def delete_event(request, event_id):
 
 
 @login_required(login_url='Users:login')
+@require_POST
 def register_event(request, event_id):
     """Зарегистрировать пользователя на событие."""
     event = get_object_or_404(Event, id=event_id)
-    if event.is_private and request.user != event.creator:
-        token = request.GET.get('token')
-        if token != event.access_token:
-            raise Http404()
+    if not _has_access(request, event):
+        raise Http404()
+
+    if event.has_passed:
+        messages.error(request, tr(
+            get_language(request),
+            'Регистрация закрыта: мероприятие уже прошло.',
+            'Registration is closed: the event has already passed.',
+        ))
+        return _detail_redirect(event)
 
     from Events.models import EventRegistration
-    
-    registration, created = EventRegistration.objects.get_or_create(
-        user=request.user,
-        event=event
-    )
-    
-    redirect_url = reverse('Events:event_detail', args=[event_id])
-    if event.is_private and event.access_token:
-        redirect_url += f'?token={event.access_token}'
-    return redirect(redirect_url)
+    EventRegistration.objects.get_or_create(user=request.user, event=event)
+    return _detail_redirect(event)
 
 
 @login_required(login_url='Users:login')
+@require_POST
 def unregister_event(request, event_id):
     """Отменить регистрацию пользователя на событие."""
     event = get_object_or_404(Event, id=event_id)
-    if event.is_private and request.user != event.creator:
-        token = request.GET.get('token')
-        if token != event.access_token:
-            raise Http404()
+    if not _has_access(request, event):
+        raise Http404()
 
     from Events.models import EventRegistration
-
     EventRegistration.objects.filter(user=request.user, event=event).delete()
-
-    redirect_url = reverse('Events:event_detail', args=[event_id])
-    if event.is_private and event.access_token:
-        redirect_url += f'?token={event.access_token}'
-    return redirect(redirect_url)
+    return _detail_redirect(event)

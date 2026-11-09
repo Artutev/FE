@@ -54,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const addr = await reverseGeocode(lat, lng);
         if (addr) {
             locationInput.value = addr;
-            mapNotice.textContent = 'Адрес установлен на основе выбора на карте.';
+            mapNotice.textContent = etT('Адрес установлен на основе выбора на карте.', 'Address set from the map selection.', 'Adresa byla nastavena podle výběru na mapě.');
             setMarker(lat, lng, addr);
         } else {
-            mapNotice.textContent = 'Не удалось получить адрес для выбранной точки.';
+            mapNotice.textContent = etT('Не удалось получить адрес для выбранной точки.', "Couldn't get an address for this point.", 'Pro tento bod se nepodařilo zjistit adresu.');
             setMarker(lat, lng, null);
         }
     });
@@ -69,13 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
         typingTimer = setTimeout(async () => {
             const q = locationInput.value.trim();
             if (!q) return;
-            mapNotice.textContent = 'Ищем адрес...';
+            mapNotice.textContent = etT('Ищем адрес...', 'Searching for the address...', 'Hledáme adresu...');
             const res = await searchAddress(q);
             if (res) {
                 setMarker(res.lat, res.lon, res.display_name || q);
-                mapNotice.textContent = 'Найдено и отмечено на карте.';
+                mapNotice.textContent = etT('Найдено и отмечено на карте.', 'Found and marked on the map.', 'Nalezeno a označeno na mapě.');
             } else {
-                mapNotice.textContent = 'Адрес не найден. Попробуйте уточнить запрос.';
+                mapNotice.textContent = etT('Адрес не найден. Попробуйте уточнить запрос.', 'Address not found. Try a more specific query.', 'Adresa nenalezena. Zkuste upřesnit dotaz.');
             }
         }, 600);
     });

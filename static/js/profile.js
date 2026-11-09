@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     moreButton.addEventListener('click', () => {
         const isVisible = moreEvents.classList.toggle('is-visible');
-        moreButton.textContent = isVisible ? 'Свернуть' : 'Показать ещё';
+        moreButton.textContent = isVisible
+            ? etT('Свернуть', 'Show less', 'Zobrazit méně')
+            : etT('Показать ещё', 'Show more', 'Zobrazit více');
     });
 });

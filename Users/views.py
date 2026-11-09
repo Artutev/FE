@@ -3,6 +3,7 @@ import secrets
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.core.cache import cache
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
@@ -15,21 +16,28 @@ from Users.forms import UserLoginForm, UserRegistrationForm, UserProfileForm
 from django.contrib import auth
 from django.urls import reverse
 from django.contrib import messages
-from Events.models import Event, EventRegistration
+from Events.models import Event, EventRegistration, EventType
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
+from Users.i18n import SUPPORTED_LANGUAGES, get_language, tr
 from django.core.paginator import Paginator
 from datetime import date, datetime
 from calendar import monthcalendar, month_name
-# Create your views here.
+CONFIRM_CODE_MAX_ATTEMPTS = 5
+CONFIRM_CODE_LOCK_SECONDS = 15 * 60
 
 
 def set_language(request, lang_code):
-    if lang_code not in ('ru', 'en'):
+    if lang_code not in SUPPORTED_LANGUAGES:
         lang_code = 'ru'
     request.session['language'] = lang_code
-    next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or reverse('base')
+    next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or ''
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse('base')
     return redirect(next_url)
 
 def build_event_calendar(user, month=None, year=None):
@@ -71,12 +79,20 @@ def base(request):
     latest_events = Event.objects.filter(
         date__gte=date.today(),
         is_private=False,
-    ).order_by('date', 'time')[:2]
+    ).order_by('date', 'time')[:6]
+    language = get_language(request)
+    event_types = EventType.localized_choices(language) or [
+        (code, label) for code, label in Event.EVENT_TYPE_LABELS.get(language, Event.EVENT_TYPE_LABELS['ru']).items()
+    ]
 
-    return render(request, 'Users/base.html', {'latest_events': latest_events, 'is_home': True})
+    return render(request, 'Users/base.html', {
+        'latest_events': latest_events,
+        'event_types': event_types,
+        'is_home': True,
+    })
 
 def login(request):
-    language = request.session.get('language', 'ru')
+    language = get_language(request)
     if request.method == "POST":
         form = UserLoginForm(data=request.POST, language=language)
         if form.is_valid():
@@ -85,14 +101,19 @@ def login(request):
             user = auth.authenticate(username=username, password=password)
             if user:
                 auth.login(request, user)
-                return HttpResponseRedirect(reverse('base'))
+                next_url = request.POST.get('next', '')
+                if not url_has_allowed_host_and_scheme(
+                    next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+                ):
+                    next_url = reverse('base')
+                return HttpResponseRedirect(next_url)
     else:
         form = UserLoginForm(language=language)
-    context = {'form': form}
+    context = {'form': form, 'next': request.POST.get('next') or request.GET.get('next', '')}
     return render(request, 'Users/login.html', context)
 
 def confirm_email(request, uidb64, token):
-    language = request.session.get('language', 'ru')
+    language = get_language(request)
     user = None
     try:
         user_id = force_str(urlsafe_base64_decode(uidb64))
@@ -111,11 +132,21 @@ def confirm_email(request, uidb64, token):
     }, status=400)
 
 def confirm_email_code(request):
-    language = request.session.get('language', 'ru')
+    language = get_language(request)
     error = None
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         code = request.POST.get('code', '').strip()
+        attempts_key = f'confirm-code-attempts:{email.lower()}'
+        attempts = cache.get(attempts_key, 0)
+        if attempts >= CONFIRM_CODE_MAX_ATTEMPTS:
+            return render(request, 'Users/email_confirm_code.html', {
+                'language': language,
+                'error': tr(language, 'Слишком много попыток. Попробуйте через 15 минут.',
+                            'Too many attempts. Try again in 15 minutes.'),
+                'email': email,
+            }, status=429)
+        cache.set(attempts_key, attempts + 1, CONFIRM_CODE_LOCK_SECONDS)
         user = User.objects.filter(email__iexact=email, is_active=False).first()
         if user and len(code) == 6 and code.isdigit() and check_password(
             code, user.email_confirmation_code_hash
@@ -123,20 +154,18 @@ def confirm_email_code(request):
             user.is_active = True
             user.email_confirmation_code_hash = ''
             user.save(update_fields=['is_active', 'email_confirmation_code_hash'])
+            cache.delete(attempts_key)
             return render(request, 'Users/email_confirmed.html', {'language': language})
-        error = (
-            'Неверный email или код подтверждения.'
-            if language == 'ru'
-            else 'Invalid email or confirmation code.'
-        )
+        error = tr(language, 'Неверный email или код подтверждения.', 'Invalid email or confirmation code.')
     return render(request, 'Users/email_confirm_code.html', {
         'language': language,
         'error': error,
+        'email': request.POST.get('email') or request.GET.get('email', ''),
     })
 
 def registration(request):
     if request.method == "POST":
-        form = UserRegistrationForm(data=request.POST, language=request.session.get('language', 'ru'))
+        form = UserRegistrationForm(data=request.POST, language=get_language(request))
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False
@@ -149,8 +178,8 @@ def registration(request):
             confirmation_url = request.build_absolute_uri(
                 reverse('Users:confirm_email', kwargs={'uidb64': uid, 'token': token})
             )
-            language = request.session.get('language', 'ru')
-            subject = 'Подтвердите email в EventHub' if language == 'ru' else 'Confirm your EventHub email'
+            language = get_language(request)
+            subject = tr(language, 'Подтвердите email в EventTown', 'Confirm your EventTown email')
             message = render_to_string('Users/email_confirmation.txt', {
                 'confirmation_url': confirmation_url,
                 'confirmation_code': confirmation_code,
@@ -160,14 +189,12 @@ def registration(request):
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
             messages.success(
                 request,
-                'Проверьте почту и подтвердите email.'
-                if language == 'ru'
-                else 'Check your email and confirm your address.'
+                tr(language, 'Проверьте почту и подтвердите email.', 'Check your email and confirm your address.')
             )
             confirm_url = reverse('Users:confirm_email_code')
             return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": user.email})}')
     else:
-        form = UserRegistrationForm(language=request.session.get('language', 'ru'))
+        form = UserRegistrationForm(language=get_language(request))
     context = {'form': form}
     return render(request, 'Users/registration.html', context)
 
@@ -186,12 +213,14 @@ def profile(request):
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse('Users:profile'))
-        else:
-            print(form.errors)
     else:
         form = UserProfileForm(instance=request.user)
     
-    my_events = Event.objects.filter(creator=request.user)
+    my_events = list(
+        Event.objects.filter(creator=request.user)
+        .annotate(reg_count=Count('registrations'))
+        .order_by('-date', '-time')
+    )
     
     # Получаем события, на которые зарегистрирован пользователь
     registered_events = EventRegistration.objects.filter(user=request.user).exclude(
@@ -253,9 +282,12 @@ def public_profile(request, username):
             'profile_user': profile_user,
             'is_private': True,
         })
+    events = Event.objects.filter(creator=profile_user)
+    if request.user != profile_user:
+        events = events.filter(is_private=False)
     return render(request, 'Users/public_profile.html', {
         'profile_user': profile_user,
-        'events': Event.objects.filter(creator=profile_user).order_by('-date', '-time'),
+        'events': events.order_by('-date', '-time'),
         'is_private': False,
     })
 
@@ -263,7 +295,7 @@ def public_profile(request, username):
 @login_required(login_url='Users:login')
 def friends(request):
     query = request.GET.get('q', '').strip()
-    users_queryset = User.objects.exclude(pk=request.user.pk).order_by('username')
+    users_queryset = User.objects.filter(is_active=True).exclude(pk=request.user.pk).order_by('username')
     if query:
         users_queryset = users_queryset.filter(username__icontains=query)
     users_page = Paginator(users_queryset, 8).get_page(request.GET.get('page'))
@@ -348,6 +380,7 @@ def remove_friend(request, user_id):
     ).delete()
     return redirect('Users:profile')
 
+@require_POST
 def logout(request):
     auth.logout(request)
     return HttpResponseRedirect(reverse('base'))

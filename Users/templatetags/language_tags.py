@@ -1,5 +1,6 @@
 from django import template
 from Events.models import Event, EventType
+from Users.i18n import tr
 
 register = template.Library()
 
@@ -12,6 +13,16 @@ MONTH_LABELS = {
         '', 'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
     ),
+    'cs': (
+        '', 'ledna', 'února', 'března', 'dubna', 'května', 'června',
+        'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
+    ),
+}
+
+MONTH_SHORT_LABELS = {
+    'ru': ('', 'янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'),
+    'en': ('', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'),
+    'cs': ('', 'led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'),
 }
 
 FRIEND_REQUEST_STATUS_LABELS = {
@@ -25,32 +36,48 @@ FRIEND_REQUEST_STATUS_LABELS = {
         'accepted': 'Accepted',
         'declined': 'Declined',
     },
+    'cs': {
+        'pending': 'Čeká na odpověď',
+        'accepted': 'Přijato',
+        'declined': 'Odmítnuto',
+    },
 }
+
+
+def _language(context):
+    return context.get('LANGUAGE_CODE', 'ru')
+
 
 @register.simple_tag(takes_context=True)
 def lang(context, ru_text, en_text):
-    language = context.get('LANGUAGE_CODE', 'ru')
-    return en_text if language == 'en' else ru_text
+    return tr(_language(context), ru_text, en_text)
+
 
 @register.simple_tag(takes_context=True)
 def event_type_label(context, event_type_code):
-    language = context.get('LANGUAGE_CODE', 'ru')
-    event_type = EventType.objects.filter(code=event_type_code).first()
-    if event_type:
-        return event_type.name_en if language == 'en' else event_type.name_ru
-    labels = Event.EVENT_TYPE_LABELS.get(language, Event.EVENT_TYPE_LABELS['ru'])
-    return labels.get(event_type_code, event_type_code)
+    return EventType.label_for(event_type_code, _language(context))
+
 
 @register.simple_tag(takes_context=True)
 def event_date(context, value):
     if not value:
         return ''
-    language = context.get('LANGUAGE_CODE', 'ru')
+    language = _language(context)
     months = MONTH_LABELS.get(language, MONTH_LABELS['ru'])
+    if language == 'cs':
+        return f'{value.day}. {months[value.month]} {value.year}'
     return f'{value.day} {months[value.month]} {value.year}'
+
+
+@register.simple_tag(takes_context=True)
+def month_short(context, value):
+    if not value:
+        return ''
+    months = MONTH_SHORT_LABELS.get(_language(context), MONTH_SHORT_LABELS['ru'])
+    return months[value.month]
+
 
 @register.simple_tag(takes_context=True)
 def friend_request_status(context, status):
-    language = context.get('LANGUAGE_CODE', 'ru')
-    labels = FRIEND_REQUEST_STATUS_LABELS.get(language, FRIEND_REQUEST_STATUS_LABELS['ru'])
+    labels = FRIEND_REQUEST_STATUS_LABELS.get(_language(context), FRIEND_REQUEST_STATUS_LABELS['ru'])
     return labels.get(status, status)

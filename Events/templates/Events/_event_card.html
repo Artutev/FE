@@ -1,0 +1,34 @@
+{% load language_tags %}
+<article class="ecard ecard--{{ event.event_type|default:'other' }}{% if event.has_passed %} ecard--past{% endif %}">
+    <div class="ecard-cover" aria-hidden="true">
+        {% include "Events/_type_icon.html" with type=event.event_type %}
+        {% if event.date %}
+        <div class="ecard-date"><b>{{ event.date.day }}</b><span>{% month_short event.date %}</span></div>
+        {% endif %}
+    </div>
+    <div class="ecard-body">
+        <span class="ecard-type">
+            {% event_type_label event.event_type %}
+            {% if event.has_passed %}<span class="ecard-flag">{% lang "Прошло" "Past" %}</span>{% endif %}
+        </span>
+        <h3 class="ecard-title"><a href="{% url 'Events:event_detail' event.id %}">{{ event.name }}</a></h3>
+        {% if event.event_type == 'wedding' and event.bride_name or event.event_type == 'wedding' and event.groom_name %}
+            <p class="ecard-desc">{{ event.bride_name|default:"" }}{% if event.bride_name and event.groom_name %} &amp; {% endif %}{{ event.groom_name|default:"" }}</p>
+        {% endif %}
+        <p class="ecard-meta">
+            <span>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                <em>{% event_date event.date %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}</em>
+            </span>
+            {% if event.location %}
+            <span>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                <em>{{ event.location }}</em>
+            </span>
+            {% endif %}
+        </p>
+        {% if show_description and event.description %}
+            <p class="ecard-desc">{{ event.description }}</p>
+        {% endif %}
+    </div>
+</article>

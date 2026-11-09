@@ -1,0 +1,111 @@
+{% load static language_tags %}
+<form {% if form_action %}action="{{ form_action }}" {% endif %}method="POST" class="ef-form styled-form event-form" novalidate>
+    {% csrf_token %}
+    {{ form.latitude }}
+    {{ form.longitude }}
+
+    {% if form.errors %}
+        <div class="alert alert-danger ef-errors" role="alert">
+            <strong>{% lang "Пожалуйста, исправьте ошибки в форме:" "Please fix the form errors:" %}</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <section class="ef-section">
+        <header class="ef-section-head">
+            <span class="ef-step">1</span>
+            <h2>{% lang "Основная информация" "Basic information" %}</h2>
+        </header>
+        <div class="ef-grid">
+            <div class="form-group ef-span-2{% if form.name.errors %} has-error{% endif %}">
+                {{ form.name.label_tag }}
+                {{ form.name }}
+            </div>
+            <div class="form-group ef-span-2{% if form.event_type.errors %} has-error{% endif %}">
+                {{ form.event_type.label_tag }}
+                {{ form.event_type }}
+            </div>
+        </div>
+    </section>
+
+    <section class="ef-section">
+        <header class="ef-section-head">
+            <span class="ef-step">2</span>
+            <h2>{% lang "Дата, время и место" "Date, time & location" %}</h2>
+        </header>
+        <div class="ef-grid">
+            <div class="form-group{% if form.date.errors %} has-error{% endif %}">
+                {{ form.date.label_tag }}
+                {{ form.date }}
+            </div>
+            <div class="form-group{% if form.time.errors %} has-error{% endif %}">
+                {{ form.time.label_tag }}
+                {{ form.time }}
+            </div>
+            <div class="form-group ef-span-2{% if form.location.errors %} has-error{% endif %}">
+                {{ form.location.label_tag }}
+                {{ form.location }}
+            </div>
+            <div class="form-group ef-span-2 location-map-group">
+                <label>{% lang "Выбрать место на карте" "Pick location on map" %}</label>
+                <div class="location-map-wrapper">
+                    <div id="locationMap" class="location-map-div"></div>
+                </div>
+                <p class="location-map-hint">{% lang "Кликните по карте, чтобы выбрать место или введите адрес." "Click on the map to pick a place or type an address." %}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="ef-section wedding-only" style="display: none;">
+        <header class="ef-section-head">
+            <span class="ef-step">♥</span>
+            <h2>{% lang "Детали свадьбы" "Wedding details" %}</h2>
+        </header>
+        <div class="ef-grid">
+            <div class="form-group">{{ form.bride_name.label_tag }}{{ form.bride_name }}</div>
+            <div class="form-group">{{ form.groom_name.label_tag }}{{ form.groom_name }}</div>
+            <div class="form-group">{{ form.wedding_theme.label_tag }}{{ form.wedding_theme }}</div>
+            <div class="form-group">{{ form.guest_count.label_tag }}{{ form.guest_count }}</div>
+        </div>
+    </section>
+
+    <section class="ef-section">
+        <header class="ef-section-head">
+            <span class="ef-step">3</span>
+            <h2>{% lang "Описание и доступ" "Description & access" %}</h2>
+        </header>
+        <div class="ef-grid">
+            <div class="form-group ef-span-2{% if form.description.errors %} has-error{% endif %}">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+            </div>
+            <div class="form-group ef-span-2 privacy-toggle">
+                <label class="privacy-card" for="{{ form.is_private.id_for_label }}">
+                    {{ form.is_private }}
+                    <span class="privacy-card__content">
+                        <span class="privacy-card__title">{{ form.is_private.label }}</span>
+                        <span class="privacy-card__hint">{% lang "Сделайте событие скрытым от общей ленты" "Make the event hidden from the public feed" %}</span>
+                    </span>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <div class="ef-actions">
+        {% if cancel_url %}<a href="{{ cancel_url }}" class="btn btn-secondary">{% lang "Отмена" "Cancel" %}</a>{% endif %}
+        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+    </div>
+</form>
+<script src="{% static 'js/wedding-fields.js' %}?v=3"></script>
+<script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{% static 'js/location-map.js' %}?v=3"></script>

@@ -1,31 +1,51 @@
 {% extends 'Users/base.html' %}
 {% load static language_tags %}
 
-{% block title %}{{ profile_user.username }} | EventHub{% endblock %}
+{% block title %}{{ profile_user.username }} | EventTown{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=3">
 {% endblock %}
 
 {% block content %}
 <section class="page-section">
-    <div class="container public-profile">
-        <div class="content-card profile-card">
-            <span class="section-badge">Профиль пользователя</span>
-            <h1>{{ profile_user.username }}</h1>
-            {% if is_private %}
-                <p class="section-lead">Этот профиль закрыт для просмотра.</p>
-            {% else %}
-                <p class="section-lead">Мероприятия пользователя</p>
-                {% for event in events %}
-                    <article class="public-event-row">
-                        <a href="{% url 'Events:event_detail' event.id %}">{{ event.name }}</a>
-                        <span>{% event_date event.date %}</span>
-                    </article>
-                {% empty %}
-                    <p class="section-lead">Пользователь ещё не создал мероприятий.</p>
-                {% endfor %}
+    <div class="container pp-container">
+        <header class="pf-head">
+            <span class="pf-avatar" aria-hidden="true">{{ profile_user.username|slice:":1"|upper }}</span>
+            <div class="pf-id">
+                <h1>{{ profile_user.username }}</h1>
+                <p class="muted-text">{% lang "Профиль пользователя" "User profile" %}</p>
+            </div>
+            {% if user == profile_user %}
+                <div class="pf-head-actions">
+                    <a href="{% url 'Users:profile' %}" class="btn btn-secondary">{% lang "Изменить" "Edit" %}</a>
+                </div>
             {% endif %}
-        </div>
+        </header>
+
+        {% if is_private %}
+            <div class="empty-state pp-locked">
+                <span class="dialog-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                </span>
+                <h3>{% lang "Этот профиль закрыт" "This profile is private" %}</h3>
+                <p>{% lang "Пользователь ограничил просмотр своего профиля." "The user has restricted access to their profile." %}</p>
+            </div>
+        {% else %}
+            <div class="pf-block-head">
+                <h2>{% lang "Мероприятия пользователя" "Events by this user" %}</h2>
+            </div>
+            {% if events %}
+                <div class="cards-grid pf-grid">
+                    {% for event in events %}
+                        {% include "Events/_event_card.html" %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>{% lang "Пользователь ещё не создал мероприятий." "This user hasn't created any events yet." %}</p>
+                </div>
+            {% endif %}
+        {% endif %}
     </div>
 </section>
 {% endblock %}

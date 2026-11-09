@@ -2,99 +2,104 @@
 {% load static language_tags %}
 {% load l10n %}
 
-{% block title %}{{ event.name }} | EventHub{% endblock %}
+{% block title %}{{ event.name }} | EventTown{% endblock %}
+{% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=3">
+    {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-<section class="page-section event-detail-section">
-    <div class="container detail-layout">
-        <article class="content-card detail-card{% if event.date < now|date:"Y-m-d" %} detail-card--passed{% endif %}">
-            {% if event.date < now|date:"Y-m-d" %}
-                <div class="passed-event-banner">⏰ {% lang "Это событие уже прошло" "This event has already passed" %}</div>
-            {% endif %}
-            <h1 class="event-detail-title">{{ event.name }}</h1>
-            <div class="detail-grid event-meta">
-                <div class="detail-item detail-item--date">
-                    <span>{% lang "Дата" "Date" %}</span>
-                    <strong>{% event_date event.date %}</strong>
-                </div>
-                <div class="detail-item detail-item--time">
-                    <span>{% lang "Время" "Time" %}</span>
-                    <strong>{{ event.time|time:"H:i" }}</strong>
-                </div>
-                <div class="detail-item detail-item--location">
-                    <span>{% lang "Место" "Location" %}</span>
-                    {% if event.location %}
-                        <a class="event-address-link" href="https://www.google.com/maps/search/?api=1&query={{ event.location|urlencode }}" target="_blank" rel="noopener noreferrer">{{ event.location }}</a>
-                    {% else %}
-                        <strong>{% lang "Место не указано" "Location not specified" %}</strong>
+<article class="ed ecard--{{ event.event_type|default:'other' }}{% if event.has_passed %} ed--past{% endif %}">
+    <header class="ed-hero">
+        <div class="container ed-hero-inner">
+            <a href="{% if event.has_passed %}{% url 'Events:event_archive' %}{% else %}{% url 'Events:event_list' %}{% endif %}" class="ed-back">← {% lang "К афише" "Back to events" %}</a>
+            <div class="ed-hero-row">
+                <div class="ed-hero-text">
+                    <div class="ed-tags">
+                        <span class="ed-type">{% event_type_label event.event_type %}</span>
+                        {% if event.is_private %}<span class="ed-pill">{% lang "Приватное событие" "Private event" %}</span>{% endif %}
+                        {% if event.has_passed %}<span class="ed-pill">{% lang "Прошло" "Past" %}</span>{% endif %}
+                    </div>
+                    <h1 class="ed-title">{{ event.name }}</h1>
+                    {% if event.event_type == 'wedding' and event.bride_name or event.event_type == 'wedding' and event.groom_name %}
+                        <p class="ed-subtitle">{% if event.bride_name %}{{ event.bride_name }}{% else %}{% lang "Невеста" "Bride" %}{% endif %} &amp; {% if event.groom_name %}{{ event.groom_name }}{% else %}{% lang "Жених" "Groom" %}{% endif %}</p>
                     {% endif %}
                 </div>
-                <div class="detail-item detail-item--type">
-                    <span>{% lang "Тип" "Type" %}</span>
-                    <strong>{% event_type_label event.event_type %}</strong>
-                </div>
-                <div class="detail-item detail-item--registered">
-                    <span>{% lang "Зарегистрировано" "Registered" %}</span>
-                    <strong>{{ registration_count }} {% lang "человек" "people" %}</strong>
-                </div>
-                {% if event.is_private %}
-                    <div class="detail-item private-event-note">
-                        <span>{% lang "Приватное событие" "Private event" %}</span>
-                        <strong>{% lang "Доступно только по ссылке" "Available by link only" %}</strong>
-                        {% if private_link %}
-                            <p><a href="{{ private_link }}">{% lang "Ссылка для доступа" "Access link" %}</a></p>
-                        {% endif %}
-                    </div>
+                <div class="ed-hero-icon" aria-hidden="true">{% include "Events/_type_icon.html" with type=event.event_type %}</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container ed-layout">
+        <div class="ed-main">
+            {% if event.has_passed %}
+                <div class="ed-notice">{% lang "Это событие уже прошло" "This event has already passed" %}</div>
+            {% endif %}
+
+            <section class="ed-section">
+                <h2>{% lang "Описание" "Description" %}</h2>
+                {% if event.description %}
+                    <p class="ed-description">{{ event.description|linebreaksbr }}</p>
+                {% else %}
+                    <p class="muted-text">{% lang "Организатор пока не добавил описание." "The organizer hasn't added a description yet." %}</p>
                 {% endif %}
-                {% if event.event_type == 'wedding' %}
-                    {% if event.bride_name or event.groom_name or event.wedding_theme or event.guest_count %}
-                        <div class="detail-item wedding-highlight">
-                            {% if event.bride_name or event.groom_name %}
-                                <span>{% lang "Пара" "Couple" %}</span>
-                                <strong>
-                                    {% if event.bride_name %}{{ event.bride_name }}{% else %}{% lang "Невеста" "Bride" %}{% endif %}
-                                    —
-                                    {% if event.groom_name %}{{ event.groom_name }}{% else %}{% lang "Жених" "Groom" %}{% endif %}
-                                </strong>
+            </section>
+
+            {% if event.event_type == 'wedding' and event.wedding_theme or event.event_type == 'wedding' and event.guest_count %}
+                <section class="ed-section">
+                    <h2>{% lang "Детали свадьбы" "Wedding details" %}</h2>
+                    <dl class="ed-facts">
+                        {% if event.wedding_theme %}<div><dt>{% lang "Тема" "Theme" %}</dt><dd>{{ event.wedding_theme }}</dd></div>{% endif %}
+                        {% if event.guest_count %}<div><dt>{% lang "Гостей" "Guests" %}</dt><dd>{{ event.guest_count }}</dd></div>{% endif %}
+                    </dl>
+                </section>
+            {% endif %}
+
+            {% if event.latitude and event.longitude %}
+                <section class="ed-section">
+                    <h2>{% lang "Карта" "Map" %}</h2>
+                    <div id="detailMap" class="ed-map"></div>
+                </section>
+            {% endif %}
+
+            <section class="ed-section">
+                <h2>{% lang "Кто идёт" "Who's going" %}</h2>
+                <div class="ed-people">
+                    <div class="ed-person-row">
+                        <span class="ed-avatar" aria-hidden="true">{% if event.creator %}{{ event.creator.username|slice:":1"|upper }}{% else %}?{% endif %}</span>
+                        <div>
+                            <span class="ed-person-label">{% lang "Организатор" "Organizer" %}</span>
+                            {% if event.creator %}
+                                <a href="{% url 'Users:public_profile' event.creator.username %}">{{ event.creator.username }}</a>
+                            {% else %}
+                                <span class="muted-text">{% lang "Не указан" "Not specified" %}</span>
                             {% endif %}
-                            {% if event.wedding_theme %}
-                                <span>{% lang "Тема" "Theme" %}</span>
-                                <strong>{{ event.wedding_theme }}</strong>
-                            {% endif %}
-                            {% if event.guest_count %}
-                                <span>{% lang "Гостей" "Guests" %}</span>
-                                <strong>{{ event.guest_count }}</strong>
+                        </div>
+                    </div>
+                    {% if user.is_authenticated %}
+                        <div class="ed-friends">
+                            <span class="ed-person-label">{% lang "Друзья на мероприятии" "Friends attending" %}</span>
+                            {% if registered_friends %}
+                                <div class="ed-friend-list">
+                                    {% for registration in registered_friends %}
+                                        <a class="ed-friend" href="{% url 'Users:public_profile' registration.user.username %}">
+                                            <span class="ed-avatar ed-avatar--sm" aria-hidden="true">{{ registration.user.username|slice:":1"|upper }}</span>{{ registration.user.username }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="muted-text">{% lang "Пока никто из друзей не зарегистрирован." "None of your friends are registered yet." %}</p>
                             {% endif %}
                         </div>
                     {% endif %}
-                {% endif %}
-            </div>
-
-            <div class="event-people-section">
-                <div class="detail-item event-people-block">
-                    <span>{% lang "Организатор" "Organizer" %}</span>
-                    {% if event.creator %}
-                        <a class="event-person-link" href="{% url 'Users:public_profile' event.creator.username %}">{{ event.creator.username }}</a>
-                    {% else %}
-                        <span>{% lang "Не указан" "Not specified" %}</span>
-                    {% endif %}
                 </div>
-                <div class="detail-item event-people-block">
-                    <span>{% lang "Друзья на мероприятии" "Friends attending" %}</span>
-                    {% for registration in registered_friends %}
-                        <a class="event-person-link" href="{% url 'Users:public_profile' registration.user.username %}">{{ registration.user.username }}</a>{% if not forloop.last %}, {% endif %}
-                    {% empty %}
-                        <span>{% lang "Пока никто из друзей не зарегистрирован." "None of your friends are registered yet." %}</span>
-                    {% endfor %}
-                </div>
-            </div>
+            </section>
 
-            {% if event.event_type == 'wedding' %}
-                <div class="detail-description wedding-tips">
+            {% if event.event_type == 'wedding' and user == event.creator %}
+                <section class="ed-section ed-tips">
                     <h2>{% lang "Идеи для свадьбы" "Wedding ideas" %}</h2>
                     <ul>
                         <li>{% lang "Выделите место для уютной фотозоны с реквизитом." "Set aside a cozy photo area with props." %}</li>
@@ -102,92 +107,141 @@
                         <li>{% lang "Подберите цветовую гамму, совпадающую с темой свадьбы." "Choose a color palette matching the wedding theme." %}</li>
                         <li>{% lang "Добавьте музыкальные акценты и атмосферное освещение." "Add musical accents and atmospheric lighting." %}</li>
                     </ul>
-                </div>
+                </section>
             {% endif %}
+        </div>
 
-            <div class="detail-description">
-                <h2>{% lang "Описание" "Description" %}</h2>
-                <p>{{ event.description }}</p>
-            </div>
+        <aside class="ed-side">
+            <div class="ed-ticket">
+                <ul class="ed-info">
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        <div><span>{% lang "Дата" "Date" %}</span><strong>{% if event.date %}{% event_date event.date %}{% else %}—{% endif %}</strong></div>
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                        <div><span>{% lang "Время" "Time" %}</span><strong>{% if event.time %}{{ event.time|time:"H:i" }}{% else %}—{% endif %}</strong></div>
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                        <div>
+                            <span>{% lang "Место" "Location" %}</span>
+                            {% if event.location %}
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ event.location|urlencode }}" target="_blank" rel="noopener noreferrer">{{ event.location }}</a>
+                            {% else %}
+                                <strong>{% lang "Место не указано" "Location not specified" %}</strong>
+                            {% endif %}
+                        </div>
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>
+                        <div><span>{% lang "Зарегистрировано" "Registered" %}</span><strong>{{ registration_count }} {% lang "человек" "people" %}</strong></div>
+                    </li>
+                </ul>
 
-            {% if event.latitude and event.longitude %}
-                <div class="event-map-section">
-                    <h2>{% lang "Карта" "Map" %}</h2>
-                    <div class="event-location-map">
-                        <div id="detailMap" class="event-location-map-iframe"></div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <div class="card-actions detail-actions">
-                <a href="{% url 'Events:event_list' %}" class="btn btn-secondary">{% lang "К списку мероприятий" "Back to events" %}</a>
-                {% if user.is_authenticated %}
-                    {% if is_registered %}
-                        <a href="{% url 'Events:unregister_event' event.id %}{{ token_param }}" class="btn btn-warning">{% lang "Отменить регистрацию" "Unregister" %}</a>
-                    {% else %}
-                        <a href="{% url 'Events:register_event' event.id %}{{ token_param }}" class="btn btn-primary">{% lang "Зарегистрироваться" "Register" %}</a>
+                <div class="ed-cta">
+                    {% if user.is_authenticated %}
+                        {% if is_registered %}
+                            <p class="ed-going"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% lang "Вы идёте" "You're going" %}</p>
+                            <form method="post" action="{% url 'Events:unregister_event' event.id %}{{ token_param }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-block">{% lang "Отменить регистрацию" "Unregister" %}</button>
+                            </form>
+                        {% elif not event.has_passed %}
+                            <form method="post" action="{% url 'Events:register_event' event.id %}{{ token_param }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
+                            </form>
+                        {% endif %}
+                    {% elif not event.has_passed %}
+                        <a href="{% url 'Users:login' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary btn-block">{% lang "Войти для регистрации" "Login to register" %}</a>
                     {% endif %}
-                {% else %}
-                    <a href="{% url 'Users:login' %}" class="btn btn-primary">{% lang "Войти для регистрации" "Login to register" %}</a>
-                {% endif %}
-                {% if event.event_type == 'wedding' %}
-                    <a href="{% url 'Events:download_invitation' event.id %}" class="btn btn-secondary">{% lang "Скачать приглашение" "Download invitation" %}</a>
-                {% endif %}
-                {% if private_link %}
-                    <button type="button" id="copyPrivateLink" class="btn btn-secondary">{% lang "Скопировать приватную ссылку" "Copy private link" %}</button>
-                {% endif %}
-                {% if user.is_authenticated and user == event.creator %}
-                    <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-primary">{% lang "Редактировать" "Edit" %}</a>
+                </div>
+
+                <div class="ed-secondary">
+                    {% if user.is_authenticated and user == event.creator %}
+                        <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">{% lang "Редактировать" "Edit" %}</a>
+                    {% endif %}
+                    {% if event.event_type == 'wedding' %}
+                        <a href="{% url 'Events:download_invitation' event.id %}{{ token_param }}" class="btn btn-secondary">{% lang "Скачать приглашение" "Download invitation" %}</a>
+                    {% endif %}
+                    {% if private_link %}
+                        <button type="button" id="copyPrivateLink" class="btn btn-secondary">{% lang "Скопировать приватную ссылку" "Copy private link" %}</button>
+                    {% else %}
+                        <button type="button" id="shareEvent" class="btn btn-secondary">{% lang "Поделиться" "Share" %}</button>
+                    {% endif %}
+                </div>
+                {% if event.is_private %}
+                    <p class="ed-private-note">{% lang "Доступно только по ссылке" "Available by link only" %}</p>
                 {% endif %}
             </div>
-        </article>
+        </aside>
     </div>
-</section>
-{% if private_link %}
+
+    {% if not is_registered and not event.has_passed %}
+    <div class="ed-mobile-bar">
+        <div>
+            <strong>{% if event.date %}{% event_date event.date %}{% endif %}</strong>
+            <span>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</span>
+        </div>
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'Events:register_event' event.id %}{{ token_param }}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">{% lang "Зарегистрироваться" "Register" %}</button>
+            </form>
+        {% else %}
+            <a href="{% url 'Users:login' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary">{% lang "Войти" "Log in" %}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</article>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const copyBtn = document.getElementById('copyPrivateLink');
-        if (!copyBtn) return;
-
-        copyBtn.addEventListener('click', async () => {
-            const link = '{{ private_link }}';
+        const copyLink = async (button, link, idleText) => {
             try {
                 await navigator.clipboard.writeText(link);
-                copyBtn.textContent = 'Ссылка скопирована';
-                setTimeout(() => {
-                    copyBtn.textContent = 'Скопировать приватную ссылку';
-                }, 2000);
+                button.textContent = etT('Ссылка скопирована', 'Link copied', 'Odkaz zkopírován');
+                setTimeout(() => { button.textContent = idleText; }, 2000);
             } catch (error) {
-                window.prompt('Скопируйте ссылку вручную', link);
+                window.prompt(etT('Скопируйте ссылку вручную', 'Copy the link manually', 'Zkopírujte odkaz ručně'), link);
             }
-        });
+        };
+
+        const copyBtn = document.getElementById('copyPrivateLink');
+        if (copyBtn) {
+            const idle = copyBtn.textContent;
+            copyBtn.addEventListener('click', () => copyLink(copyBtn, '{{ private_link|escapejs }}', idle));
+        }
+
+        const shareBtn = document.getElementById('shareEvent');
+        if (shareBtn) {
+            const idle = shareBtn.textContent;
+            shareBtn.addEventListener('click', async () => {
+                const data = { title: '{{ event.name|escapejs }}', url: window.location.href };
+                if (navigator.share) {
+                    try { await navigator.share(data); } catch (error) { /* cancelled */ }
+                } else {
+                    copyLink(shareBtn, data.url, idle);
+                }
+            });
+        }
     });
 </script>
-{% endif %}
 {% if event.latitude and event.longitude %}
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const lat = {{ event.latitude|unlocalize }};
         const lon = {{ event.longitude|unlocalize }};
         const mapDiv = document.getElementById('detailMap');
         if (!mapDiv || typeof L === 'undefined') return;
-        const map = L.map(mapDiv).setView([lat, lon], 15);
+        const map = L.map(mapDiv, { scrollWheelZoom: false }).setView([lat, lon], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
         L.marker([lat, lon]).addTo(map);
         window.setTimeout(() => map.invalidateSize(), 100);
-    });
-</script>
-{% else %}
-<script>
-    // If no coordinates, hide the map div to avoid empty box
-    document.addEventListener('DOMContentLoaded', () => {
-        const mapDiv = document.getElementById('detailMap');
-        if (mapDiv && (!mapDiv.innerHTML || mapDiv.innerHTML.trim() === '')) {
-            mapDiv.style.display = 'none';
-        }
     });
 </script>
 {% endif %}

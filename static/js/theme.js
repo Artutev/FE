@@ -54,8 +54,11 @@
         if (!button) return;
         
         const isDark = document.documentElement.classList.contains(DARK_MODE_CLASS);
-        button.textContent = isDark ? '☀️' : '🌙';
-        button.setAttribute('aria-label', isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему');
+        if (window.etT) {
+            button.setAttribute('aria-label', isDark
+                ? etT('Переключить на светлую тему', 'Switch to light theme', 'Přepnout na světlý motiv')
+                : etT('Переключить на тёмную тему', 'Switch to dark theme', 'Přepnout na tmavý motiv'));
+        }
     }
     
     // Listen for system theme changes

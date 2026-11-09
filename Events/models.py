@@ -1,4 +1,5 @@
 import secrets
+from datetime import date
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -22,10 +23,28 @@ class EventType(models.Model):
     def __str__(self):
         return self.name_ru
 
+    def localized_name(self, language='ru'):
+        from Users.i18n import tr
+        if language != 'en' and language != 'ru':
+            builtin = Event.EVENT_TYPE_LABELS.get(language, {}).get(self.code)
+            if builtin:
+                return builtin
+        return tr(language, self.name_ru, self.name_en)
+
     @classmethod
     def localized_choices(cls, language='ru'):
-        name_field = 'name_en' if language == 'en' else 'name_ru'
-        return list(cls.objects.filter(is_active=True).values_list('code', name_field))
+        return [
+            (event_type.code, event_type.localized_name(language))
+            for event_type in cls.objects.filter(is_active=True)
+        ]
+
+    @classmethod
+    def label_for(cls, code, language='ru'):
+        event_type = cls.objects.filter(code=code).first()
+        if event_type:
+            return event_type.localized_name(language)
+        labels = Event.EVENT_TYPE_LABELS.get(language, Event.EVENT_TYPE_LABELS['ru'])
+        return labels.get(code, code)
 
 
 class Event(models.Model):
@@ -47,6 +66,15 @@ class Event(models.Model):
             'lecture': 'Lecture',
             'wedding': 'Wedding',
             'other': 'Other',
+        },
+        'cs': {
+            'concert': 'Koncert',
+            'theater': 'Divadlo',
+            'cinema': 'Kino',
+            'exhibition': 'Výstava',
+            'lecture': 'Přednáška',
+            'wedding': 'Svatba',
+            'other': 'Ostatní',
         },
     }
 
@@ -92,6 +120,10 @@ class Event(models.Model):
         while Event.objects.filter(access_token=token).exists():
             token = secrets.token_urlsafe(24)
         return token
+
+    @property
+    def has_passed(self):
+        return bool(self.date) and self.date < date.today()
 
     def __str__(self):
         return f"{self.name} ({self.date})"

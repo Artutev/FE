@@ -25,4 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeMenu();
     });
+
+    // Language dropdown: close on outside click / Escape
+    document.querySelectorAll('.lang-menu').forEach((details) => {
+        document.addEventListener('click', (event) => {
+            if (!details.contains(event.target)) details.removeAttribute('open');
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') details.removeAttribute('open');
+        });
+    });
 });

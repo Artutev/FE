@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const yearPrevBtn = popup.querySelector('.picker-year-prev');
         const yearNextBtn = popup.querySelector('.picker-year-next');
 
-        title.textContent = new Date(year, month, 1).toLocaleDateString(undefined, {
+        title.textContent = new Date(year, month, 1).toLocaleDateString(window.etLocale || undefined, {
             month: 'long'
         });
         yearSelect.value = year;
@@ -72,7 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         yearNextBtn.onclick = () => buildCalendar(popup, input, Math.min(2100, year + 1), month);
         grid.innerHTML = '';
 
-        const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        const weekdayFormat = new Intl.DateTimeFormat(window.etLocale || undefined, { weekday: 'short' });
+        const weekdays = [0, 1, 2, 3, 4, 5, 6].map(i => weekdayFormat.format(new Date(2024, 0, 1 + i)));
         weekdays.forEach(day => {
             const span = document.createElement('span');
             span.className = 'weekday';

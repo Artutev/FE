@@ -119,17 +119,31 @@ class EventCalendar {
 
     registerEvent() {
         if (!this.currentEventId) return;
-        window.location.href = `/Events/${this.currentEventId}/register/`;
+        this.postTo(`/Event/${this.currentEventId}/register/`);
     }
 
     unregisterEvent() {
         if (!this.currentEventId) return;
 
-        if (!confirm('Вы уверены, что хотите отменить регистрацию?')) {
+        if (!confirm(etT('Вы уверены, что хотите отменить регистрацию?', 'Are you sure you want to cancel your registration?', 'Opravdu chcete zrušit registraci?'))) {
             return;
         }
 
-        window.location.href = `/Events/${this.currentEventId}/unregister/`;
+        this.postTo(`/Event/${this.currentEventId}/unregister/`);
+    }
+
+    postTo(url) {
+        const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = url;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrfmiddlewaretoken';
+        input.value = match ? decodeURIComponent(match[1]) : '';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
     }
 
     navigateMonth(offset) {
@@ -174,7 +188,9 @@ class EventCalendar {
         table.className = 'event-calendar';
 
         const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></tr>';
+        const weekdayFormat = new Intl.DateTimeFormat(etLocale, { weekday: 'short' });
+        // 2024-01-01 — понедельник
+        thead.innerHTML = '<tr>' + [0, 1, 2, 3, 4, 5, 6].map(i => `<th>${weekdayFormat.format(new Date(2024, 0, 1 + i))}</th>`).join('') + '</tr>';
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
@@ -186,6 +202,10 @@ class EventCalendar {
                     cell.classList.add('empty');
                 } else {
                     cell.innerHTML = `<span class="day-number">${day}</span>`;
+                    const now = new Date();
+                    if (day === now.getDate() && this.currentMonth === now.getMonth() + 1 && this.currentYear === now.getFullYear()) {
+                        cell.classList.add('is-today');
+                    }
                     const dayEvents = eventsByDay[day] || [];
                     if (dayEvents.length > 0) {
                         const eventsWrapper = document.createElement('div');
@@ -236,7 +256,7 @@ class EventCalendar {
             const eventDay = eventDate.getDate();
 
             if (eventYear === year && eventMonth === month) {
-                const formattedDate = eventDate.toLocaleDateString('ru-RU', {
+                const formattedDate = eventDate.toLocaleDateString(etLocale, {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric'
@@ -287,8 +307,9 @@ class EventCalendar {
     }
 
     getMonthName(month) {
-        const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-        return monthNames[month - 1] || '';
+        if (!month) return '';
+        const name = new Intl.DateTimeFormat(etLocale, { month: 'long' }).format(new Date(2024, month - 1, 1));
+        return name.charAt(0).toUpperCase() + name.slice(1);
     }
 }
 

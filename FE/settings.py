@@ -34,7 +34,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+def _env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
+
+ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', '127.0.0.1,localhost')
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
 
 
 # Application definition
@@ -57,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'Users.middleware.SessionLanguageMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -137,6 +143,7 @@ USE_I18N = True
 LANGUAGES = [
     ('ru', 'Русский'),
     ('en', 'English'),
+    ('cs', 'Čeština'),
 ]
 
 USE_TZ = True
@@ -147,6 +154,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (BASE_DIR / 'static', )
+STATIC_ROOT = Path(os.getenv('STATIC_ROOT', BASE_DIR / 'staticfiles'))
+
+# Production hardening (active when DEBUG=False)
+if not DEBUG:
+    SESSION_COOKIE_SECURE = os.getenv('SECURE_COOKIES', 'True').lower() == 'true'
+    CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    if os.getenv('BEHIND_HTTPS_PROXY', 'False').lower() == 'true':
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -155,15 +172,27 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'Users.User'
 
-# Email settings. Console backend is used locally until Brevo credentials are set.
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND') or (
-    'django.core.mail.backends.smtp.EmailBackend'
-    if os.getenv('BREVO_SMTP_LOGIN') and os.getenv('BREVO_SMTP_KEY')
-    else 'django.core.mail.backends.console.EmailBackend'
-)
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-relay.brevo.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('BREVO_SMTP_LOGIN', '')
-EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_KEY', '')
+# Email settings. Console backend is used locally until Resend (or Brevo) credentials are set.
+if os.getenv('RESEND_API_KEY'):
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.resend.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'resend')
+    EMAIL_HOST_PASSWORD = os.getenv('RESEND_API_KEY')
+elif os.getenv('BREVO_SMTP_LOGIN') and os.getenv('BREVO_SMTP_KEY'):
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-relay.brevo.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+    EMAIL_HOST_USER = os.getenv('BREVO_SMTP_LOGIN', '')
+    EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_KEY', '')
+else:
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+    EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')

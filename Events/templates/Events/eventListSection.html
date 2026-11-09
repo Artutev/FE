@@ -1,73 +1,52 @@
 {% load language_tags %}
 
-<form method="get" class="search-form">
-    <div class="search-container">
-        <input 
-            type="text" 
-            name="search" 
-            class="search-input" 
-            placeholder="{% lang "Поиск мероприятий..." "Search events..." %}" 
+<form method="get" action="{{ request.path }}" class="search-form" role="search">
+    <div class="home-search list-search">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input
+            type="text"
+            name="search"
+            placeholder="{% lang "Название, место или описание" "Name, place or description" %}"
             value="{{ search_query }}"
             aria-label="{% lang "Поиск мероприятий" "Search events" %}"
         >
-        <select name="type" class="filter-select" aria-label="{% lang "Фильтр по типу" "Filter by type" %}">
-            <option value="">{% lang "Все типы" "All types" %}</option>
-            {% for code, label in event_types %}
-                <option value="{{ code }}" {% if event_type == code %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="search-btn" title="{% lang "Поиск" "Search" %}">
-            🔍
-        </button>
-        {% if search_query or event_type %}
-            <a href="{% url 'Events:event_list' %}" class="search-clear" title="{% lang "Очистить фильтры" "Clear filters" %}">✕</a>
+        {% if event_type %}<input type="hidden" name="type" value="{{ event_type }}">{% endif %}
+        {% if search_query %}
+            <a href="{{ request.path }}{% if event_type %}?type={{ event_type }}{% endif %}" class="icon-btn" title="{% lang "Очистить поиск" "Clear search" %}" aria-label="{% lang "Очистить поиск" "Clear search" %}">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </a>
         {% endif %}
+        <button type="submit" class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>{% lang "Найти" "Search" %}</span></button>
     </div>
+
+    {% if event_types %}
+    <div class="chip-row">
+        <a href="{{ request.path }}{% if search_query %}?search={{ search_query|urlencode }}{% endif %}" class="chip{% if not event_type %} is-active{% endif %}">{% lang "Все" "All" %}</a>
+        {% for code, label in event_types %}
+            <a href="{{ request.path }}?type={{ code }}{% if search_query %}&amp;search={{ search_query|urlencode }}{% endif %}" class="chip{% if event_type == code %} is-active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
 </form>
 
 {% if events %}
     {% if search_query %}
-        <div class="search-results-info">
-            <p>{% lang "Найдено мероприятий:" "Events found:" %} <strong>{{ events.count }}</strong></p>
-        </div>
+        <p class="search-results-info">{% lang "Найдено:" "Found:" %} <strong>{{ events.count }}</strong></p>
     {% endif %}
     <div class="cards-grid events-grid">
         {% for event in events %}
-            {% if event.date < now|date:"Y-m-d" %}
-                <article class="info-card event-card event-card--passed">
-            {% else %}
-                <article class="info-card event-card">
-            {% endif %}
-                <div class="card-content event-info">
-                    {% if event.date < now|date:"Y-m-d" %}
-                        <span class="event-status">{% lang "Прошедшее мероприятие" "Past event" %}</span>
-                    {% endif %}
-                    <span class="event-type{% if event.event_type == 'wedding' %} wedding{% endif %}">{% event_type_label event.event_type %}</span>
-                    <h3>{{ event.name }}</h3>
-                    {% if event.event_type == 'wedding' %}
-                        <p><strong>{% lang "Пара:" "Couple:" %}</strong>
-                            {% if event.bride_name %}{{ event.bride_name }}{% else %}{% lang "Невеста" "Bride" %}{% endif %} —
-                            {% if event.groom_name %}{{ event.groom_name }}{% else %}{% lang "Жених" "Groom" %}{% endif %}
-                        </p>
-                        {% if event.wedding_theme %}<p><strong>{% lang "Тема:" "Theme:" %}</strong> {{ event.wedding_theme }}</p>{% endif %}
-                    {% endif %}
-                    <p><strong>{% lang "Дата:" "Date:" %}</strong> {% event_date event.date %}</p>
-                    <p><strong>{% lang "Время:" "Time:" %}</strong> {{ event.time|time:"H:i" }}</p>
-                    <p><strong>{% lang "Место:" "Location:" %}</strong> {{ event.location }}</p>
-                    <p class="muted-text desc">{{ event.description|truncatewords:20 }}</p>
-                </div>
-                <a href="{% url 'Events:event_detail' event.id %}" class="btn btn-primary">{% lang "Подробнее" "Details" %}</a>
-            </article>
+            {% include "Events/_event_card.html" with show_description=True %}
         {% endfor %}
     </div>
 {% else %}
     <div class="empty-state">
-        {% if search_query %}
-            <h3>{% lang "По запросу" "No results for" %} "{{ search_query }}" {% lang "ничего не найдено" "were found" %}</h3>
-            <p>{% lang "Попробуйте другой поиск или" "Try another search or" %} <a href="{% url 'Events:event_list' %}">{% lang "просмотрите все мероприятия" "browse all events" %}</a>.</p>
+        {% if search_query or event_type %}
+            <h3>{% lang "Ничего не нашлось" "Nothing found" %}</h3>
+            <p>{% lang "Попробуйте изменить запрос или" "Try a different search or" %} <a href="{{ request.path }}">{% lang "сбросить фильтры" "reset filters" %}</a>.</p>
         {% else %}
-            <h3>{% lang "Пока нет запланированных мероприятий" "No upcoming events yet" %}</h3>
-            <p>{% lang "Станьте первым, кто создаст новое событие в EventHub." "Be the first to create a new event on EventHub." %}</p>
+            <h3>{% lang "Здесь пока пусто" "Nothing here yet" %}</h3>
+            <p>{% lang "Станьте первым, кто создаст событие в EventTown." "Be the first to create an event on EventTown." %}</p>
+            <a href="{% url 'Events:create_event' %}" class="btn btn-primary">{% lang "Создать мероприятие" "Create event" %}</a>
         {% endif %}
     </div>
 {% endif %}

@@ -1,58 +1,61 @@
-.about-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 24px;
-    align-items: stretch;
+/* =========================================================
+   About page
+   ========================================================= */
+.ab-hero {
+    max-width: 720px;
+    margin: 8px 0 36px;
 }
 
-.about-grid .info-card:nth-child(1) {
-    grid-row: span 2;
+.ab-hero h1 {
+    margin: 0 0 12px;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
 }
 
-.about-grid .info-card:nth-child(2) {
-    grid-column: 2;
-    grid-row: 3;
-}
+.ab-hero .section-lead { font-size: 1.1rem; }
 
-.about-grid .info-card:nth-child(3) {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-.about-grid .info-card:nth-child(4) {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-.about-card {
-    text-align: center;
+.ab-grid {
     display: grid;
-    align-content: center;
-    min-height: 230px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
 }
 
-.about-grid .info-card {
-    min-height: 170px;
-    display: grid;
-    align-content: center;
+.ab-card {
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
 }
 
-.about-grid .info-card:nth-child(2) {
-    grid-column: 1 / -1;
+.ab-card h2 {
+    margin: 14px 0 8px;
+    font-size: 1.15rem;
 }
 
-@media (max-width: 700px) {
-    .about-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .about-grid .info-card:nth-child(n) {
-        grid-column: auto;
-        grid-row: auto;
-        min-height: 220px;
-    }
-
+.ab-card p {
+    margin: 0 0 8px;
+    color: var(--muted);
 }
 
-.contact-card a {
-    font-weight: 700;
+.ab-card p:last-child { margin-bottom: 0; }
+
+.ab-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--primary-tint);
+    color: var(--primary-text);
+}
+
+.ab-cta-actions { margin-top: 0; }
+
+@media (max-width: 640px) {
+    .ab-hero { margin-bottom: 24px; }
+    .ab-card { padding: 20px; }
+    .ab-cta-actions { width: 100%; }
+    .ab-cta-actions .btn { flex: 1; }
 }

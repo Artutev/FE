@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateWeddingFields() {
         const showWedding = eventTypeField && eventTypeField.value === 'wedding';
         weddingFields.forEach(field => {
-            field.style.display = showWedding ? 'block' : 'none';
+            field.style.display = showWedding ? 'grid' : 'none';
         });
 
         if (weddingHint) {

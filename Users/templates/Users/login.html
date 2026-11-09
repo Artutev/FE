@@ -1,35 +1,29 @@
-{% extends 'Users/base.html' %}
+{% extends 'Users/auth_base.html' %}
 {% load static language_tags %}
 
-{% block title %}{% lang "Вход | EventHub" "Login | EventHub" %}{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-{% endblock %}
+{% block title %}{% lang "Вход | EventTown" "Login | EventTown" %}{% endblock %}
 
-{% block content %}
-<section class="page-section auth-section">
-    <div class="container auth-container">
-        <div class="content-card form-card">
-            <span class="section-badge">{% lang "Добро пожаловать" "Welcome" %}</span>
-            <h1>{% lang "Вход в аккаунт" "Login to your account" %}</h1>
-            <p class="section-lead">{% lang "Войдите, чтобы управлять своими мероприятиями и отслеживать обновления." "Sign in to manage your events and stay updated." %}</p>
+{% block auth_form %}
+<h1>{% lang "С возвращением" "Welcome back" %}</h1>
+<p class="section-lead">{% lang "Войдите, чтобы управлять своими мероприятиями и отслеживать обновления." "Sign in to manage your events and stay updated." %}</p>
 
-            <form action="{% url 'Users:login' %}" method="post" class="styled-form">
-                {% csrf_token %}
-                {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-                {% for field in form %}
-                    <div class="auth-field">
-                        {{ field.label_tag }}
-                        {{ field }}
-                        {{ field.errors }}
-                    </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary btn-block">{% lang "Войти" "Login" %}</button>
-            </form>
-
-            <p class="auth-footer-text">{% lang "Нет аккаунта?" "No account?" %} <a href="{% url 'Users:registration' %}">{% lang "Зарегистрируйтесь" "Register" %}</a></p>
+<form action="{% url 'Users:login' %}" method="post" class="styled-form auth-form">
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+    {% endif %}
+    {% for field in form %}
+        <div class="auth-field{% if field.errors %} has-error{% endif %}">
+            {{ field.label_tag }}
+            {{ field }}
+            {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
         </div>
-    </div>
-</section>
-<script src="{% static 'js/password-toggle.js' %}"></script>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary btn-block">{% lang "Войти" "Login" %}</button>
+</form>
+
+<p class="auth-footer-text">{% lang "Нет аккаунта?" "No account?" %} <a href="{% url 'Users:registration' %}">{% lang "Зарегистрируйтесь" "Sign up" %}</a></p>
+<p class="auth-footer-text auth-footer-text--muted">{% lang "Не пришло письмо с кодом?" "Didn't get the code?" %} <a href="{% url 'Users:confirm_email_code' %}">{% lang "Подтвердить email" "Confirm email" %}</a></p>
+<script src="{% static 'js/password-toggle.js' %}?v=4"></script>
 {% endblock %}
