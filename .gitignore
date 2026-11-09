@@ -1,4 +1,8 @@
+.env
 .env.local
 __pycache__/
 *.py[cod]
-db.sqlite3staticfiles/
+db.sqlite3
+staticfiles/
+.idea/
+.claude/
