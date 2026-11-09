@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=4">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -61,7 +61,13 @@
             {% if event.latitude and event.longitude %}
                 <section class="ed-section">
                     <h2>{% lang "Карта" "Map" %}</h2>
-                    <div id="detailMap" class="ed-map"></div>
+                    <div class="ed-map-wrap">
+                        <div id="detailMap" class="ed-map"></div>
+                        <button type="button" class="btn btn-secondary ed-map-open" data-open-maps aria-haspopup="dialog">
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>
+                            {% lang "Открыть в картах" "Open in maps" %}
+                        </button>
+                    </div>
                 </section>
             {% endif %}
 
@@ -127,7 +133,7 @@
                         <div>
                             <span>{% lang "Место" "Location" %}</span>
                             {% if event.location %}
-                                <a href="https://www.google.com/maps/search/?api=1&query={{ event.location|urlencode }}" target="_blank" rel="noopener noreferrer">{{ event.location }}</a>
+                                <button type="button" class="ed-address" data-open-maps aria-haspopup="dialog">{{ event.location }}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
                             {% else %}
                                 <strong>{% lang "Место не указано" "Location not specified" %}</strong>
                             {% endif %}
@@ -195,6 +201,8 @@
     </div>
     {% endif %}
 </article>
+
+{% include "Events/_maps_sheet.html" %}
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

@@ -322,6 +322,13 @@ CS = {
     'Find': 'Najít',
     'Settings': 'Nastavení',
     'Create an account': 'Vytvořit účet',
+    # --- Maps ---
+    'Open in maps': 'Otevřít v mapách',
+    'Copy address': 'Zkopírovat adresu',
+    'Map for picking a place': 'Mapa pro výběr místa',
+    'My location': 'Moje poloha',
+    'Start typing an address or tap the map to drop a pin.': 'Začněte psát adresu nebo klepněte do mapy a umístěte špendlík.',
+    'Remove pin': 'Odstranit špendlík',
 }
 
 TRANSLATIONS = {

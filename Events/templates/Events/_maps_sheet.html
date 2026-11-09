@@ -1,0 +1,66 @@
+{% load language_tags map_tags %}
+{% map_links event as links %}
+{% if links %}
+<dialog class="maps-sheet" id="mapsSheet" aria-labelledby="mapsSheetTitle">
+    <form method="dialog" class="maps-sheet-inner">
+        <header class="maps-sheet-head">
+            <div>
+                <h2 id="mapsSheetTitle">{% lang "Открыть в картах" "Open in maps" %}</h2>
+                {% if event.location %}<p>{{ event.location }}</p>{% endif %}
+            </div>
+            <button type="submit" class="icon-btn" aria-label="{% lang "Закрыть" "Close" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </header>
+        <ul class="maps-list">
+            {% for link in links %}
+                <li>
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="maps-item">
+                        <span class="maps-dot" style="--brand: {{ link.color }}" aria-hidden="true">{{ link.name|slice:":1" }}</span>
+                        <span class="maps-name">{{ link.name }}</span>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% if event.location %}
+            <button type="button" class="btn btn-secondary btn-block" id="copyAddressBtn" data-address="{{ event.location }}">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                <span>{% lang "Скопировать адрес" "Copy address" %}</span>
+            </button>
+        {% endif %}
+    </form>
+</dialog>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sheet = document.getElementById('mapsSheet');
+        if (!sheet) return;
+        document.querySelectorAll('[data-open-maps]').forEach((trigger) => {
+            trigger.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (typeof sheet.showModal === 'function') sheet.showModal();
+                else sheet.setAttribute('open', '');
+            });
+        });
+        // Close when clicking the backdrop
+        sheet.addEventListener('click', (event) => {
+            if (event.target === sheet) sheet.close();
+        });
+        sheet.querySelectorAll('.maps-item').forEach((link) => {
+            link.addEventListener('click', () => sheet.close());
+        });
+        const copyBtn = document.getElementById('copyAddressBtn');
+        if (copyBtn) {
+            const label = copyBtn.querySelector('span');
+            const idle = label.textContent;
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(copyBtn.dataset.address);
+                    label.textContent = etT('Адрес скопирован', 'Address copied', 'Adresa zkopírována');
+                } catch (error) {
+                    window.prompt(etT('Скопируйте адрес вручную', 'Copy the address manually', 'Zkopírujte adresu ručně'), copyBtn.dataset.address);
+                }
+                setTimeout(() => { label.textContent = idle; }, 2000);
+            });
+        }
+    });
+</script>
+{% endif %}
