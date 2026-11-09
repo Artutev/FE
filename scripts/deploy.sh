@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Выкладка FastEvent на прод.
-# Запускать от пользователя ubuntu в папке проекта:
-#   cd /home/ubuntu/FE && bash scripts/deploy.sh feat/redesign-violet
+# Запуск (от пользователя с правом записи в проект). Скрипт лучше брать из нужной ветки
+# во временный файл, чтобы не трогать рабочее дерево до проверок:
+#   cd /home/ubuntu/FE && git fetch origin
+#   git show origin/feat/redesign-violet:scripts/deploy.sh > /tmp/fe-deploy.sh
+#   PROJECT_DIR=/home/ubuntu/FE bash /tmp/fe-deploy.sh feat/redesign-violet
 # Скрипт останавливается на первой ошибке и ничего не перезапускает, пока всё не прошло.
 set -euo pipefail
 
 BRANCH="${1:-main}"
-PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 SERVICE="${SERVICE:-fe}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/backups}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -16,22 +19,61 @@ say() { printf '\n\033[1;35m==> %s\033[0m\n' "$*"; }
 
 say "Проект: $PROJECT_DIR, ветка: $BRANCH, сервис: $SERVICE"
 
-# 1. Локальные правки на сервере (часто это settings.py) — сохраняем, а не теряем
+# Читаем .env.local так же, как FE/settings.py: KEY=VALUE без подстановок bash
+# (в паролях бывают $, ` и т.п.), внешние кавычки снимаются.
+load_env() {
+    local file="$1" line key value
+    [ -f "$file" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        line="${line%$'\r'}"
+        [[ -z "${line//[[:space:]]/}" || "${line#"${line%%[![:space:]]*}"}" == \#* || "$line" != *=* ]] && continue
+        key="${line%%=*}"; value="${line#*=}"
+        key="$(printf '%s' "$key" | tr -d '[:space:]')"
+        value="${value#"${value%%[![:space:]]*}"}"; value="${value%"${value##*[![:space:]]}"}"
+        if [[ ${#value} -ge 2 && ( ( "${value:0:1}" == '"' && "${value: -1}" == '"' ) || ( "${value:0:1}" == "'" && "${value: -1}" == "'" ) ) ]]; then
+            value="${value:1:${#value}-2}"
+        fi
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+        export "$key=$value"
+    done < "$file"
+}
+
+# 1. Переменные окружения — проверяем ДО любых изменений
+load_env .env.local
+missing=()
+for var in SECRET_KEY ALLOWED_HOSTS CSRF_TRUSTED_ORIGINS SITE_URL; do
+    [ -n "${!var:-}" ] || missing+=("$var")
+done
+if [ ${#missing[@]} -gt 0 ]; then
+    say "В .env.local не хватает: ${missing[*]}"
+    echo "Добавьте их (пример — в .env.example) и запустите скрипт снова. Ничего не изменено."
+    exit 1
+fi
+
+# Если что-то упадёт до переключения кода — вернуть ручные правки на место
+STASHED=0
+CODE_SWITCHED=0
+restore_on_error() {
+    if [ "$STASHED" = 1 ] && [ "$CODE_SWITCHED" = 0 ]; then
+        echo "Ошибка до обновления кода — возвращаю ручные правки (git stash pop)"
+        git stash pop || echo "Не удалось вернуть автоматически: git stash list"
+    fi
+}
+trap restore_on_error ERR
+
+# 2. Локальные правки на сервере (часто это settings.py) — сохраняем, а не теряем
+mkdir -p "$BACKUP_DIR"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     say "На сервере есть незакоммиченные правки:"
     git status --short --untracked-files=no
-    git diff > "$BACKUP_DIR/server-local-changes-$STAMP.diff" 2>/dev/null || {
-        mkdir -p "$BACKUP_DIR"; git diff > "$BACKUP_DIR/server-local-changes-$STAMP.diff"; }
+    git diff HEAD > "$BACKUP_DIR/server-local-changes-$STAMP.diff"
     git stash push -m "server-local-$STAMP"
+    STASHED=1
     echo "Правки сохранены в git stash и в $BACKUP_DIR/server-local-changes-$STAMP.diff"
     echo "Настройки вроде ALLOWED_HOSTS теперь задаются в .env.local (см. docs/DEPLOY.md)."
 fi
 
-# 2. Бэкап базы
-mkdir -p "$BACKUP_DIR"
-if [ -f .env.local ]; then
-    set -a; . ./.env.local; set +a
-fi
+# 3. Бэкап базы
 if [ -n "${POSTGRES_DB:-}" ]; then
     say "Бэкап PostgreSQL ($POSTGRES_DB)"
     PGPASSWORD="${POSTGRES_PASSWORD:-}" pg_dump \
@@ -43,21 +85,11 @@ else
     [ -f db.sqlite3 ] && cp db.sqlite3 "$BACKUP_DIR/db-$STAMP.sqlite3"
 fi
 
-# 3. Проверка обязательных переменных
-missing=()
-for var in SECRET_KEY ALLOWED_HOSTS CSRF_TRUSTED_ORIGINS SITE_URL; do
-    [ -n "${!var:-}" ] || missing+=("$var")
-done
-if [ ${#missing[@]} -gt 0 ]; then
-    say "В .env.local не хватает: ${missing[*]}"
-    echo "Добавьте их (пример — в .env.example) и запустите скрипт снова."
-    exit 1
-fi
-
 # 4. Код
 say "Обновляю код"
 PREVIOUS="$(git rev-parse HEAD)"
 git fetch origin
+CODE_SWITCHED=1
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
 echo "Было: $PREVIOUS → стало: $(git rev-parse HEAD)"
@@ -80,7 +112,7 @@ python manage.py collectstatic --noinput
 say "Перезапуск $SERVICE"
 sudo systemctl restart "$SERVICE"
 sleep 2
-sudo systemctl --no-pager --lines=5 status "$SERVICE" | head -n 12
+sudo systemctl status "$SERVICE" --no-pager --lines=5 || true
 
 # 7. Быстрая проверка
 URL="${SITE_URL%/}/"

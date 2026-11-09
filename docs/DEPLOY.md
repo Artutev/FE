@@ -29,6 +29,16 @@ python -c "import secrets; print(secrets.token_urlsafe(50))"
 
 ## 2. Выкладка
 
+Проще всего скриптом (бэкап базы, сохранение ручных правок, миграции, статика, перезапуск, проверка):
+
+```bash
+cd /home/ubuntu/FE && git fetch origin
+git show origin/feat/redesign-violet:scripts/deploy.sh > /tmp/fe-deploy.sh
+PROJECT_DIR=/home/ubuntu/FE bash /tmp/fe-deploy.sh feat/redesign-violet
+```
+
+Вручную:
+
 ```bash
 cd /path/to/project
 git fetch origin
