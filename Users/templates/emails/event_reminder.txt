@@ -1,0 +1,8 @@
+{% load language_tags %}{% autoescape off %}{% lang "Завтра мероприятие" "See you tomorrow" %}: {{ event.name }}
+{% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
+{% if event.location %}{{ event.location }}
+{% endif %}
+{{ event_url }}
+
+— EventTown
+{% endautoescape %}

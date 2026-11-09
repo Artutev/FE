@@ -1,0 +1,8 @@
+{% load language_tags %}{% autoescape off %}{% lang "Мероприятие изменилось" "The event has changed" %}: {{ event.name }}
+
+{% for change in changes %}{{ change.label }}: {{ change.old|default:"—" }} → {{ change.new|default:"—" }}
+{% endfor %}
+{{ event_url }}
+
+— EventTown
+{% endautoescape %}

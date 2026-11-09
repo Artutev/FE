@@ -23,4 +23,44 @@
     <p class="auth-hint">{% lang "Код действителен ограниченное время. Проверьте папку «Спам», если письмо не пришло." "The code is valid for a limited time. Check your spam folder if you don't see the email." %}</p>
     <button type="submit" class="btn btn-primary btn-block">{% lang "Подтвердить" "Confirm" %}</button>
 </form>
+<form method="post" action="{% url 'Users:resend_confirmation' %}" class="auth-resend" id="resendForm">
+    {% csrf_token %}
+    <input type="hidden" name="email" value="{{ email }}" id="resendEmail">
+    <span class="muted-text">{% lang "Не пришло письмо?" "No email?" %}</span>
+    <button type="submit" class="link-button" id="resendBtn" data-cooldown="{{ resend_cooldown|default:60 }}">{% lang "Отправить код ещё раз" "Send the code again" %}</button>
+</form>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('resendForm');
+        const btn = document.getElementById('resendBtn');
+        const hidden = document.getElementById('resendEmail');
+        const emailInput = document.getElementById('confirmEmail');
+        if (!form || !btn) return;
+        const label = btn.textContent;
+        const KEY = 'et-resend-until';
+        const tick = () => {
+            let until = 0;
+            try { until = parseInt(localStorage.getItem(KEY) || '0', 10); } catch (e) {}
+            const left = Math.ceil((until - Date.now()) / 1000);
+            if (left > 0) {
+                btn.disabled = true;
+                btn.textContent = `${label} (${left})`;
+                setTimeout(tick, 1000);
+            } else {
+                btn.disabled = false;
+                btn.textContent = label;
+            }
+        };
+        form.addEventListener('submit', (event) => {
+            hidden.value = emailInput ? emailInput.value.trim() : hidden.value;
+            if (!hidden.value) {
+                event.preventDefault();
+                emailInput && emailInput.focus();
+                return;
+            }
+            try { localStorage.setItem(KEY, String(Date.now() + parseInt(btn.dataset.cooldown, 10) * 1000)); } catch (e) {}
+        });
+        tick();
+    });
+</script>
 {% endblock %}

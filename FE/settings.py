@@ -196,3 +196,7 @@ else:
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
+# Base URL for links in emails sent outside a request (reminders via cron)
+SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
+# Password reset links stay valid for 3 days
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3

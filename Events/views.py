@@ -12,6 +12,8 @@ from Events.models import Event, EventType
 from Events.forms import EventForm
 from Users.models import FriendRequest
 from Users.i18n import get_language, tr
+from Events import notifications
+from Users.emails import send_bulk
 
 def _has_access(request, event):
     """Приватное событие доступно только создателю или по ссылке с токеном."""
@@ -176,9 +178,15 @@ def edit_event(request, event_id):
     language = get_language(request)
 
     if request.method == 'POST':
+        before = notifications.snapshot(event)
         form = EventForm(request.POST, instance=event, language=language)
         if form.is_valid():
-            form.save()
+            event = form.save(commit=False)
+            changed = notifications.changed_fields(before, event)
+            if 'date' in changed or 'time' in changed:
+                event.reminder_sent = False
+            event.save()
+            notifications.notify_updated(event, before, changed, request=request)
             messages.success(request, tr(language, 'Изменения сохранены.', 'Event updated.'))
             return redirect('Events:event_detail', event_id=event.id)
     else:
@@ -192,7 +200,9 @@ def delete_event(request, event_id):
     event = get_object_or_404(Event, id=event_id, creator=request.user)
 
     if request.method == 'POST':
+        cancel_messages = notifications.collect_cancel_messages(event, request=request)
         event.delete()
+        send_bulk(cancel_messages)
         messages.success(request, tr(get_language(request), 'Мероприятие удалено.', 'Event deleted.'))
         return redirect('Users:profile')
     context = {'event': event}
@@ -217,7 +227,9 @@ def register_event(request, event_id):
         return _detail_redirect(event)
 
     from Events.models import EventRegistration
-    EventRegistration.objects.get_or_create(user=request.user, event=event)
+    _registration, created = EventRegistration.objects.get_or_create(user=request.user, event=event)
+    if created:
+        notifications.notify_registered(event, request.user, request=request)
     return _detail_redirect(event)
 
 

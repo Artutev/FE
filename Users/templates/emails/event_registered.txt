@@ -1,0 +1,12 @@
+{% load language_tags %}{% autoescape off %}{% lang "Вы идёте!" "You're going!" %}
+
+{{ event.name }}
+{% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
+{% if event.location %}{{ event.location }}
+{% endif %}
+{{ event_url }}
+
+{% lang "Мы напомним за день до начала." "We'll remind you a day before." %}
+
+— EventTown
+{% endautoescape %}

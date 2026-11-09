@@ -1,0 +1,20 @@
+{% extends "emails/base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Изменения в мероприятии" "Event update" %}: {{ event.name }}{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Мероприятие изменилось" "The event has changed" %}</h1>
+<p style="margin:0 0 4px;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Организатор обновил детали мероприятия, на которое вы записаны. Что изменилось:" "The organizer updated an event you're going to. What changed:" %}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;">
+  {% for change in changes %}
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #F0EEF5;font-size:14px;color:#6B6880;width:110px;" valign="top">{{ change.label }}</td>
+    <td style="padding:8px 0;border-bottom:1px solid #F0EEF5;font-size:14px;line-height:20px;" valign="top">
+      <span style="color:#9A97AB;text-decoration:line-through;">{{ change.old|default:"—" }}</span><br>
+      <strong style="color:#18122B;">{{ change.new|default:"—" }}</strong>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% include "emails/_event_box.html" %}
+{% lang "Открыть мероприятие" "Open event" as button_label %}{% include "emails/_button.html" with url=event_url label=button_label %}
+{% endblock %}
+{% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}

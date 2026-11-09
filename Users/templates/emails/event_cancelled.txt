@@ -1,0 +1,9 @@
+{% load language_tags %}{% autoescape off %}{% lang "Мероприятие отменено" "Event cancelled" %}: {{ event.name }}
+{% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
+
+{% lang "К сожалению, организатор отменил мероприятие, на которое вы были записаны." "Unfortunately, the organizer cancelled an event you were going to." %}
+
+{{ events_url }}
+
+— EventTown
+{% endautoescape %}

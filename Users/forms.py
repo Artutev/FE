@@ -1,5 +1,9 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import (
+    AuthenticationForm, PasswordResetForm, SetPasswordForm, UserChangeForm, UserCreationForm,
+)
+from django.core.cache import cache
+from django.urls import reverse
 
 from Users.models import User
 from Users.i18n import CS, tr
@@ -127,4 +131,39 @@ class UserProfileForm(UserChangeForm):
     birthDate = forms.DateField(widget=forms.DateInput(attrs={'readonly': True}))
     class Meta:
         model = User
-        fields = ('username', 'email', 'birthDate', 'is_profile_private')
+        fields = ('username', 'email', 'birthDate', 'is_profile_private', 'email_notifications')
+
+
+class EventTownPasswordResetForm(PasswordResetForm):
+    """Сброс пароля: фирменное письмо на языке пользователя + не чаще раза в минуту на адрес."""
+
+    def save(self, *args, **kwargs):
+        email = self.cleaned_data.get('email', '').lower()
+        cooldown_key = f'password-reset:{email}'
+        if cache.get(cooldown_key):
+            return
+        cache.set(cooldown_key, True, 60)
+        super().save(*args, **kwargs)
+
+    def send_mail(self, subject_template_name, email_template_name, context, from_email, to_email,
+                  html_email_template_name=None):
+        from Users.emails import send_email, user_language
+
+        user = context['user']
+        path = reverse('Users:password_reset_confirm', kwargs={'uidb64': context['uid'], 'token': context['token']})
+        send_email(
+            to=to_email,
+            template='password_reset',
+            subject=('Сброс пароля в EventTown', 'Reset your EventTown password'),
+            context={'user': user, 'reset_url': f"{context['protocol']}://{context['domain']}{path}"},
+            language=user_language(user),
+            fail_silently=True,
+        )
+
+
+class EventTownSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('label_suffix', '')
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('autocomplete', 'new-password')

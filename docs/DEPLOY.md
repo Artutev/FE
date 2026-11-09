@@ -18,7 +18,8 @@
 | `SECURE_COOKIES` | `True` (или `False`, если сайт пока по HTTP) | иначе на HTTP не будет работать вход |
 | `STATIC_ROOT` | `/var/www/fastevent/static` | куда кладёт `collectstatic` |
 | `POSTGRES_*` | см. `.env.example` | база |
-| `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` | | письма подтверждения |
+| `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` | `noreply@твойдомен` | все письма (адрес должен быть подтверждён в Resend) |
+| `SITE_URL` | `https://example.com` | ссылки в напоминаниях, которые шлёт cron |
 
 Сгенерировать `SECRET_KEY`:
 
@@ -41,7 +42,23 @@ python manage.py check --deploy
 sudo systemctl restart <gunicorn-service>
 ```
 
-## 3. nginx
+## 3. Напоминания по cron
+
+Раз в день (например, в 10:00) отправляются письма «Завтра мероприятие»:
+
+```cron
+0 10 * * * cd /path/to/project && venv/bin/python manage.py send_event_reminders >> /var/log/fastevent-reminders.log 2>&1
+```
+
+Проверить без отправки: `python manage.py send_event_reminders --dry-run`.
+
+## 4. Почта (Resend)
+
+- В Resend добавить домен и прописать у регистратора DNS-записи, которые он покажет (SPF, DKIM, по желанию DMARC) — без этого письма уходят в спам.
+- `DEFAULT_FROM_EMAIL` — адрес на подтверждённом домене, например `EventTown <noreply@домен>`.
+- Проверка с сервера: `python manage.py sendtestemail you@example.com`.
+
+## 5. nginx
 
 `/static/` должен отдаваться из `STATIC_ROOT`:
 
@@ -54,7 +71,7 @@ location /static/ {
 
 CSS/JS подключаются с `?v=N`, поэтому долгий кэш безопасен: при изменении файлов номер версии в шаблонах увеличивается.
 
-## 4. Проверка после выкладки
+## 6. Проверка после выкладки
 
 - главная, афиша, страница мероприятия открываются;
 - переключение языка RU / EN / CS;
@@ -70,4 +87,4 @@ python manage.py collectstatic --noinput
 sudo systemctl restart <gunicorn-service>
 ```
 
-Миграций базы в этой ветке нет, поэтому откат кода безопасен.
+Миграции `Users.0007_user_email_settings` и `Events.0011_event_reminder_sent` только добавляют столбцы со значениями по умолчанию — старый код с ними работает, поэтому откат кода безопасен без отката базы.

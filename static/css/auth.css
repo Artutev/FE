@@ -212,6 +212,41 @@ html.dark-mode .auth-perks li::before {
     font-size: 0.9rem;
 }
 
+.auth-forgot {
+    justify-self: end;
+    margin-top: -6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.auth-resend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 18px;
+    font-size: 0.92rem;
+}
+
+.link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--primary-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.link-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.link-button:disabled {
+    color: var(--muted);
+    cursor: default;
+    text-decoration: none;
+}
+
 /* Password visibility toggle */
 .password-field {
     position: relative;

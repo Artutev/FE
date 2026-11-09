@@ -1,0 +1,11 @@
+{% load language_tags %}{% autoescape off %}{% lang "Привет," "Hi," %} {{ username }}!
+
+{% lang "Ваш код подтверждения:" "Your confirmation code:" %} {{ code }}
+
+{% lang "Или откройте ссылку:" "Or open this link:" %}
+{{ confirm_url }}
+
+{% lang "Код действует" "The code is valid for" %} {{ expires_minutes }} {% lang "минут. Если вы не регистрировались в EventTown, просто проигнорируйте это письмо." "minutes. If you didn't sign up for EventTown, you can safely ignore this email." %}
+
+— EventTown
+{% endautoescape %}

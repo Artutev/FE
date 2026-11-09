@@ -20,6 +20,12 @@ class User(AbstractUser):
     )
     email_confirmation_code_hash = models.CharField(max_length=128, blank=True)
     is_profile_private = models.BooleanField('Закрытый профиль', default=False)
+    email_confirmation_sent_at = models.DateTimeField('Код подтверждения отправлен', null=True, blank=True)
+    language = models.CharField(
+        'Язык писем', max_length=5, default='ru',
+        choices=(('ru', 'Русский'), ('en', 'English'), ('cs', 'Čeština')),
+    )
+    email_notifications = models.BooleanField('Письма о мероприятиях', default=True)
 
 
 class FriendRequest(models.Model):

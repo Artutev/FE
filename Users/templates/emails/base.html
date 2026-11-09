@@ -1,0 +1,40 @@
+{% load language_tags %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F2F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#18122B;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F2F8;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+        <tr>
+          <td style="padding:0 4px 20px;">
+            <a href="{{ site_url }}" style="text-decoration:none;color:#18122B;font-size:20px;font-weight:700;letter-spacing:-0.3px;">
+              <span style="display:inline-block;width:28px;height:21px;line-height:21px;margin-right:8px;border-radius:5px;background:#7C3AED;color:#FFFFFF;font-size:13px;font-weight:800;text-align:center;vertical-align:-3px;">E</span>EventTown
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#FFFFFF;border-radius:20px;padding:36px 32px;border:1px solid #E7E5EF;">
+            {% block content %}{% endblock %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 8px 0;font-size:12px;line-height:18px;color:#6B6880;text-align:center;">
+            {% block footer %}
+              {% lang "Вы получили это письмо, потому что зарегистрированы в EventTown." "You're receiving this email because you have an EventTown account." %}
+            {% endblock %}
+            <br>© 2026 EventTown
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

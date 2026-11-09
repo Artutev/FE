@@ -1,0 +1,12 @@
+{% extends "emails/base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Ваш код подтверждения:" "Your confirmation code:" %} {{ code }}{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Подтвердите email" "Confirm your email" %}</h1>
+<p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Привет," "Hi," %} {{ username }}! {% lang "Осталось подтвердить адрес почты, и аккаунт EventTown готов." "Just confirm your email address and your EventTown account is ready." %}</p>
+<p style="margin:0 0 8px;font-size:14px;color:#6B6880;">{% lang "Ваш код подтверждения" "Your confirmation code" %}</p>
+<div style="display:inline-block;padding:14px 22px;border-radius:12px;background:#F4F2F8;font-size:32px;font-weight:700;letter-spacing:10px;color:#18122B;font-family:'SFMono-Regular',Consolas,monospace;">{{ code }}</div>
+<p style="margin:20px 0 0;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Или просто нажмите кнопку:" "Or just press the button:" %}</p>
+{% lang "Подтвердить email" "Confirm email" as button_label %}{% include "emails/_button.html" with url=confirm_url label=button_label %}
+<p style="margin:0;font-size:13px;line-height:20px;color:#6B6880;">{% lang "Код действует" "The code is valid for" %} {{ expires_minutes }} {% lang "минут. Если вы не регистрировались в EventTown, просто проигнорируйте это письмо." "minutes. If you didn't sign up for EventTown, you can safely ignore this email." %}</p>
+{% endblock %}
+{% block footer %}{% lang "Это письмо отправлено при регистрации в EventTown." "This email was sent because someone signed up for EventTown with this address." %}{% endblock %}

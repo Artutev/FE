@@ -162,6 +162,10 @@
                             {{ form.is_profile_private }}
                             <span>{% lang "Закрыть профиль для просмотра другими пользователями" "Hide my profile from other users" %}</span>
                         </label>
+                        <label class="pf-switch">
+                            {{ form.email_notifications }}
+                            <span>{% lang "Присылать письма о мероприятиях: запись, изменения, напоминания" "Email me about events: sign-ups, changes, reminders" %}</span>
+                        </label>
                         <button type="submit" class="btn btn-primary btn-block">{% lang "Сохранить изменения" "Save changes" %}</button>
                     </form>
                 </section>

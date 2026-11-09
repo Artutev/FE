@@ -6,9 +6,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.hashers import check_password, make_password
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, render, HttpResponseRedirect, redirect
-from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from Users.models import FriendRequest, User
@@ -22,10 +20,15 @@ from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from django.utils.http import url_has_allowed_host_and_scheme
 from Users.i18n import SUPPORTED_LANGUAGES, get_language, tr
+from Users.emails import send_email
+from django.utils import timezone
+from datetime import timedelta
 from django.core.paginator import Paginator
 from datetime import date, datetime
 from calendar import monthcalendar, month_name
 CONFIRM_CODE_MAX_ATTEMPTS = 5
+CONFIRM_CODE_TTL_MINUTES = 30
+RESEND_COOLDOWN_SECONDS = 60
 CONFIRM_CODE_LOCK_SECONDS = 15 * 60
 
 
@@ -33,6 +36,9 @@ def set_language(request, lang_code):
     if lang_code not in SUPPORTED_LANGUAGES:
         lang_code = 'ru'
     request.session['language'] = lang_code
+    if request.user.is_authenticated and request.user.language != lang_code:
+        request.user.language = lang_code
+        request.user.save(update_fields=['language'])
     next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or ''
     if not url_has_allowed_host_and_scheme(
         next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
@@ -46,7 +52,7 @@ def build_event_calendar(user, month=None, year=None):
         month = datetime.now().month
     if year is None:
         year = datetime.now().year
-    
+
     # Получаем события пользователя на этот месяц
     registered_events = EventRegistration.objects.filter(user=user).exclude(
         event__creator=user
@@ -56,7 +62,7 @@ def build_event_calendar(user, month=None, year=None):
         date__year=year,
         date__month=month
     )
-    
+
     # Создаём словарь дней с событиями
     events_by_day = {}
     for event in events:
@@ -64,10 +70,10 @@ def build_event_calendar(user, month=None, year=None):
         if day not in events_by_day:
             events_by_day[day] = []
         events_by_day[day].append(event)
-    
+
     # Получаем календарную сетку
     cal = monthcalendar(year, month)
-    
+
     return {
         'calendar': cal,
         'month': month_name[month],
@@ -148,7 +154,11 @@ def confirm_email_code(request):
             }, status=429)
         cache.set(attempts_key, attempts + 1, CONFIRM_CODE_LOCK_SECONDS)
         user = User.objects.filter(email__iexact=email, is_active=False).first()
-        if user and len(code) == 6 and code.isdigit() and check_password(
+        code_expired = bool(
+            user and user.email_confirmation_sent_at
+            and timezone.now() - user.email_confirmation_sent_at > timedelta(minutes=CONFIRM_CODE_TTL_MINUTES)
+        )
+        if user and not code_expired and len(code) == 6 and code.isdigit() and check_password(
             code, user.email_confirmation_code_hash
         ):
             user.is_active = True
@@ -156,41 +166,92 @@ def confirm_email_code(request):
             user.save(update_fields=['is_active', 'email_confirmation_code_hash'])
             cache.delete(attempts_key)
             return render(request, 'Users/email_confirmed.html', {'language': language})
-        error = tr(language, 'Неверный email или код подтверждения.', 'Invalid email or confirmation code.')
+        if code_expired:
+            error = tr(language, 'Срок действия кода истёк. Отправьте новый код.', 'The code has expired. Send a new one.')
+        else:
+            error = tr(language, 'Неверный email или код подтверждения.', 'Invalid email or confirmation code.')
     return render(request, 'Users/email_confirm_code.html', {
         'language': language,
         'error': error,
         'email': request.POST.get('email') or request.GET.get('email', ''),
+        'resend_cooldown': RESEND_COOLDOWN_SECONDS,
     })
+
+
+def send_confirmation_email(request, user, language):
+    """Генерирует новый код и ссылку подтверждения и отправляет письмо. True — если ушло."""
+    code = f'{secrets.randbelow(1000000):06d}'
+    user.email_confirmation_code_hash = make_password(code)
+    user.email_confirmation_sent_at = timezone.now()
+    user.save(update_fields=['email_confirmation_code_hash', 'email_confirmation_sent_at'])
+
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    confirm_url = request.build_absolute_uri(
+        reverse('Users:confirm_email', kwargs={'uidb64': uid, 'token': token})
+    )
+    return send_email(
+        to=user.email,
+        template='confirm_email',
+        subject=('Подтвердите email в EventTown', 'Confirm your EventTown email'),
+        context={
+            'username': user.username,
+            'code': code,
+            'confirm_url': confirm_url,
+            'expires_minutes': CONFIRM_CODE_TTL_MINUTES,
+        },
+        language=language,
+        fail_silently=True,
+    )
+
+
+@require_POST
+def resend_confirmation(request):
+    """Повторная отправка кода. Не раскрывает, есть ли такой email в базе."""
+    language = get_language(request)
+    email = request.POST.get('email', '').strip()
+    cooldown_key = f'confirm-resend:{email.lower()}'
+    if email and not cache.get(cooldown_key):
+        cache.set(cooldown_key, True, RESEND_COOLDOWN_SECONDS)
+        user = User.objects.filter(email__iexact=email, is_active=False).first()
+        if user:
+            send_confirmation_email(request, user, user.language or language)
+            cache.delete(f'confirm-code-attempts:{email.lower()}')
+        messages.success(request, tr(
+            language,
+            'Если аккаунт с таким email ждёт подтверждения, мы отправили новый код.',
+            'If an account with this email is waiting for confirmation, we sent a new code.',
+        ))
+    elif email:
+        messages.warning(request, tr(
+            language,
+            'Новый код можно запросить раз в минуту.',
+            'You can request a new code once a minute.',
+        ))
+    url = reverse('Users:confirm_email_code')
+    return HttpResponseRedirect(f'{url}?{urlencode({"email": email})}' if email else url)
 
 def registration(request):
     if request.method == "POST":
         form = UserRegistrationForm(data=request.POST, language=get_language(request))
         if form.is_valid():
+            language = get_language(request)
             user = form.save(commit=False)
             user.is_active = False
-            confirmation_code = f'{secrets.randbelow(1000000):06d}'
-            user.email_confirmation_code_hash = make_password(confirmation_code)
+            user.language = language
             user.save()
 
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            confirmation_url = request.build_absolute_uri(
-                reverse('Users:confirm_email', kwargs={'uidb64': uid, 'token': token})
-            )
-            language = get_language(request)
-            subject = tr(language, 'Подтвердите email в EventTown', 'Confirm your EventTown email')
-            message = render_to_string('Users/email_confirmation.txt', {
-                'confirmation_url': confirmation_url,
-                'confirmation_code': confirmation_code,
-                'language': language,
-                'username': user.username,
-            })
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
-            messages.success(
-                request,
-                tr(language, 'Проверьте почту и подтвердите email.', 'Check your email and confirm your address.')
-            )
+            if send_confirmation_email(request, user, language):
+                messages.success(
+                    request,
+                    tr(language, 'Проверьте почту и подтвердите email.', 'Check your email and confirm your address.')
+                )
+            else:
+                messages.warning(request, tr(
+                    language,
+                    'Аккаунт создан, но письмо не отправилось. Нажмите «Отправить код ещё раз».',
+                    'Account created, but the email failed to send. Press "Send the code again".',
+                ))
             confirm_url = reverse('Users:confirm_email_code')
             return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": user.email})}')
     else:
@@ -215,18 +276,18 @@ def profile(request):
             return HttpResponseRedirect(reverse('Users:profile'))
     else:
         form = UserProfileForm(instance=request.user)
-    
+
     my_events = list(
         Event.objects.filter(creator=request.user)
         .annotate(reg_count=Count('registrations'))
         .order_by('-date', '-time')
     )
-    
+
     # Получаем события, на которые зарегистрирован пользователь
     registered_events = EventRegistration.objects.filter(user=request.user).exclude(
         event__creator=request.user
     ).select_related('event').order_by('event__date', 'event__time')
-    
+
     # Получаем месяц и год для календаря
     month = request.GET.get('month', None)
     year = request.GET.get('year', None)
@@ -234,9 +295,9 @@ def profile(request):
         month = int(month)
     if year:
         year = int(year)
-    
+
     calendar_data = build_event_calendar(request.user, month, year)
-    
+
     # Подготавливаем данные для client-side календаря (весь год)
     registered_events_data = []
     for registration in EventRegistration.objects.filter(user=request.user).exclude(
@@ -255,7 +316,7 @@ def profile(request):
 
     current_month = month or datetime.now().month
     current_year = year or datetime.now().year
-    
+
     context = {
         'form': form,
         'my_events': my_events,

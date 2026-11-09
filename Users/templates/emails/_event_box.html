@@ -1,0 +1,18 @@
+{% load language_tags %}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #E7E5EF;border-radius:14px;">
+  <tr>
+    <td width="64" valign="top" style="padding:16px 0 16px 16px;">
+      <div style="width:56px;border-radius:10px;background:#EDE9FE;text-align:center;padding:8px 0;">
+        <div style="font-size:22px;font-weight:700;line-height:24px;color:#18122B;">{% if event.date %}{{ event.date.day }}{% else %}—{% endif %}</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6D28D9;">{% if event.date %}{% month_short event.date %}{% endif %}</div>
+      </div>
+    </td>
+    <td valign="top" style="padding:16px;">
+      <div style="font-size:12px;font-weight:600;color:#6D28D9;">{% event_type_label event.event_type %}</div>
+      <div style="font-size:17px;font-weight:700;line-height:23px;margin:2px 0 6px;color:#18122B;">{{ event.name }}</div>
+      <div style="font-size:14px;line-height:20px;color:#6B6880;">
+        {% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
+        {% if event.location %}<br>{{ event.location }}{% endif %}
+      </div>
+    </td>
+  </tr>
+</table>
