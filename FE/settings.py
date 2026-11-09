@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from email.utils import parseaddr
 
 LOCAL_ENV_FILE = Path(__file__).resolve().parent.parent / '.env.local'
 if LOCAL_ENV_FILE.exists():
@@ -172,30 +173,40 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'Users.User'
 
-# Email settings. Console backend is used locally until Resend (or Brevo) credentials are set.
-if os.getenv('RESEND_API_KEY'):
+# Email settings.
+# Priority: own SMTP mailbox (EMAIL_HOST_USER + EMAIL_HOST_PASSWORD, e.g. Gmail with an app password)
+# -> Resend -> Brevo -> console (local development, emails are printed to the terminal).
+_smtp_user = os.getenv('EMAIL_HOST_USER', '')
+_smtp_password = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '15'))
+if _smtp_user and _smtp_password:
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+    EMAIL_HOST = os.getenv('EMAIL_HOST') or ('smtp.gmail.com' if _smtp_user.endswith('@gmail.com') else '')
+    EMAIL_HOST_USER = _smtp_user
+    EMAIL_HOST_PASSWORD = _smtp_password
+elif os.getenv('RESEND_API_KEY'):
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
     EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.resend.com')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'resend')
+    EMAIL_HOST_USER = 'resend'
     EMAIL_HOST_PASSWORD = os.getenv('RESEND_API_KEY')
 elif os.getenv('BREVO_SMTP_LOGIN') and os.getenv('BREVO_SMTP_KEY'):
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
     EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-relay.brevo.com')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
     EMAIL_HOST_USER = os.getenv('BREVO_SMTP_LOGIN', '')
     EMAIL_HOST_PASSWORD = os.getenv('BREVO_SMTP_KEY', '')
 else:
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
     EMAIL_HOST = os.getenv('EMAIL_HOST', '')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
 
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL') or (
+    f'EventTown <{_smtp_user}>' if _smtp_user else 'noreply@example.com'
+)
+# Address shown on the About page (plain email, without the display name)
+CONTACT_EMAIL = os.getenv('CONTACT_EMAIL') or parseaddr(DEFAULT_FROM_EMAIL)[1]
 # Base URL for links in emails sent outside a request (reminders via cron)
 SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 # Password reset links stay valid for 3 days

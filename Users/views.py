@@ -264,7 +264,7 @@ def registration(request):
 
 def about(request):
     return render(request, 'Users/about.html', {
-        'contact_email': settings.DEFAULT_FROM_EMAIL,
+        'contact_email': settings.CONTACT_EMAIL,
     })
 
 @login_required(login_url='Users:login')

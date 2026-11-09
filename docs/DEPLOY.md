@@ -62,11 +62,23 @@ sudo systemctl restart <gunicorn-service>
 
 Проверить без отправки: `python manage.py send_event_reminders --dry-run`.
 
-## 4. Почта (Resend)
+## 4. Почта
 
-- В Resend добавить домен и прописать у регистратора DNS-записи, которые он покажет (SPF, DKIM, по желанию DMARC) — без этого письма уходят в спам.
-- `DEFAULT_FROM_EMAIL` — адрес на подтверждённом домене, например `EventTown <noreply@домен>`.
-- Проверка с сервера: `python manage.py sendtestemail you@example.com`.
+Письма уходят с ящика **fastevent.123@gmail.com** через SMTP Gmail.
+
+1. В аккаунте Google включить двухэтапную проверку.
+2. Создать пароль приложения: https://myaccount.google.com/apppasswords (16 символов).
+3. В `.env.local` на сервере:
+   ```
+   EMAIL_HOST_USER=fastevent.123@gmail.com
+   EMAIL_HOST_PASSWORD=<пароль приложения>
+   DEFAULT_FROM_EMAIL=EventTown <fastevent.123@gmail.com>
+   ```
+   Эти настройки важнее Resend/Brevo: старые ключи можно оставить, они просто не используются.
+4. `sudo systemctl restart fe` и проверка: `python manage.py sendtestemail you@example.com`.
+
+Лимит Gmail — около 500 писем в сутки. Для массовых рассылок позже лучше перейти на Resend/Brevo
+со своим доменом (SPF/DKIM), настройки для них остались.
 
 ## 5. nginx
 
