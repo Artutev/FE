@@ -28,7 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------- Map ----------
     const DEFAULT_CENTER = lang === 'cs' ? [50.0755, 14.4378] : [43.2389, 76.8897];
     const map = L.map(mapDiv, { scrollWheelZoom: false, zoomControl: true }).setView(DEFAULT_CENTER, 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // OSM требует Referer с адресом сайта, иначе отдаёт 403 «Access blocked»
+            referrerPolicy: 'strict-origin-when-cross-origin',
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map);

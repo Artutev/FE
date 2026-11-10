@@ -41,6 +41,8 @@ def _env_list(name, default=''):
 
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', '127.0.0.1,localhost')
 CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+# Send only our origin to other sites (OpenStreetMap tiles require a Referer, otherwise 403)
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 
 # Application definition
