@@ -174,14 +174,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'Users.User'
 
 # Email settings.
-# Priority: own SMTP mailbox (EMAIL_HOST_USER + EMAIL_HOST_PASSWORD, e.g. Gmail with an app password)
-# -> Resend -> Brevo -> console (local development, emails are printed to the terminal).
+# Priority: Gmail API over HTTPS (GMAIL_* — works where SMTP login to Gmail is blocked, e.g. cloud IPs)
+# -> own SMTP mailbox (EMAIL_HOST_USER + EMAIL_HOST_PASSWORD) -> Resend -> Brevo
+# -> console (local development, emails are printed to the terminal).
+GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
+GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
+GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')
+GMAIL_SENDER = os.getenv('GMAIL_SENDER', '')
 _smtp_user = os.getenv('EMAIL_HOST_USER', '')
 _smtp_password = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '15'))
-if _smtp_user and _smtp_password:
+if GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET and GMAIL_REFRESH_TOKEN:
+    EMAIL_BACKEND = 'Users.gmail_backend.GmailAPIBackend'
+    EMAIL_HOST = ''
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
+elif _smtp_user and _smtp_password:
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
     EMAIL_HOST = os.getenv('EMAIL_HOST') or ('smtp.gmail.com' if _smtp_user.endswith('@gmail.com') else '')
     EMAIL_HOST_USER = _smtp_user
@@ -202,8 +212,9 @@ else:
     EMAIL_HOST_USER = ''
     EMAIL_HOST_PASSWORD = ''
 
+_sender = GMAIL_SENDER or _smtp_user
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL') or (
-    f'EventTown <{_smtp_user}>' if _smtp_user else 'noreply@example.com'
+    f'EventTown <{_sender}>' if _sender else 'noreply@example.com'
 )
 # Address shown on the About page (plain email, without the display name)
 CONTACT_EMAIL = os.getenv('CONTACT_EMAIL') or parseaddr(DEFAULT_FROM_EMAIL)[1]

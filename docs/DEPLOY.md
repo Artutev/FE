@@ -62,23 +62,24 @@ sudo systemctl restart <gunicorn-service>
 
 Проверить без отправки: `python manage.py send_event_reminders --dry-run`.
 
-## 4. Почта
+## 4. Почта (Gmail API)
 
-Письма уходят с ящика **fastevent.123@gmail.com** через SMTP Gmail.
+SMTP-вход в Gmail с облачного IP сервера блокируется, поэтому письма от **fastevent.123@gmail.com**
+отправляются через **Gmail API** по HTTPS (`Users/gmail_backend.py`).
 
-1. В аккаунте Google включить двухэтапную проверку.
-2. Создать пароль приложения: https://myaccount.google.com/apppasswords (16 символов).
-3. В `.env.local` на сервере:
-   ```
-   EMAIL_HOST_USER=fastevent.123@gmail.com
-   EMAIL_HOST_PASSWORD=<пароль приложения>
-   DEFAULT_FROM_EMAIL=EventTown <fastevent.123@gmail.com>
-   ```
-   Эти настройки важнее Resend/Brevo: старые ключи можно оставить, они просто не используются.
-4. `sudo systemctl restart fe` и проверка: `python manage.py sendtestemail you@example.com`.
+Разовая настройка:
+1. https://console.cloud.google.com/ под fastevent.123@gmail.com → создать проект `EventTown`.
+2. Включить Gmail API: https://console.cloud.google.com/apis/library/gmail.googleapis.com
+3. Google Auth Platform → Branding: название `EventTown`, почта поддержки; Audience: External,
+   затем **Publish app** (статус «In production» — иначе refresh token умирает через 7 дней).
+4. Clients → Create client → тип **Desktop app** → скачать JSON.
+5. На своём компьютере: `python manage.py gmail_authorize --client-file путь\к\client_secret.json`,
+   войти под fastevent.123@gmail.com, «Дополнительно → Перейти на сайт EventTown» → «Разрешить».
+6. Команда напечатает строки `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_SENDER`
+   — добавить их в `/home/ubuntu/FE/.env.local`, затем `sudo systemctl restart fe`.
 
-Лимит Gmail — около 500 писем в сутки. Для массовых рассылок позже лучше перейти на Resend/Brevo
-со своим доменом (SPF/DKIM), настройки для них остались.
+Gmail API важнее остальных способов (SMTP/Resend/Brevo). Лимит ~500 писем в сутки.
+Проверка: `python manage.py sendtestemail you@example.com`.
 
 ## 5. nginx
 
