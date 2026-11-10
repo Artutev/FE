@@ -14,7 +14,7 @@ from Events import card_designs
 from Users.models import FriendRequest
 from Users.i18n import get_language, tr
 from Events import invites, notifications
-from Users.emails import send_bulk
+from Users.emails import in_background, send_bulk
 
 def _has_access(request, event):
     """Приватное событие доступно только создателю или по ссылке с токеном."""
@@ -45,7 +45,7 @@ def create_event(request):
             # Автоматически регистрируем создателя на своё событие
             from Events.models import EventRegistration
             EventRegistration.objects.get_or_create(user=request.user, event=event)
-            notifications.notify_created(event, request=request)
+            in_background(notifications.notify_created, event, request=request)
             request.session['card_prompt'] = event.id
 
             messages.success(request, tr(language, 'Мероприятие создано.', 'Event created.'))
@@ -217,7 +217,7 @@ def edit_event(request, event_id):
             if 'date' in changed or 'time' in changed:
                 event.reminder_sent = False
             event.save()
-            notifications.notify_updated(event, before, changed, request=request)
+            in_background(notifications.notify_updated, event, before, changed, request=request)
             messages.success(request, tr(language, 'Изменения сохранены.', 'Event updated.'))
             return redirect('Events:event_detail', event_id=event.id)
     else:
@@ -233,7 +233,7 @@ def delete_event(request, event_id):
     if request.method == 'POST':
         cancel_messages = notifications.collect_cancel_messages(event, request=request)
         event.delete()
-        send_bulk(cancel_messages)
+        in_background(send_bulk, cancel_messages)
         messages.success(request, tr(get_language(request), 'Мероприятие удалено.', 'Event deleted.'))
         return redirect('Users:profile')
     context = {'event': event}
@@ -260,7 +260,7 @@ def register_event(request, event_id):
     from Events.models import EventRegistration
     _registration, created = EventRegistration.objects.get_or_create(user=request.user, event=event)
     if created:
-        notifications.notify_registered(event, request.user, request=request)
+        in_background(notifications.notify_registered, event, request.user, request=request)
     return _detail_redirect(event)
 
 

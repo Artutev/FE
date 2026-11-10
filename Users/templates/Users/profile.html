@@ -18,7 +18,7 @@
                     <img class="photo-preview" alt="">
                     <span class="pf-avatar-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
                 </label>
-                <input type="file" name="avatar" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="photo-input visually-hidden" data-autosubmit aria-label="{% lang "Сменить фото" "Change photo" %}">
+                <input type="file" name="avatar" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="photo-input visually-hidden" data-autosubmit data-max-side="1000" aria-label="{% lang "Сменить фото" "Change photo" %}">
                 {% if user.avatar %}<button type="submit" name="remove_avatar" value="1" class="pf-avatar-remove">{% lang "Убрать фото" "Remove photo" %}</button>{% endif %}
             </form>
             <div class="pf-id">
@@ -216,7 +216,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/photo-input.js' %}?v=1"></script>
+    <script src="{% static 'js/photo-input.js' %}?v=2"></script>
     <script src="{% static 'js/calendar.js' %}?v=4"></script>
     <script src="{% static 'js/profile.js' %}?v=3"></script>
 {% endblock %}

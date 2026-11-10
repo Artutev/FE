@@ -176,3 +176,29 @@ class EventNotificationTests(TestCase):
 
         call_command('send_event_reminders', stdout=StringIO())
         self.assertEqual(len(mail.outbox), 2)  # no duplicates
+
+
+class BackgroundEmailTests(TestCase):
+    def test_in_background_runs_after_commit_in_a_thread(self):
+        import threading
+        from django.test import override_settings
+        from Users.emails import in_background
+
+        done = threading.Event()
+        seen = {}
+
+        def task(value):
+            seen['value'] = value
+            seen['thread'] = threading.current_thread().name
+            done.set()
+
+        with override_settings(EMAIL_ASYNC=True):
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertIsNone(in_background(task, 42))
+                self.assertFalse(done.is_set())  # до коммита ничего не уходит
+        self.assertTrue(done.wait(5))
+        self.assertEqual(seen, {'value': 42, 'thread': 'email'})
+
+    def test_sync_when_disabled(self):
+        from Users.emails import in_background
+        self.assertEqual(in_background(lambda x: x * 2, 21), 42)

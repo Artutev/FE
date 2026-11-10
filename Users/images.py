@@ -57,7 +57,7 @@ def process_image(uploaded, kind, language='ru'):
         image.thumbnail((max_w, max_h), Image.LANCZOS)
 
     out = io.BytesIO()
-    image.save(out, 'WEBP', quality=82, method=6)  # без exif — метаданные не сохраняются
+    image.save(out, 'WEBP', quality=82, method=4)  # без exif; method=4 вместо 6 — заметно быстрее, размер почти тот же
     return ContentFile(out.getvalue(), name=f'{uuid.uuid4().hex}.webp')
 
 

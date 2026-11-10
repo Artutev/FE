@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from email.utils import parseaddr
 
 LOCAL_ENV_FILE = Path(__file__).resolve().parent.parent / '.env.local'
@@ -223,6 +224,9 @@ _smtp_password = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '15'))
+# Письма-уведомления уходят в фоне, чтобы страница не ждала почтовый сервер.
+# В тестах — синхронно (mail.outbox проверяется сразу после запроса).
+EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'True').lower() == 'true' and sys.argv[1:2] != ['test']
 if GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET and GMAIL_REFRESH_TOKEN:
     EMAIL_BACKEND = 'Users.gmail_backend.GmailAPIBackend'
     EMAIL_HOST = ''

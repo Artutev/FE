@@ -1346,6 +1346,7 @@ html.dark-mode .ecard--other      { --cv-bg: #231E33; --cv-fg: #C9C5D8; }
 }
 
 .photo-drop:hover { border-color: var(--primary); }
+.photo-drop.is-processing { opacity: 0.6; pointer-events: none; cursor: progress; }
 
 .photo-drop--cover { aspect-ratio: 16 / 7; }
 

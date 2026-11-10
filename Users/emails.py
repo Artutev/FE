@@ -5,9 +5,11 @@ emails/base.html) и <name>.txt (текстовая версия). Тема пе
 переводится через Users.i18n, как и строки в шаблонах ({% lang %}).
 """
 import logging
+import threading
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
+from django.db import connections, transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import translation
@@ -82,3 +84,24 @@ def send_bulk(messages):
     except Exception:
         logger.exception('Bulk email (%s messages) failed', len(messages))
         return 0
+
+
+def in_background(func, *args, **kwargs):
+    """Выполнить отправку писем в фоновом потоке после коммита транзакции.
+
+    Пользователь не ждёт Gmail/SMTP (это секунды). Ошибки только пишутся в журнал.
+    При EMAIL_ASYNC=False (тесты) — выполняется сразу, синхронно.
+    """
+    if not getattr(settings, 'EMAIL_ASYNC', False):
+        return func(*args, **kwargs)
+
+    def run():
+        try:
+            func(*args, **kwargs)
+        except Exception:
+            logger.exception('Background email task %s failed', getattr(func, '__name__', func))
+        finally:
+            connections.close_all()
+
+    transaction.on_commit(lambda: threading.Thread(target=run, daemon=True, name='email').start())
+    return None
