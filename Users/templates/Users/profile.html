@@ -3,7 +3,7 @@
 
 {% block title %}{% lang "Профиль | EventTown" "Profile | EventTown" %}{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=4">
     <link rel="stylesheet" href="{% static 'css/calendar-new.css' %}?v=3">
 {% endblock %}
 
@@ -11,7 +11,16 @@
 <section class="page-section">
     <div class="container">
         <header class="pf-head">
-            <span class="pf-avatar" aria-hidden="true">{{ user.username|slice:":1"|upper }}</span>
+            <form method="post" action="{% url 'Users:update_avatar' %}" enctype="multipart/form-data" class="pf-avatar-form">
+                {% csrf_token %}
+                <label class="pf-avatar-edit photo-drop" for="avatarInput" title="{% lang "Сменить фото" "Change photo" %}">
+                    {% include "Users/_avatar.html" with u=user size="lg" %}
+                    <img class="photo-preview" alt="">
+                    <span class="pf-avatar-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+                </label>
+                <input type="file" name="avatar" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="photo-input visually-hidden" data-autosubmit aria-label="{% lang "Сменить фото" "Change photo" %}">
+                {% if user.avatar %}<button type="submit" name="remove_avatar" value="1" class="pf-avatar-remove">{% lang "Убрать фото" "Remove photo" %}</button>{% endif %}
+            </form>
             <div class="pf-id">
                 <h1>{{ user.username }}</h1>
                 <p class="muted-text">{{ user.email }}{% if user.is_profile_private %} · {% lang "Закрытый профиль" "Private profile" %}{% endif %}</p>
@@ -105,7 +114,7 @@
                         {% for friend_request in incoming_friend_requests %}
                             <li>
                                 <a href="{% url 'Users:public_profile' friend_request.from_user.username %}" class="pf-person">
-                                    <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend_request.from_user.username|slice:":1"|upper }}</span>{{ friend_request.from_user.username }}
+                                    {% include "Users/_avatar.html" with u=friend_request.from_user size="sm" %}{{ friend_request.from_user.username }}
                                 </a>
                                 <div class="pf-person-actions">
                                     <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">{% lang "Принять" "Accept" %}</button></form>
@@ -127,7 +136,7 @@
                             {% for friend in friends %}
                                 <li>
                                     <a href="{% url 'Users:public_profile' friend.username %}" class="pf-person">
-                                        <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend.username|slice:":1"|upper }}</span>{{ friend.username }}
+                                        {% include "Users/_avatar.html" with u=friend size="sm" %}{{ friend.username }}
                                     </a>
                                     <form method="post" action="{% url 'Users:remove_friend' friend.id %}">
                                         {% csrf_token %}
@@ -201,6 +210,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static 'js/photo-input.js' %}?v=1"></script>
     <script src="{% static 'js/calendar.js' %}?v=4"></script>
     <script src="{% static 'js/profile.js' %}?v=3"></script>
 {% endblock %}

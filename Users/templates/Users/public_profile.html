@@ -3,14 +3,14 @@
 
 {% block title %}{{ profile_user.username }} | EventTown{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="container pp-container">
         <header class="pf-head">
-            <span class="pf-avatar" aria-hidden="true">{{ profile_user.username|slice:":1"|upper }}</span>
+            {% include "Users/_avatar.html" with u=profile_user size="lg" %}
             <div class="pf-id">
                 <h1>{{ profile_user.username }}</h1>
                 <p class="muted-text">{% lang "Профиль пользователя" "User profile" %}</p>

@@ -368,3 +368,57 @@
 
     .pf-grid { grid-template-columns: 1fr; }
 }
+
+/* Avatar upload in the profile header */
+.pf-avatar-form {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.pf-avatar-edit {
+    width: 80px;
+    height: 80px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    overflow: visible;
+}
+
+.pf-avatar-edit .photo-preview { border-radius: 50%; }
+
+.pf-avatar-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+}
+
+.pf-avatar-badge .icon { width: 15px; height: 15px; }
+
+.pf-avatar-edit:hover .pf-avatar-badge { border-color: var(--primary); color: var(--primary-text); }
+
+.pf-avatar-remove {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.pf-avatar-remove:hover { color: var(--danger); }
+
+@media (max-width: 640px) {
+    .pf-avatar-edit { width: 60px; height: 60px; }
+    .pf-avatar-edit .avatar--lg { width: 60px; height: 60px; font-size: 1.5rem; }
+}

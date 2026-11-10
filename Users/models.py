@@ -10,7 +10,7 @@ class User(AbstractUser):
         ('auto', 'Автоматично'),
     )
     
-    # image = models.ImageField(upload_to="users_images", null=True, blank=True)
+    avatar = models.ImageField('Аватар', upload_to='avatars/', blank=True)
     birthDate = models.DateField(null=True, blank=True)
     theme_preference = models.CharField(
         max_length=10,

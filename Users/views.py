@@ -21,6 +21,8 @@ from django.views.decorators.http import require_POST
 from django.utils.http import url_has_allowed_host_and_scheme
 from Users.i18n import SUPPORTED_LANGUAGES, get_language, tr
 from Users.emails import send_email
+from Users.images import process_image, replace_image
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
@@ -334,6 +336,32 @@ def profile(request):
         to_user=request.user, status='pending'
     ).select_related('from_user')
     return render(request, 'Users/profile.html', context)
+
+
+@login_required(login_url='Users:login')
+@require_POST
+def update_avatar(request):
+    language = get_language(request)
+    user = request.user
+    if request.POST.get('remove_avatar'):
+        if user.avatar:
+            replace_image(user, 'avatar', None)
+            user.save(update_fields=['avatar'])
+            messages.success(request, tr(language, 'Фото удалено.', 'Photo removed.'))
+        return redirect('Users:profile')
+    upload = request.FILES.get('avatar')
+    if not upload:
+        messages.error(request, tr(language, 'Выберите фото.', 'Choose a photo.'))
+        return redirect('Users:profile')
+    try:
+        processed = process_image(upload, 'avatar', language)
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0])
+        return redirect('Users:profile')
+    replace_image(user, 'avatar', processed)
+    user.save(update_fields=['avatar'])
+    messages.success(request, tr(language, 'Фото обновлено.', 'Photo updated.'))
+    return redirect('Users:profile')
 
 
 def public_profile(request, username):

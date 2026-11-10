@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 from Events.models import Event, EventType
 from Users.i18n import CS, SUPPORTED_LANGUAGES, tr
+from Users.images import process_image, replace_image
 
 PLACEHOLDERS = {
     'ru': {
@@ -64,6 +65,11 @@ LABELS['cs'] = {key: CS.get(value, value) for key, value in LABELS['en'].items()
 
 
 class EventForm(forms.ModelForm):
+    cover_upload = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/jpeg,image/png,image/webp', 'class': 'photo-input'}),
+    )
+    remove_cover = forms.BooleanField(required=False)
     date = forms.DateField(
         required=True,
         widget=forms.TextInput(
@@ -178,6 +184,23 @@ class EventForm(forms.ModelForm):
         self.fields['wedding_theme'].widget.attrs.update({'placeholder': PLACEHOLDERS[lang]['wedding_theme']})
         self.fields['guest_count'].widget.attrs.update({'placeholder': PLACEHOLDERS[lang]['guest_count']})
         self.fields['description'].widget.attrs.update({'placeholder': PLACEHOLDERS[lang]['description']})
+
+    def clean_cover_upload(self):
+        upload = self.cleaned_data.get('cover_upload')
+        if not upload:
+            return None
+        return process_image(upload, 'cover', self.language)
+
+    def save(self, commit=True):
+        event = super().save(commit=False)
+        new_cover = self.cleaned_data.get('cover_upload')
+        if new_cover is not None:
+            replace_image(event, 'cover', new_cover)
+        elif self.cleaned_data.get('remove_cover') and event.cover:
+            replace_image(event, 'cover', None)
+        if commit:
+            event.save()
+        return event
 
     def clean(self):
         cleaned_data = super().clean()

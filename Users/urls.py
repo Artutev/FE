@@ -3,7 +3,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
 
 from Users.forms import EventTownPasswordResetForm, EventTownSetPasswordForm
-from Users.views import resend_confirmation, login, registration, profile, public_profile, logout, set_language, confirm_email, confirm_email_code, friends, send_friend_request, respond_friend_request, remove_friend
+from Users.views import update_avatar, resend_confirmation, login, registration, profile, public_profile, logout, set_language, confirm_email, confirm_email_code, friends, send_friend_request, respond_friend_request, remove_friend
 
 
 app_name = 'Users'
@@ -30,6 +30,7 @@ urlpatterns = [
         template_name='Users/password_reset_complete.html',
     ), name='password_reset_complete'),
     path('Profile/', profile, name='profile'),
+    path('Profile/avatar/', update_avatar, name='update_avatar'),
     path('User/<str:username>/', public_profile, name='public_profile'),
     path('Friends/', friends, name='friends'),
     path('Friends/add/<int:user_id>/', send_friend_request, name='send_friend_request'),

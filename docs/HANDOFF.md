@@ -34,3 +34,31 @@ python manage.py test        # 25 тестов
 - Свои HTML-письма подтверждения + «Отправить код ещё раз» + сброс пароля.
 - PWA (манифест, иконки), позже REST API под мобильное приложение.
 - Фото-обложки мероприятий (`ImageField`), пагинация афиши, лимит участников.
+
+
+## В работе: ветка `feat/chat-photos` (НЕ выкатывать на прод без команды Шефа)
+
+Шеф попросил: чат на WebSockets (вариант 2) + фото мероприятий и аватары. Только локально.
+
+**Сделано (WIP-коммит):**
+- Зависимости: `channels==4.1.0`, `daphne==4.1.2`, `channels-redis==4.2.0` (в requirements.txt, локально установлены).
+- Settings: `daphne` и `channels` в INSTALLED_APPS, `ASGI_APPLICATION`, `CHANNEL_LAYERS` (Redis при `REDIS_URL`, иначе InMemory), `MEDIA_URL/MEDIA_ROOT`; media отдаётся Django только при DEBUG.
+- Фото: `Users/images.py` (проверка, EXIF transpose + удаление метаданных, WebP, cover 1600x1000, avatar 400x400 crop).
+  Поля `Event.cover`, `User.avatar` (миграции Events.0012_photos, Users.0008_photos, применены локально).
+  Форма события: поле `cover_upload` + `remove_cover`, блок выбора с предпросмотром (`static/js/photo-input.js`).
+  Аватар: view `Users:update_avatar` (POST, загрузка/удаление), в шапке профиля кликабельный аватар.
+  Партиал `Users/_avatar.html` (u=..., size=xs|sm|lg) уже стоит в друзьях, профиле, публичном профиле, странице события.
+- Чат: приложение `Chat` — модели Conversation (direct/event), Membership (last_read_at), Message; миграция Chat.0001;
+  `Chat/services.py` (доступ: личный — только друзья; чат события — участники и организатор; непрочитанные; сериализация).
+
+**Осталось:**
+1. Обложка в карточке `Events/_event_card.html` и в шапке `eventDetail.html` (если `event.cover`, иначе как сейчас).
+2. Аватар в шапке сайта (кнопка «Профиль») — по желанию.
+3. Чат: `Chat/consumers.py` (AsyncJsonWebsocketConsumer: message / typing / read, presence через cache, лимит частоты),
+   `Chat/routing.py` (`ws/chat/<id>/`, `ws/notify/`), `FE/asgi.py` (ProtocolTypeRouter + AuthMiddlewareStack + AllowedHostsOriginValidator).
+4. Чат: views + urls (список чатов `/Chat/`, чат `/Chat/<id>/`, «написать» другу POST `/Chat/with/<username>/`, чат события `/Chat/event/<id>/`,
+   JSON-история `?before=`), шаблоны, JS-клиент (переподключение, «печатает…», в сети), значок непрочитанных в шапке и нижней панели.
+5. Кнопки «Написать» у друзей и «Чат участников» на странице события.
+6. Переводы CS (скрипт: проверка покрытия как в Users/tests.py), тесты (Channels WebsocketCommunicator), проверка в браузере.
+7. Для будущего деплоя (не сейчас): Redis на сервере, запуск через daphne/uvicorn вместо gunicorn, nginx `location /ws/` с Upgrade,
+   `location /media/` → MEDIA_ROOT, бэкап media.

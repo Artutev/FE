@@ -75,7 +75,7 @@
                 <h2>{% lang "Кто идёт" "Who's going" %}</h2>
                 <div class="ed-people">
                     <div class="ed-person-row">
-                        <span class="ed-avatar" aria-hidden="true">{% if event.creator %}{{ event.creator.username|slice:":1"|upper }}{% else %}?{% endif %}</span>
+                        {% if event.creator %}{% include "Users/_avatar.html" with u=event.creator %}{% else %}<span class="avatar" aria-hidden="true">?</span>{% endif %}
                         <div>
                             <span class="ed-person-label">{% lang "Организатор" "Organizer" %}</span>
                             {% if event.creator %}
@@ -92,7 +92,7 @@
                                 <div class="ed-friend-list">
                                     {% for registration in registered_friends %}
                                         <a class="ed-friend" href="{% url 'Users:public_profile' registration.user.username %}">
-                                            <span class="ed-avatar ed-avatar--sm" aria-hidden="true">{{ registration.user.username|slice:":1"|upper }}</span>{{ registration.user.username }}
+                                            {% include "Users/_avatar.html" with u=registration.user size="xs" %}{{ registration.user.username }}
                                         </a>
                                     {% endfor %}
                                 </div>

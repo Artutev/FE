@@ -36,7 +36,7 @@ def _detail_redirect(event):
 def create_event(request):
     language = get_language(request)
     if request.method == 'POST':
-        form = EventForm(request.POST, language=language)
+        form = EventForm(request.POST, request.FILES, language=language)
         if form.is_valid():
             event = form.save(commit=False)
             event.creator = request.user
@@ -197,7 +197,7 @@ def edit_event(request, event_id):
 
     if request.method == 'POST':
         before = notifications.snapshot(event)
-        form = EventForm(request.POST, instance=event, language=language)
+        form = EventForm(request.POST, request.FILES, instance=event, language=language)
         if form.is_valid():
             event = form.save(commit=False)
             changed = notifications.changed_fields(before, event)

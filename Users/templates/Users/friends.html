@@ -33,7 +33,7 @@
                 {% for person in users %}
                     <li class="fr-row">
                         <a class="fr-person" href="{% url 'Users:public_profile' person.username %}">
-                            <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ person.username|slice:":1"|upper }}</span>
+                            {% include "Users/_avatar.html" with u=person size="sm" %}
                             <span>{{ person.username }}</span>
                         </a>
                         {% with status=relationship_statuses|get_item:person.id %}
@@ -73,7 +73,7 @@
                 {% for person in friend_users %}
                     <li class="fr-row">
                         <a class="fr-person" href="{% url 'Users:public_profile' person.username %}">
-                            <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ person.username|slice:":1"|upper }}</span>
+                            {% include "Users/_avatar.html" with u=person size="sm" %}
                             <span>{{ person.username }}</span>
                         </a>
                         <form method="post" action="{% url 'Users:remove_friend' person.id %}">
@@ -93,7 +93,7 @@
                     <li class="fr-row">
                         {% if friend_request.to_user_id == request.user.id %}
                             <a class="fr-person" href="{% url 'Users:public_profile' friend_request.from_user.username %}">
-                                <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend_request.from_user.username|slice:":1"|upper }}</span>
+                                {% include "Users/_avatar.html" with u=friend_request.from_user size="sm" %}
                                 <span>{{ friend_request.from_user.username }} <em class="fr-dir">→ {% lang "вам" "to you" %}</em></span>
                             </a>
                             {% if friend_request.status == 'pending' %}
@@ -108,7 +108,7 @@
                             {% else %}<span class="fr-status">{% friend_request_status friend_request.status %}</span>{% endif %}
                         {% else %}
                             <a class="fr-person" href="{% url 'Users:public_profile' friend_request.to_user.username %}">
-                                <span class="pf-avatar pf-avatar--sm" aria-hidden="true">{{ friend_request.to_user.username|slice:":1"|upper }}</span>
+                                {% include "Users/_avatar.html" with u=friend_request.to_user size="sm" %}
                                 <span>{{ friend_request.to_user.username }} <em class="fr-dir">← {% lang "от вас" "from you" %}</em></span>
                             </a>
                             <span class="fr-status">{% friend_request_status friend_request.status %}</span>

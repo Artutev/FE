@@ -106,6 +106,7 @@ class Event(models.Model):
 
     is_past = models.BooleanField("Прошедшее", default=False)
     reminder_sent = models.BooleanField("Напоминание отправлено", default=False)
+    cover = models.ImageField("Обложка", upload_to='covers/', blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
