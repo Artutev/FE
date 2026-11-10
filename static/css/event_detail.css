@@ -674,3 +674,96 @@ html.dark-mode .ed-ticket::before { color: #160F2E; }
     border-radius: 3px;
     background: var(--cv-fg);
 }
+
+/* Invite friends */
+.ed-invite { padding: 0 22px 8px; }
+.ed-cta:has(.btn) + .ed-invite { margin-top: -10px; }
+
+.invite-sheet .maps-sheet-head form { margin: 0; }
+
+.invite-form { display: grid; gap: 14px; }
+
+.invite-list {
+    display: grid;
+    max-height: min(52vh, 420px);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.invite-list li + li { border-top: 1px solid var(--border); }
+
+.invite-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.invite-item:hover { background: var(--surface-soft); }
+
+.invite-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.invite-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.invite-check {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border: 2px solid var(--border-strong);
+    border-radius: 7px;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.invite-check svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: var(--on-primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+}
+
+.invite-item input:checked ~ .invite-check { background: var(--primary); border-color: var(--primary); }
+.invite-item input:checked ~ .invite-check svg { opacity: 1; }
+.invite-item input:focus-visible ~ .invite-check { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.invite-item.is-disabled { cursor: default; opacity: 0.65; }
+.invite-item.is-disabled:hover { background: none; }
+
+.invite-tag {
+    flex-shrink: 0;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.invite-tag--going {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+}
+
+.invite-empty { display: grid; gap: 12px; }
+.invite-empty p { margin: 0; color: var(--muted); }

@@ -4,7 +4,7 @@
 {% block title %}{% if conversation.kind == 'event' %}{{ conversation.event.name }}{% else %}{{ peer.username }}{% endif %} | EventTown{% endblock %}
 {% block body_class %}page-chat{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -64,5 +64,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/chat.js' %}?v=3"></script>
+    <script src="{% static 'js/chat.js' %}?v=4"></script>
 {% endblock %}

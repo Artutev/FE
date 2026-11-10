@@ -144,3 +144,22 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} → {self.event.name}"
+
+
+class EventInvite(models.Model):
+    """Приглашение друга на мероприятие (приходит сообщением в личный чат)."""
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='invites')
+    inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_event_invites')
+    invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_invites')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            # один человек получает приглашение на событие один раз, кто бы ни звал
+            models.UniqueConstraint(fields=('event', 'invitee'), name='unique_event_invitee'),
+        ]
+        verbose_name = "Приглашение на событие"
+        verbose_name_plural = "Приглашения на события"
+
+    def __str__(self):
+        return f"{self.inviter} → {self.invitee}: {self.event}"

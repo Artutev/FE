@@ -1,0 +1,16 @@
+{% load language_tags %}{% autoescape off %}{% lang "Мероприятие создано!" "Your event is created!" %}
+
+{{ event.name }}
+{% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
+{% if event.location %}{{ event.location }}
+{% endif %}
+{{ event_url }}
+{% if event.is_private %}
+{% lang "Приватное мероприятие: оно видно только по этой ссылке." "Private event: it's visible only via this link." %}
+{% endif %}
+{% lang "Позовите друзей прямо со страницы мероприятия — кнопка «Пригласить друзей»." "Invite friends right from the event page with the “Invite friends” button." %}
+
+{% lang "Редактировать" "Edit" %}: {{ edit_url }}
+
+— EventTown
+{% endautoescape %}

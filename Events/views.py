@@ -12,7 +12,7 @@ from Events.models import Event, EventType
 from Events.forms import EventForm
 from Users.models import FriendRequest
 from Users.i18n import get_language, tr
-from Events import notifications
+from Events import invites, notifications
 from Users.emails import send_bulk
 
 def _has_access(request, event):
@@ -44,6 +44,7 @@ def create_event(request):
             # Автоматически регистрируем создателя на своё событие
             from Events.models import EventRegistration
             EventRegistration.objects.get_or_create(user=request.user, event=event)
+            notifications.notify_created(event, request=request)
 
             messages.success(request, tr(language, 'Мероприятие создано.', 'Event created.'))
             redirect_url = reverse('Events:event_detail', args=[event.id])
@@ -149,8 +150,11 @@ def event_detail(request, event_id):
         elif token == event.access_token:
             token_param = f'?token={token}'
 
+    can_invite = invites.can_invite(request.user, event, True)
     context = {
         'event': event,
+        'can_invite': can_invite,
+        'invite_friends': invites.invite_candidates(request.user, event) if can_invite else [],
         'is_registered': is_registered,
         'registration_count': registration_count,
         'registered_friends': registered_friends,
@@ -248,6 +252,31 @@ def register_event(request, event_id):
     _registration, created = EventRegistration.objects.get_or_create(user=request.user, event=event)
     if created:
         notifications.notify_registered(event, request.user, request=request)
+    return _detail_redirect(event)
+
+
+@login_required(login_url='Users:login')
+@require_POST
+def invite_friends(request, event_id):
+    """Позвать выбранных друзей: каждому придёт приглашение со ссылкой в личный чат."""
+    event = get_object_or_404(Event, id=event_id)
+    if not _has_access(request, event):
+        raise Http404()
+    language = get_language(request)
+    if not invites.can_invite(request.user, event, True):
+        messages.error(request, tr(language, 'Приглашать на прошедшее мероприятие нельзя.', "You can't invite people to a past event."))
+        return _detail_redirect(event)
+    ids = []
+    for raw in request.POST.getlist('friends'):
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    sent = invites.send_invites(request.user, event, ids, request, language)
+    if sent:
+        messages.success(request, tr(language, 'Приглашения отправлены: ', 'Invitations sent: ') + str(sent))
+    else:
+        messages.info(request, tr(language, 'Выберите друзей, которых ещё не приглашали.', "Pick friends you haven't invited yet."))
     return _detail_redirect(event)
 
 

@@ -1,0 +1,64 @@
+{% load language_tags %}
+<dialog class="maps-sheet invite-sheet" id="inviteSheet" aria-labelledby="inviteSheetTitle">
+    <div class="maps-sheet-inner">
+        <header class="maps-sheet-head">
+            <div>
+                <h2 id="inviteSheetTitle">{% lang "Пригласить друзей" "Invite friends" %}</h2>
+                <p>{% lang "Каждому придёт приглашение со ссылкой в личные сообщения." "Each friend gets an invitation with a link in direct messages." %}</p>
+            </div>
+            <form method="dialog"><button type="submit" class="icon-btn" aria-label="{% lang "Закрыть" "Close" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        </header>
+        {% if invite_friends %}
+            <form method="post" action="{% url 'Events:invite_friends' event.id %}{{ token_param }}" class="invite-form" id="inviteForm">
+                {% csrf_token %}
+                <ul class="invite-list">
+                    {% for friend in invite_friends %}
+                        <li>
+                            <label class="invite-item{% if friend.invite_status %} is-disabled{% endif %}">
+                                <input type="checkbox" name="friends" value="{{ friend.pk }}"{% if friend.invite_status %} disabled{% endif %}>
+                                {% include "Users/_avatar.html" with u=friend size="sm" %}
+                                <span class="invite-name">{{ friend.username }}</span>
+                                {% if friend.invite_status == 'going' %}
+                                    <span class="invite-tag invite-tag--going">{% lang "Идёт" "Going" %}</span>
+                                {% elif friend.invite_status == 'invited' %}
+                                    <span class="invite-tag">{% lang "Приглашён" "Invited" %}</span>
+                                {% else %}
+                                    <span class="invite-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                                {% endif %}
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <button type="submit" class="btn btn-primary btn-block" id="inviteSubmit" disabled data-label="{% lang "Пригласить" "Invite" %}">{% lang "Пригласить" "Invite" %}</button>
+            </form>
+        {% else %}
+            <div class="invite-empty">
+                <p>{% lang "У вас пока нет друзей, которых можно позвать." "You don't have friends to invite yet." %}</p>
+                <a href="{% url 'Users:friends' %}?tab=find" class="btn btn-secondary btn-block">{% lang "Найти друзей" "Find friends" %}</a>
+            </div>
+        {% endif %}
+    </div>
+</dialog>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sheet = document.getElementById('inviteSheet');
+        if (!sheet) return;
+        document.querySelectorAll('[data-open-invite]').forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                if (typeof sheet.showModal === 'function') sheet.showModal();
+                else sheet.setAttribute('open', '');
+            });
+        });
+        sheet.addEventListener('click', (event) => { if (event.target === sheet) sheet.close(); });
+        const form = document.getElementById('inviteForm');
+        const submit = document.getElementById('inviteSubmit');
+        if (!form || !submit) return;
+        const update = () => {
+            const count = form.querySelectorAll('input[name="friends"]:checked').length;
+            submit.disabled = count === 0;
+            submit.textContent = count ? `${submit.dataset.label} (${count})` : submit.dataset.label;
+        };
+        form.addEventListener('change', update);
+        form.addEventListener('submit', () => { submit.disabled = true; });
+    });
+</script>

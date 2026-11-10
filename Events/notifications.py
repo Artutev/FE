@@ -71,6 +71,27 @@ def notify_registered(event, user, request=None):
     )
 
 
+def notify_created(event, request=None):
+    """Письмо организатору: мероприятие создано (с приватной ссылкой, если оно приватное)."""
+    user = event.creator
+    if not user or not user.email or not user.email_notifications:
+        return False
+    edit_path = reverse('Events:edit_event', args=[event.id])
+    return send_email(
+        to=user.email,
+        template='event_created',
+        subject=('Мероприятие создано: ', 'Event created: ', event.name),
+        context={
+            'event': event,
+            'event_url': _event_url(event, request),
+            'calendar_url': _calendar_url(event, request),
+            'edit_url': request.build_absolute_uri(edit_path) if request else absolute_url(edit_path),
+        },
+        language=user_language(user),
+        fail_silently=True,
+    )
+
+
 def notify_updated(event, before, fields, request=None):
     if not fields:
         return 0

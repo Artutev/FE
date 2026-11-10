@@ -1,0 +1,21 @@
+{% extends "emails/ticket_base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Мероприятие опубликовано — пригласите друзей." "Your event is live — invite your friends." %}{% endblock %}
+{% block kicker %}{% lang "Вы организатор" "You're the organizer" %}{% endblock %}
+{% block intro %}
+<tr><td style="padding:0 6px 16px;">
+  <div style="font-size:22px;font-weight:800;line-height:28px;">{% lang "Мероприятие создано!" "Your event is created!" %}</div>
+  <div style="font-size:15px;line-height:22px;color:#3B3550;margin-top:4px;">{% lang "Всё готово. Позовите друзей прямо со страницы мероприятия — кнопка «Пригласить друзей»." "All set. Invite friends right from the event page with the “Invite friends” button." %}</div>
+</td></tr>
+{% endblock %}
+{% block after_details %}
+{% if event.is_private %}
+<tr><td style="padding:14px 24px 4px;">
+  <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Приватное мероприятие" "Private event" %}</div>
+  <div style="font-size:14px;line-height:20px;margin-top:3px;color:#3B3550;">{% lang "Оно видно только по этой ссылке:" "It's visible only via this link:" %}<br><a href="{{ event_url }}" style="color:#6D28D9;word-break:break-all;">{{ event_url }}</a></div>
+</td></tr>
+{% endif %}
+{% endblock %}
+{% block actions %}{% lang "Открыть мероприятие" "Open event" as primary_label %}{% include "emails/_ticket_buttons.html" %}{% endblock %}
+{% block after %}
+<tr><td align="center" style="padding:14px 8px 0;font-size:13px;line-height:19px;color:#6B6880;">{% lang "Нужно что-то поправить?" "Need to change something?" %} <a href="{{ edit_url }}" style="color:#6D28D9;font-weight:600;text-decoration:none;">{% lang "Редактировать" "Edit" %}</a></td></tr>
+{% endblock %}

@@ -109,6 +109,27 @@
         return el;
     }
 
+    // Текст сообщения: только текстовые узлы и <a> для http(s)-ссылок — никакого HTML от пользователей
+    const URL_RE = /https?:\/\/[^\s<>"]+/g;
+    function fillText(el, value) {
+        const textValue = value || '';
+        let last = 0;
+        for (const match of textValue.matchAll(URL_RE)) {
+            const url = match[0].replace(/[.,!?;:)»]+$/, '');
+            let parsed;
+            try { parsed = new URL(url); } catch (error) { continue; } // не ссылка — останется текстом
+            if (match.index > last) el.appendChild(document.createTextNode(textValue.slice(last, match.index)));
+            const link = document.createElement('a');
+            link.href = parsed.href;
+            link.textContent = url;
+            link.rel = 'noopener noreferrer';
+            if (parsed.origin !== location.origin) link.target = '_blank';
+            el.appendChild(link);
+            last = match.index + url.length;
+        }
+        if (last < textValue.length) el.appendChild(document.createTextNode(textValue.slice(last)));
+    }
+
     function bubble(message, pending) {
         const mine = message.author && message.author.id === me;
         const row = document.createElement('div');
@@ -125,7 +146,7 @@
         }
         const text = document.createElement('span');
         text.className = 'ch-text';
-        text.textContent = message.text; // только textContent — никакого HTML от пользователей
+        fillText(text, message.text);
         body.appendChild(text);
         const meta = document.createElement('span');
         meta.className = 'ch-meta';
