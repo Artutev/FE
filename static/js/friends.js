@@ -21,9 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) return;
                 const html = await response.text();
                 const documentFragment = new DOMParser().parseFromString(html, 'text/html');
-                const nextPanel = documentFragment.querySelector('[data-panel="all"]');
-                const currentPanel = document.querySelector('[data-panel="all"]');
-                if (nextPanel && currentPanel) currentPanel.replaceWith(nextPanel);
+                // заменяем только результаты, чтобы поле поиска не теряло фокус
+                const nextResults = documentFragment.querySelector('[data-results]');
+                const currentResults = document.querySelector('[data-results]');
+                if (nextResults && currentResults) currentResults.replaceWith(nextResults);
             } catch (error) {
                 if (error.name !== 'AbortError') console.error('User search failed:', error);
             }
@@ -58,9 +59,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    tabs.forEach((tab) => tab.addEventListener('click', () => {
-        const selectedTab = tab.dataset.tab;
-        tabs.forEach((item) => item.classList.toggle('is-active', item === tab));
-        panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === selectedTab));
-    }));
+    const showTab = (name) => {
+        tabs.forEach((item) => {
+            const on = item.dataset.tab === name;
+            item.classList.toggle('is-active', on);
+            item.setAttribute('aria-selected', String(on));
+        });
+        panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === name));
+        if (name === 'all' && searchInput && window.matchMedia('(pointer: fine)').matches) searchInput.focus();
+    };
+
+    tabs.forEach((tab) => tab.addEventListener('click', () => showTab(tab.dataset.tab)));
+    document.querySelectorAll('[data-go-tab]').forEach((button) => {
+        button.addEventListener('click', () => showTab(button.dataset.goTab));
+    });
+
+    document.querySelectorAll('form[data-confirm]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+        });
+    });
 });

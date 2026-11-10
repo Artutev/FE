@@ -3,7 +3,7 @@
 
 {% block title %}{% lang "Друзья | EventTown" "Friends | EventTown" %}{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/friends.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/friends.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -16,109 +16,147 @@
             </div>
         </div>
 
-        <form method="get" class="home-search fr-search" id="friendsSearchForm" role="search">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-            <input type="search" name="q" value="{{ query }}" placeholder="{% lang 'Найти пользователя' 'Find a user' %}" aria-label="{% lang 'Найти пользователя' 'Find a user' %}">
-            <button type="submit" class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>{% lang "Найти" "Search" %}</span></button>
-        </form>
-
-        <div class="fr-tabs" role="tablist">
-            <button type="button" class="friends-tab fr-tab is-active" data-tab="all" role="tab">{% lang "Все пользователи" "All users" %}</button>
-            <button type="button" class="friends-tab fr-tab" data-tab="friends" role="tab">{% lang "Мои друзья" "My friends" %} <span class="fr-count">{{ friend_users|length }}</span></button>
-            <button type="button" class="friends-tab fr-tab" data-tab="requests" role="tab">{% lang "Заявки" "Requests" %} <span class="fr-count">{{ friend_requests|length }}</span></button>
-        </div>
-
-        <section class="friends-panel is-active" data-panel="all">
-            <ul class="fr-list">
-                {% for person in users %}
-                    <li class="fr-row">
-                        <a class="fr-person" href="{% url 'Users:public_profile' person.username %}">
-                            {% include "Users/_avatar.html" with u=person size="sm" %}
-                            <span>{{ person.username }}</span>
+        {% if incoming_requests %}
+        <section class="fr-incoming" aria-labelledby="frIncomingTitle">
+            <h2 id="frIncomingTitle">
+                {% lang "Хотят добавить вас в друзья" "Want to be your friend" %}
+                <span class="fr-count fr-count--accent">{{ incoming_requests|length }}</span>
+            </h2>
+            <ul class="fr-incoming-list">
+                {% for friend_request in incoming_requests %}
+                    <li class="fr-incoming-item">
+                        <a class="fr-person" href="{% url 'Users:public_profile' friend_request.from_user.username %}">
+                            {% include "Users/_avatar.html" with u=friend_request.from_user %}
+                            <span class="fr-name">{{ friend_request.from_user.username }}</span>
                         </a>
-                        {% with status=relationship_statuses|get_item:person.id %}
-                            {% if status == 'friend' %}
-                                <span class="fr-status fr-status--ok">{% lang "В друзьях" "Friends" %}</span>
-                            {% elif status == 'sent' %}
-                                <span class="fr-status">{% lang "Заявка отправлена" "Request sent" %}</span>
-                            {% elif status == 'received' %}
-                                <span class="fr-status fr-status--accent">{% lang "Есть входящая заявка" "Incoming request" %}</span>
-                            {% else %}
-                                <form method="post" action="{% url 'Users:send_friend_request' person.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-secondary btn-sm">+ {% lang "Добавить" "Add" %}</button>
-                                </form>
-                            {% endif %}
-                        {% endwith %}
+                        <div class="fr-actions">
+                            <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">
+                                {% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">{% lang "Принять" "Accept" %}</button>
+                            </form>
+                            <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'decline' %}">
+                                {% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm">{% lang "Отклонить" "Decline" %}</button>
+                            </form>
+                        </div>
                     </li>
-                {% empty %}
-                    <li class="fr-empty">{% lang "Пользователи не найдены." "No users found." %}</li>
                 {% endfor %}
             </ul>
-            {% if users_page.paginator.num_pages > 1 %}
-                <nav class="fr-pagination" aria-label="Pagination">
-                    {% if users_page.has_previous %}
-                        <a class="icon-btn" href="?q={{ query|urlencode }}&amp;page={{ users_page.previous_page_number }}" aria-label="Previous page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
-                    {% endif %}
-                    <span>{% lang "Страница" "Page" %} {{ users_page.number }} {% lang "из" "of" %} {{ users_page.paginator.num_pages }}</span>
-                    {% if users_page.has_next %}
-                        <a class="icon-btn" href="?q={{ query|urlencode }}&amp;page={{ users_page.next_page_number }}" aria-label="Next page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-                    {% endif %}
-                </nav>
+        </section>
+        {% endif %}
+
+        <div class="fr-tabs" role="tablist">
+            <button type="button" class="friends-tab fr-tab{% if active_tab == 'friends' %} is-active{% endif %}" data-tab="friends" role="tab">{% lang "Мои друзья" "My friends" %} <span class="fr-count">{{ friend_users|length }}</span></button>
+            <button type="button" class="friends-tab fr-tab{% if active_tab == 'all' %} is-active{% endif %}" data-tab="all" role="tab">{% lang "Найти людей" "Find people" %}</button>
+            <button type="button" class="friends-tab fr-tab{% if active_tab == 'requests' %} is-active{% endif %}" data-tab="requests" role="tab">{% lang "Заявки" "Requests" %}{% if friend_requests %} <span class="fr-count">{{ friend_requests|length }}</span>{% endif %}</button>
+        </div>
+
+        {# ---------- My friends ---------- #}
+        <section class="friends-panel{% if active_tab == 'friends' %} is-active{% endif %}" data-panel="friends">
+            {% if friend_users %}
+                <ul class="fr-grid">
+                    {% for person in friend_users %}
+                        <li class="fr-card">
+                            <a class="fr-card-head" href="{% url 'Users:public_profile' person.username %}">
+                                {% include "Users/_avatar.html" with u=person size="md" %}
+                                <span class="fr-name">{{ person.username }}</span>
+                            </a>
+                            {% if person.next_event %}
+                                <a class="fr-going" href="{% url 'Events:event_detail' person.next_event.id %}">
+                                    <span class="fr-going-date"><b>{{ person.next_event.date.day }}</b>{% month_short person.next_event.date %}</span>
+                                    <span class="fr-going-text">
+                                        <small>{% lang "Идёт на" "Going to" %}</small>
+                                        <span>{{ person.next_event.name }}</span>
+                                    </span>
+                                </a>
+                            {% else %}
+                                <p class="fr-going fr-going--none">{% lang "Пока никуда не собирается" "No plans yet" %}</p>
+                            {% endif %}
+                            <div class="fr-card-actions">
+                                <form method="post" action="{% url 'Chat:start_direct' person.username %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Написать" "Send message" %}</button>
+                                </form>
+                                <form method="post" action="{% url 'Users:remove_friend' person.id %}" data-confirm="{% lang 'Удалить из друзей?' 'Remove from friends?' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="icon-btn fr-remove" title="{% lang 'Удалить из друзей' 'Remove from friends' %}" aria-label="{% lang 'Удалить из друзей' 'Remove from friends' %} {{ person.username }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 11h6"/></svg></button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="fr-empty-state">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>
+                    <p>{% lang "У вас пока нет друзей." "You have no friends yet." %}</p>
+                    <button type="button" class="btn btn-primary" data-go-tab="all">{% lang "Найти людей" "Find people" %}</button>
+                </div>
             {% endif %}
         </section>
 
-        <section class="friends-panel" data-panel="friends">
-            <ul class="fr-list">
-                {% for person in friend_users %}
-                    <li class="fr-row">
-                        <a class="fr-person" href="{% url 'Users:public_profile' person.username %}">
-                            {% include "Users/_avatar.html" with u=person size="sm" %}
-                            <span>{{ person.username }}</span>
-                        </a>
-                        <div class="fr-actions">
-                        <form method="post" action="{% url 'Chat:start_direct' person.username %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary btn-sm">{% lang "Написать" "Send message" %}</button>
-                        </form>
-                        <form method="post" action="{% url 'Users:remove_friend' person.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-secondary btn-sm">{% lang "Удалить" "Remove" %}</button>
-                        </form>
-                        </div>
-                    </li>
-                {% empty %}
-                    <li class="fr-empty">{% lang "У вас пока нет друзей." "You have no friends yet." %}</li>
-                {% endfor %}
-            </ul>
+        {# ---------- Find people ---------- #}
+        <section class="friends-panel{% if active_tab == 'all' %} is-active{% endif %}" data-panel="all">
+            <form method="get" class="home-search fr-search" id="friendsSearchForm" role="search">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                <input type="search" name="q" value="{{ query }}" placeholder="{% lang 'Найти пользователя' 'Find a user' %}" aria-label="{% lang 'Найти пользователя' 'Find a user' %}">
+                <button type="submit" class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>{% lang "Найти" "Search" %}</span></button>
+            </form>
+            <div data-results>
+                <ul class="fr-list">
+                    {% for person in users %}
+                        <li class="fr-row">
+                            <a class="fr-person" href="{% url 'Users:public_profile' person.username %}">
+                                {% include "Users/_avatar.html" with u=person %}
+                                <span class="fr-name">{{ person.username }}</span>
+                            </a>
+                            {% with status=relationship_statuses|get_item:person.id %}
+                                {% if status == 'friend' %}
+                                    <span class="fr-status fr-status--ok"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% lang "В друзьях" "Friends" %}</span>
+                                {% elif status == 'sent' %}
+                                    <span class="fr-status">{% lang "Заявка отправлена" "Request sent" %}</span>
+                                {% elif status == 'received' %}
+                                    <span class="fr-status fr-status--accent">{% lang "Есть входящая заявка" "Incoming request" %}</span>
+                                {% else %}
+                                    <form method="post" action="{% url 'Users:send_friend_request' person.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-secondary btn-sm fr-add"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"/></svg>{% lang "Добавить" "Add" %}</button>
+                                    </form>
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                    {% empty %}
+                        <li class="fr-empty">{% lang "Пользователи не найдены." "No users found." %}</li>
+                    {% endfor %}
+                </ul>
+                {% if users_page.paginator.num_pages > 1 %}
+                    <nav class="fr-pagination" aria-label="Pagination">
+                        {% if users_page.has_previous %}
+                            <a class="icon-btn friends-page-arrow" href="?q={{ query|urlencode }}&amp;page={{ users_page.previous_page_number }}" aria-label="Previous page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+                        {% endif %}
+                        <span>{% lang "Страница" "Page" %} {{ users_page.number }} {% lang "из" "of" %} {{ users_page.paginator.num_pages }}</span>
+                        {% if users_page.has_next %}
+                            <a class="icon-btn friends-page-arrow" href="?q={{ query|urlencode }}&amp;page={{ users_page.next_page_number }}" aria-label="Next page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                        {% endif %}
+                    </nav>
+                {% endif %}
+            </div>
         </section>
 
-        <section class="friends-panel" data-panel="requests">
+        {# ---------- Requests history ---------- #}
+        <section class="friends-panel{% if active_tab == 'requests' %} is-active{% endif %}" data-panel="requests">
             <ul class="fr-list">
                 {% for friend_request in friend_requests %}
                     <li class="fr-row">
                         {% if friend_request.to_user_id == request.user.id %}
                             <a class="fr-person" href="{% url 'Users:public_profile' friend_request.from_user.username %}">
-                                {% include "Users/_avatar.html" with u=friend_request.from_user size="sm" %}
-                                <span>{{ friend_request.from_user.username }} <em class="fr-dir">→ {% lang "вам" "to you" %}</em></span>
+                                {% include "Users/_avatar.html" with u=friend_request.from_user %}
+                                <span class="fr-name-wrap"><span class="fr-name">{{ friend_request.from_user.username }}</span><em class="fr-dir">{% lang "заявка вам" "request to you" %}</em></span>
                             </a>
-                            {% if friend_request.status == 'pending' %}
-                                <div class="fr-actions">
-                                    <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'accept' %}">
-                                        {% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">{% lang "Принять" "Accept" %}</button>
-                                    </form>
-                                    <form method="post" action="{% url 'Users:respond_friend_request' friend_request.id 'decline' %}">
-                                        {% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm">{% lang "Отклонить" "Decline" %}</button>
-                                    </form>
-                                </div>
-                            {% else %}<span class="fr-status">{% friend_request_status friend_request.status %}</span>{% endif %}
                         {% else %}
                             <a class="fr-person" href="{% url 'Users:public_profile' friend_request.to_user.username %}">
-                                {% include "Users/_avatar.html" with u=friend_request.to_user size="sm" %}
-                                <span>{{ friend_request.to_user.username }} <em class="fr-dir">← {% lang "от вас" "from you" %}</em></span>
+                                {% include "Users/_avatar.html" with u=friend_request.to_user %}
+                                <span class="fr-name-wrap"><span class="fr-name">{{ friend_request.to_user.username }}</span><em class="fr-dir">{% lang "ваша заявка" "your request" %}</em></span>
                             </a>
-                            <span class="fr-status">{% friend_request_status friend_request.status %}</span>
                         {% endif %}
+                        <span class="fr-status fr-status--{{ friend_request.status }}">{% friend_request_status friend_request.status %}</span>
                     </li>
                 {% empty %}
                     <li class="fr-empty">{% lang "Заявок пока нет." "No requests yet." %}</li>
@@ -128,5 +166,5 @@
     </div>
 </section>
 
-<script src="{% static 'js/friends.js' %}?v=3"></script>
+<script src="{% static 'js/friends.js' %}?v=4"></script>
 {% endblock %}

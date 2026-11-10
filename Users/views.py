@@ -410,18 +410,40 @@ def friends(request):
             relationship_statuses[person.id] = 'none'
     requests = FriendRequest.objects.filter(
         Q(from_user=request.user) | Q(to_user=request.user)
-    ).select_related('from_user', 'to_user')
-    friend_users = User.objects.filter(
+    ).select_related('from_user', 'to_user').order_by('-created_at')
+    incoming = [r for r in requests if r.to_user_id == request.user.id and r.status == 'pending']
+    history = [r for r in requests if r not in incoming]
+    friend_users = list(User.objects.filter(
         Q(sent_friend_requests__to_user=request.user, sent_friend_requests__status='accepted') |
         Q(received_friend_requests__from_user=request.user, received_friend_requests__status='accepted')
-    ).distinct()
+    ).distinct().order_by('username'))
+    # Ближайшее публичное событие каждого друга — «куда идёт»
+    next_events = {}
+    upcoming = (
+        EventRegistration.objects
+        .filter(user__in=friend_users, event__is_private=False, event__date__gte=timezone.localdate())
+        .select_related('event')
+        .order_by('event__date', 'event__time')
+    )
+    for registration in upcoming:
+        next_events.setdefault(registration.user_id, registration.event)
+    for friend in friend_users:
+        friend.next_event = next_events.get(friend.pk)
+    if query or request.GET.get('page') or request.GET.get('tab') == 'find':
+        active_tab = 'all'
+    elif request.GET.get('tab') == 'requests':
+        active_tab = 'requests'
+    else:
+        active_tab = 'friends' if friend_users else 'all'
     return render(request, 'Users/friends.html', {
         'users': users,
         'users_page': users_page,
         'query': query,
-        'friend_requests': requests,
+        'friend_requests': history,
+        'incoming_requests': incoming,
         'friend_users': friend_users,
         'relationship_statuses': relationship_statuses,
+        'active_tab': active_tab,
     })
 
 
