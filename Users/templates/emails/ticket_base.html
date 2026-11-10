@@ -20,14 +20,16 @@
   {% block intro %}{% endblock %}
 
   <!-- Ticket -->
-  <tr><td style="background:#FFFFFF;border:1px solid #E7E5EF;border-radius:18px;padding:0;">
+  <tr><td style="padding:0;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td style="background:{% block header_color %}#7C3AED{% endblock %};border-radius:17px 17px 0 0;padding:22px 24px 20px;color:#FFFFFF;">
+      <tr><td style="background:{% block header_color %}#7C3AED{% endblock %};border-radius:18px 18px 0 0;padding:22px 24px 20px;color:#FFFFFF;">
         <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#E9DDFF;">{% block kicker %}{% endblock %}</div>
         <div style="font-size:24px;line-height:30px;font-weight:800;margin-top:6px;color:#FFFFFF;">{{ event.name }}</div>
         <div style="font-size:14px;margin-top:4px;color:#EDE6FF;">{% event_type_label event.event_type %}</div>
       </td></tr>
 
+      <tr><td style="background:#FFFFFF;border-left:1px solid #E7E5EF;border-right:1px solid #E7E5EF;padding:0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       {% block before_details %}{% endblock %}
 
       <!-- Details -->
@@ -57,18 +59,23 @@
       {% endif %}
 
       {% block after_details %}{% endblock %}
+      <tr><td style="height:18px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      </table>
+      </td></tr>
 
       <!-- Perforation -->
-      <tr><td style="padding:18px 0 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td width="12" style="width:12px;height:22px;background:#F4F2F8;border-radius:0 11px 11px 0;font-size:0;line-height:0;">&nbsp;</td>
-          <td style="border-top:2px dashed #E1DCEC;font-size:0;line-height:0;">&nbsp;</td>
-          <td width="12" style="width:12px;height:22px;background:#F4F2F8;border-radius:11px 0 0 11px;font-size:0;line-height:0;">&nbsp;</td>
+      <tr><td style="padding:0;background:#FFFFFF;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;"><tr>
+          <td width="12" style="width:11px;height:22px;background:#F4F2F8;border:1px solid #E7E5EF;border-left:0;border-radius:0 12px 12px 0;font-size:0;line-height:0;">&nbsp;</td>
+          <td style="height:24px;vertical-align:middle;padding:0 8px;">
+            <div style="height:0;border-top:2px dashed #E1DCEC;font-size:0;line-height:0;">&nbsp;</div>
+          </td>
+          <td width="12" style="width:11px;height:22px;background:#F4F2F8;border:1px solid #E7E5EF;border-right:0;border-radius:12px 0 0 12px;font-size:0;line-height:0;">&nbsp;</td>
         </tr></table>
       </td></tr>
 
       <!-- Actions -->
-      <tr><td align="center" style="padding:6px 24px 24px;">
+      <tr><td align="center" style="background:#FFFFFF;border:1px solid #E7E5EF;border-top:0;border-radius:0 0 18px 18px;padding:12px 24px 24px;">
         {% block actions %}{% endblock %}
       </td></tr>
     </table>
