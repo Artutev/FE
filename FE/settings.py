@@ -103,7 +103,9 @@ if REDIS_URL:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {'hosts': [REDIS_URL]},
+            # channels-redis waits on BZPOPMIN for 5 s; redis-py >= 6 also defaults to a 5 s socket
+            # timeout, so connections drop with TimeoutError. No socket timeout for the channel layer.
+            'CONFIG': {'hosts': [{'address': REDIS_URL, 'socket_timeout': None}]},
         },
     }
     CACHES = {
@@ -254,3 +256,13 @@ CONTACT_EMAIL = os.getenv('CONTACT_EMAIL') or parseaddr(DEFAULT_FROM_EMAIL)[1]
 SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 # Password reset links stay valid for 3 days
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3
+
+# Send server errors (500 tracebacks) to stderr so they show up in `journalctl -u fe` when DEBUG is off
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+    },
+}
