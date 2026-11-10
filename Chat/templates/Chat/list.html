@@ -1,0 +1,76 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% lang "Сообщения | EventTown" "Messages | EventTown" %}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=2">
+{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="container ch-list-wrap">
+        <div class="section-header">
+            <div>
+                <h1>{% lang "Сообщения" "Messages" %}</h1>
+                <p class="section-lead">{% lang "Личные чаты с друзьями и чаты участников мероприятий." "Private chats with friends and chats for event attendees." %}</p>
+            </div>
+        </div>
+
+        {% if conversations %}
+            <ul class="ch-list">
+                {% for c in conversations %}
+                    <li>
+                        <a href="{% url 'Chat:detail' c.id %}" class="ch-row{% if c.unread %} is-unread{% endif %}">
+                            {% if c.kind == 'event' %}
+                                <span class="ch-row-icon ecard--{{ c.event.event_type|default:'other' }}" aria-hidden="true">
+                                    {% if c.event.cover %}<img src="{{ c.event.cover.url }}" alt="">{% else %}{% include "Events/_type_icon.html" with type=c.event.event_type %}{% endif %}
+                                </span>
+                            {% elif c.peer %}
+                                {% include "Users/_avatar.html" with u=c.peer %}
+                            {% endif %}
+                            <span class="ch-row-body">
+                                <span class="ch-row-title">
+                                    {% if c.kind == 'event' %}{{ c.event.name }}{% else %}{{ c.peer.username|default:"—" }}{% endif %}
+                                    {% if c.kind == 'event' %}<em class="ch-tag">{% lang "Мероприятие" "Event" %}</em>{% endif %}
+                                </span>
+                                <span class="ch-row-last">
+                                    {% if c.last_text %}{% if c.last_author_id == user.id %}{% lang "Вы:" "You:" %} {% endif %}{{ c.last_text|truncatechars:80 }}{% else %}<i>{% lang "Пока нет сообщений" "No messages yet" %}</i>{% endif %}
+                                </span>
+                            </span>
+                            <span class="ch-row-meta">
+                                {% if c.last_message_at %}<time datetime="{{ c.last_message_at|date:'c' }}" class="js-reltime">{{ c.last_message_at|date:"d.m H:i" }}</time>{% endif %}
+                                {% if c.unread %}<span class="ch-badge">{{ c.unread }}</span>{% endif %}
+                            </span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty-state">
+                <h3>{% lang "Здесь появятся ваши переписки" "Your conversations will appear here" %}</h3>
+                <p>{% lang "Напишите другу или откройте чат участников на странице мероприятия." "Message a friend or open the attendees chat on an event page." %}</p>
+            </div>
+        {% endif %}
+
+        {% if friends_without_chat %}
+            <h2 class="ch-subtitle">{% lang "Написать другу" "Message a friend" %}</h2>
+            <ul class="ch-friends">
+                {% for friend in friends_without_chat %}
+                    <li>
+                        <form method="post" action="{% url 'Chat:start_direct' friend.username %}">
+                            {% csrf_token %}
+                            <button type="submit" class="ch-friend">
+                                {% include "Users/_avatar.html" with u=friend size="sm" %}
+                                <span>{{ friend.username }}</span>
+                                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% elif not conversations %}
+            <p class="muted-text ch-hint">{% lang "Добавьте друзей, чтобы переписываться:" "Add friends to start chatting:" %} <a href="{% url 'Users:friends' %}">{% lang "Найти друзей" "Find friends" %}</a></p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

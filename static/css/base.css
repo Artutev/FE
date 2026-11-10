@@ -859,6 +859,18 @@ html.dark-mode .ecard--other      { --cv-bg: #231E33; --cv-fg: #C9C5D8; }
     padding: 0 24px;
 }
 
+.ecard-cover.has-cover { height: 150px; }
+
+.ecard-cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ecard-date { z-index: 1; }
+
 .ecard-cover .icon {
     width: 56px;
     height: 56px;
@@ -1419,3 +1431,31 @@ html.dark-mode .ecard--other      { --cv-bg: #231E33; --cv-fg: #C9C5D8; }
 .avatar--xs { width: 24px; height: 24px; font-size: 0.7rem; }
 .avatar--sm { width: 32px; height: 32px; font-size: 0.85rem; }
 .avatar--lg { width: 80px; height: 80px; font-size: 2rem; background: var(--primary); color: var(--on-primary); }
+
+/* Header / bottom-nav unread badge */
+.nav-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: 1px;
+}
+
+.nav-badge[hidden] { display: none; }
+
+.bottom-nav-chat { position: relative; }
+
+.bottom-nav-badge {
+    position: absolute;
+    top: 2px;
+    left: calc(50% + 6px);
+    margin: 0;
+}

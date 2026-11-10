@@ -1,0 +1,183 @@
+from datetime import date, timedelta
+
+from asgiref.sync import async_to_sync
+from channels.routing import URLRouter
+from channels.testing import WebsocketCommunicator
+from django.core.cache import cache
+from django.test import TestCase, TransactionTestCase
+from django.urls import reverse
+
+from Chat import services
+from Chat.models import Conversation, Message
+from Chat.routing import websocket_urlpatterns
+from Events.models import Event, EventRegistration
+from Users.models import FriendRequest, User
+
+
+def make_friends(a, b):
+    FriendRequest.objects.create(from_user=a, to_user=b, status='accepted')
+
+
+class ChatAccessTests(TestCase):
+    def setUp(self):
+        self.ann = User.objects.create_user('ann', 'ann@example.test', 'Pass12345!x')
+        self.bob = User.objects.create_user('bob', 'bob@example.test', 'Pass12345!x')
+        self.eve = User.objects.create_user('eve', 'eve@example.test', 'Pass12345!x')
+        make_friends(self.ann, self.bob)
+
+    def test_start_direct_only_with_friends(self):
+        self.client.force_login(self.ann)
+        response = self.client.post(reverse('Chat:start_direct', args=['bob']))
+        conversation = Conversation.objects.get(kind=Conversation.DIRECT)
+        self.assertRedirects(response, reverse('Chat:detail', args=[conversation.pk]))
+        # повторно — тот же чат
+        self.client.post(reverse('Chat:start_direct', args=['bob']))
+        self.assertEqual(Conversation.objects.count(), 1)
+        # не друг — чат не создаётся
+        self.client.post(reverse('Chat:start_direct', args=['eve']))
+        self.assertEqual(Conversation.objects.count(), 1)
+
+    def test_strangers_cannot_open_chat(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        self.client.force_login(self.eve)
+        self.assertEqual(self.client.get(reverse('Chat:detail', args=[conversation.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse('Chat:older', args=[conversation.pk])).status_code, 404)
+
+    def test_unfriended_can_read_but_not_write(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        FriendRequest.objects.all().delete()
+        self.assertTrue(services.can_read(self.ann, conversation))
+        self.assertFalse(services.can_write(self.ann, conversation))
+
+    def test_event_chat_requires_registration(self):
+        event = Event.objects.create(name='Jazz', date=date.today() + timedelta(days=3), creator=self.ann)
+        self.client.force_login(self.bob)
+        response = self.client.get(reverse('Chat:event', args=[event.pk]))
+        self.assertRedirects(response, reverse('Events:event_detail', args=[event.pk]))
+        EventRegistration.objects.create(user=self.bob, event=event)
+        response = self.client.get(reverse('Chat:event', args=[event.pk]))
+        conversation = Conversation.objects.get(event=event)
+        self.assertRedirects(response, reverse('Chat:detail', args=[conversation.pk]))
+
+    def test_unread_counts_and_mark_read(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        services.create_message(conversation, self.ann, 'привет')
+        services.create_message(conversation, self.ann, 'как дела?')
+        self.assertEqual(services.total_unread(self.bob), 2)
+        self.assertEqual(services.total_unread(self.ann), 0)
+        self.client.force_login(self.bob)
+        self.client.get(reverse('Chat:detail', args=[conversation.pk]))
+        self.assertEqual(services.total_unread(self.bob), 0)
+
+    def test_http_fallback_send_and_history(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        self.client.force_login(self.ann)
+        response = self.client.post(reverse('Chat:send', args=[conversation.pk]), {'text': '  hi <b>there</b>  '})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['message']['text'], 'hi <b>there</b>')
+        for i in range(60):
+            services.create_message(conversation, self.bob, f'm{i}')
+        first_page = self.client.get(reverse('Chat:older', args=[conversation.pk])).json()
+        self.assertEqual(len(first_page['messages']), 50)
+        self.assertTrue(first_page['has_more'])
+        oldest = first_page['messages'][0]['id']
+        rest = self.client.get(reverse('Chat:older', args=[conversation.pk]), {'before': oldest}).json()
+        self.assertEqual(len(rest['messages']), 11)
+        self.assertFalse(rest['has_more'])
+
+    def test_list_page_shows_conversations_and_badge(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        services.create_message(conversation, self.bob, 'yo')
+        self.client.force_login(self.ann)
+        content = self.client.get(reverse('Chat:list')).content.decode()
+        self.assertIn('bob', content)
+        self.assertIn('data-chat-badge', content)
+        self.assertIn('class="ch-badge">1<', content)
+
+
+class ChatWebSocketTests(TransactionTestCase):
+    """Настоящие WebSocket-соединения через in-memory channel layer."""
+
+    def setUp(self):
+        cache.clear()
+        self.ann = User.objects.create_user('ann', 'ann@example.test', 'Pass12345!x')
+        self.bob = User.objects.create_user('bob', 'bob@example.test', 'Pass12345!x')
+        self.eve = User.objects.create_user('eve', 'eve@example.test', 'Pass12345!x')
+        make_friends(self.ann, self.bob)
+        self.conversation = services.get_or_create_direct(self.ann, self.bob)
+
+    def connect(self, user, path):
+        communicator = WebsocketCommunicator(URLRouter(websocket_urlpatterns), path)
+        communicator.scope['user'] = user
+        return communicator
+
+    def test_message_delivery_typing_and_unread(self):
+        async def scenario():
+            path = f'/ws/chat/{self.conversation.pk}/'
+            ann = self.connect(self.ann, path)
+            bob = self.connect(self.bob, path)
+            bob_notify = self.connect(self.bob, '/ws/notify/')
+            self.assertTrue((await ann.connect())[0])
+            self.assertTrue((await bob.connect())[0])
+            self.assertTrue((await bob_notify.connect())[0])
+            self.assertEqual((await bob_notify.receive_json_from())['total'], 0)
+
+            # presence: оба в чате
+            # Боб подключился вторым: его первое событие — присутствие обоих
+            presence = await bob.receive_json_from()
+            self.assertEqual(presence['type'], 'presence')
+            self.assertEqual(sorted(presence['online']), sorted([self.ann.pk, self.bob.pk]))
+
+            await ann.send_json_to({'type': 'typing'})
+            typing = await bob.receive_json_from()
+            self.assertEqual(typing, {'type': 'typing', 'user_id': self.ann.pk, 'username': 'ann'})
+
+            await ann.send_json_to({'type': 'message', 'text': 'Привет!', 'client_id': 'c1'})
+            got = await bob.receive_json_from()
+            while got['type'] != 'message':
+                got = await bob.receive_json_from()
+            self.assertEqual(got['message']['text'], 'Привет!')
+            self.assertEqual(got['client_id'], 'c1')
+            unread = await bob_notify.receive_json_from()
+            self.assertEqual(unread['total'], 1)
+
+            await bob.send_json_to({'type': 'read'})
+            self.assertEqual((await bob_notify.receive_json_from())['total'], 0)
+
+            for c in (ann, bob, bob_notify):
+                await c.disconnect()
+
+        async_to_sync(scenario)()
+        self.assertEqual(Message.objects.filter(conversation=self.conversation).count(), 1)
+
+    def test_stranger_and_anonymous_are_rejected(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        async def scenario():
+            path = f'/ws/chat/{self.conversation.pk}/'
+            for user in (self.eve, AnonymousUser()):
+                communicator = self.connect(user, path)
+                connected, _ = await communicator.connect()
+                self.assertFalse(connected)
+
+        async_to_sync(scenario)()
+
+    def test_rate_limit(self):
+        async def scenario():
+            ann = self.connect(self.ann, f'/ws/chat/{self.conversation.pk}/')
+            await ann.connect()
+            errors = 0
+            kinds = []
+            for i in range(20):
+                await ann.send_json_to({'type': 'message', 'text': f'spam {i}'})
+            while not await ann.receive_nothing(timeout=0.5):
+                event = await ann.receive_json_from()
+                kinds.append(event['type'])
+                if event['type'] == 'error' and event['code'] == 'rate_limited':
+                    errors += 1
+            await ann.disconnect()
+            return errors
+
+        errors = async_to_sync(scenario)()
+        self.assertGreater(errors, 0)
+        self.assertEqual(Message.objects.count(), 15)

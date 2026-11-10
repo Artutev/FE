@@ -378,6 +378,10 @@ def public_profile(request, username):
         'profile_user': profile_user,
         'events': events.order_by('-date', '-time'),
         'is_private': False,
+        'is_friend': request.user.is_authenticated and request.user != profile_user and FriendRequest.objects.filter(
+            Q(from_user=request.user, to_user=profile_user) | Q(from_user=profile_user, to_user=request.user),
+            status='accepted',
+        ).exists(),
     })
 
 

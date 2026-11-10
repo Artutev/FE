@@ -516,3 +516,38 @@
         background: var(--border-strong);
     }
 }
+
+/* Hero with an uploaded cover photo */
+.ed-hero--photo {
+    position: relative;
+    background: #18122B var(--hero-photo) center / cover no-repeat;
+    color: #FFFFFF;
+}
+
+.ed-hero--photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 10, 23, 0.25) 0%, rgba(13, 10, 23, 0.78) 100%);
+}
+
+.ed-hero--photo .ed-hero-inner {
+    position: relative;
+    padding-top: 28px;
+    padding-bottom: 40px;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ed-hero--photo .ed-back,
+.ed-hero--photo .ed-type,
+.ed-hero--photo .ed-title,
+.ed-hero--photo .ed-subtitle { color: #FFFFFF; }
+
+.ed-hero--photo .ed-pill { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; }
+
+@media (max-width: 640px) {
+    .ed-hero--photo .ed-hero-inner { min-height: 260px; }
+}

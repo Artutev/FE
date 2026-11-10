@@ -1,0 +1,67 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% if conversation.kind == 'event' %}{{ conversation.event.name }}{% else %}{{ peer.username }}{% endif %} | EventTown{% endblock %}
+{% block body_class %}page-chat{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=2">
+{% endblock %}
+
+{% block content %}
+<section class="ch-room" id="chatRoom"
+         data-conversation="{{ conversation.id }}"
+         data-me="{{ user.id }}"
+         data-kind="{{ conversation.kind }}"
+         data-older-url="{% url 'Chat:older' conversation.id %}"
+         data-send-url="{% url 'Chat:send' conversation.id %}"
+         data-has-more="{{ has_more|yesno:'1,0' }}">
+    <header class="ch-head">
+        <div class="container ch-head-inner">
+            <a href="{% url 'Chat:list' %}" class="icon-btn" aria-label="{% lang "Все сообщения" "All messages" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+            {% if conversation.kind == 'event' %}
+                <span class="ch-row-icon ecard--{{ conversation.event.event_type|default:'other' }}" aria-hidden="true">
+                    {% if conversation.event.cover %}<img src="{{ conversation.event.cover.url }}" alt="">{% else %}{% include "Events/_type_icon.html" with type=conversation.event.event_type %}{% endif %}
+                </span>
+                <div class="ch-head-text">
+                    <a href="{% url 'Events:event_detail' conversation.event.id %}" class="ch-head-title">{{ conversation.event.name }}</a>
+                    <span class="ch-head-sub"><span id="chatOnline"></span>{% lang "участников в чате:" "people in chat:" %} {{ member_count }}</span>
+                </div>
+            {% else %}
+                {% include "Users/_avatar.html" with u=peer %}
+                <div class="ch-head-text">
+                    <a href="{% url 'Users:public_profile' peer.username %}" class="ch-head-title">{{ peer.username }}</a>
+                    <span class="ch-head-sub" id="chatStatus">{% lang "не в чате" "away" %}</span>
+                </div>
+            {% endif %}
+            <span class="ch-conn" id="chatConn" title="{% lang "Соединение" "Connection" %}"></span>
+        </div>
+    </header>
+
+    <div class="ch-scroll" id="chatScroll">
+        <div class="container ch-feed" id="chatFeed" aria-live="polite">
+            {% if has_more %}<button type="button" class="ch-more" id="chatMore">{% lang "Показать предыдущие" "Show earlier" %}</button>{% endif %}
+        </div>
+    </div>
+
+    <footer class="ch-foot">
+        <div class="container">
+            <div class="ch-typing" id="chatTyping" hidden></div>
+            {% if can_write %}
+                <form class="ch-compose" id="chatForm" autocomplete="off">
+                    <textarea id="chatInput" rows="1" maxlength="{{ max_length }}" placeholder="{% lang "Сообщение…" "Message…" %}" aria-label="{% lang "Сообщение" "Message" %}"></textarea>
+                    <button type="submit" class="ch-send" aria-label="{% lang "Отправить" "Send" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></button>
+                </form>
+            {% else %}
+                <p class="ch-readonly">
+                    {% if conversation.kind == 'direct' %}{% lang "Вы больше не друзья — писать в этот чат нельзя." "You're no longer friends, so you can't write here." %}{% else %}{% lang "Писать в чат могут только участники мероприятия." "Only attendees can write in this chat." %}{% endif %}
+                </p>
+            {% endif %}
+        </div>
+    </footer>
+</section>
+{{ chat_messages_json|json_script:"chatInitial" }}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/chat.js' %}?v=2"></script>
+{% endblock %}

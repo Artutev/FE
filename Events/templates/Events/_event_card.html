@@ -1,7 +1,7 @@
 {% load language_tags %}
 <article class="ecard ecard--{{ event.event_type|default:'other' }}{% if event.has_passed %} ecard--past{% endif %}">
-    <div class="ecard-cover" aria-hidden="true">
-        {% include "Events/_type_icon.html" with type=event.event_type %}
+    <div class="ecard-cover{% if event.cover %} has-cover{% endif %}" aria-hidden="true">
+        {% if event.cover %}<img class="ecard-cover-img" src="{{ event.cover.url }}" alt="" loading="lazy">{% else %}{% include "Events/_type_icon.html" with type=event.event_type %}{% endif %}
         {% if event.date %}
         <div class="ecard-date"><b>{{ event.date.day }}</b><span>{% month_short event.date %}</span></div>
         {% endif %}

@@ -138,6 +138,10 @@
                                     <a href="{% url 'Users:public_profile' friend.username %}" class="pf-person">
                                         {% include "Users/_avatar.html" with u=friend size="sm" %}{{ friend.username }}
                                     </a>
+                                    <form method="post" action="{% url 'Chat:start_direct' friend.username %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="icon-btn" title="{% lang "Написать" "Send message" %}" aria-label="{% lang "Написать" "Send message" %} {{ friend.username }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg></button>
+                                    </form>
                                     <form method="post" action="{% url 'Users:remove_friend' friend.id %}">
                                         {% csrf_token %}
                                         <button type="submit" class="icon-btn" title="{% lang "Удалить" "Remove" %}" aria-label="{% lang "Удалить" "Remove" %} {{ friend.username }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>

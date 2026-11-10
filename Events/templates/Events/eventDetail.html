@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=5">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -13,7 +13,7 @@
 
 {% block content %}
 <article class="ed ecard--{{ event.event_type|default:'other' }}{% if event.has_passed %} ed--past{% endif %}">
-    <header class="ed-hero">
+    <header class="ed-hero{% if event.cover %} ed-hero--photo{% endif %}"{% if event.cover %} style="--hero-photo: url('{{ event.cover.url }}')"{% endif %}>
         <div class="container ed-hero-inner">
             <a href="{% if event.has_passed %}{% url 'Events:event_archive' %}{% else %}{% url 'Events:event_list' %}{% endif %}" class="ed-back">← {% lang "К афише" "Back to events" %}</a>
             <div class="ed-hero-row">
@@ -28,7 +28,7 @@
                         <p class="ed-subtitle">{% if event.bride_name %}{{ event.bride_name }}{% else %}{% lang "Невеста" "Bride" %}{% endif %} &amp; {% if event.groom_name %}{{ event.groom_name }}{% else %}{% lang "Жених" "Groom" %}{% endif %}</p>
                     {% endif %}
                 </div>
-                <div class="ed-hero-icon" aria-hidden="true">{% include "Events/_type_icon.html" with type=event.event_type %}</div>
+                {% if not event.cover %}<div class="ed-hero-icon" aria-hidden="true">{% include "Events/_type_icon.html" with type=event.event_type %}</div>{% endif %}
             </div>
         </div>
     </header>
@@ -165,6 +165,9 @@
                 </div>
 
                 <div class="ed-secondary">
+                    {% if is_registered or user.is_authenticated and user == event.creator %}
+                        <a href="{% url 'Chat:event' event.id %}" class="btn btn-secondary ed-chat-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Чат участников" "Attendees chat" %}</a>
+                    {% endif %}
                     {% if user.is_authenticated and user == event.creator %}
                         <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">{% lang "Редактировать" "Edit" %}</a>
                     {% endif %}

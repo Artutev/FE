@@ -51,14 +51,19 @@ python manage.py test        # 25 тестов
 - Чат: приложение `Chat` — модели Conversation (direct/event), Membership (last_read_at), Message; миграция Chat.0001;
   `Chat/services.py` (доступ: личный — только друзья; чат события — участники и организатор; непрочитанные; сериализация).
 
-**Осталось:**
-1. Обложка в карточке `Events/_event_card.html` и в шапке `eventDetail.html` (если `event.cover`, иначе как сейчас).
-2. Аватар в шапке сайта (кнопка «Профиль») — по желанию.
-3. Чат: `Chat/consumers.py` (AsyncJsonWebsocketConsumer: message / typing / read, presence через cache, лимит частоты),
-   `Chat/routing.py` (`ws/chat/<id>/`, `ws/notify/`), `FE/asgi.py` (ProtocolTypeRouter + AuthMiddlewareStack + AllowedHostsOriginValidator).
-4. Чат: views + urls (список чатов `/Chat/`, чат `/Chat/<id>/`, «написать» другу POST `/Chat/with/<username>/`, чат события `/Chat/event/<id>/`,
-   JSON-история `?before=`), шаблоны, JS-клиент (переподключение, «печатает…», в сети), значок непрочитанных в шапке и нижней панели.
-5. Кнопки «Написать» у друзей и «Чат участников» на странице события.
-6. Переводы CS (скрипт: проверка покрытия как в Users/tests.py), тесты (Channels WebsocketCommunicator), проверка в браузере.
-7. Для будущего деплоя (не сейчас): Redis на сервере, запуск через daphne/uvicorn вместо gunicorn, nginx `location /ws/` с Upgrade,
-   `location /media/` → MEDIA_ROOT, бэкап media.
+**Готово (проверено локально, 62 теста):**
+- Обложки в карточках и шапке страницы события; аватары по всему сайту.
+- Чат на WebSockets: `Chat/consumers.py` (сообщения, «печатает…», кто в чате, прочитано, лимит 15 сообщений / 10 с),
+  `ws/notify/` — живой значок непрочитанных в шапке и нижней панели; HTTP-запасной путь отправки; подгрузка истории.
+- Страницы: `/Chat/` (список + «написать другу»), `/Chat/<id>/`, кнопки «Написать» (друзья, профиль, публичный профиль)
+  и «Чат участников» на странице события.
+- Локальные тестовые пользователи для проверки чата: `.claude/dev_test_users.txt` (в git не попадает).
+
+**Перед выкладкой на прод (когда Шеф скажет):**
+1. Сервер: `sudo apt install redis-server`; в `.env.local` добавить `REDIS_URL=redis://127.0.0.1:6379/0`.
+2. `fe.service`: заменить gunicorn на ASGI — `daphne -b 127.0.0.1 -p 8000 FE.asgi:application`
+   (или `gunicorn -k uvicorn.workers.UvicornWorker FE.asgi:application`).
+3. nginx: `location /ws/ { proxy_pass http://127.0.0.1:8000; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade;
+   proxy_set_header Connection "upgrade"; proxy_set_header Host $host; proxy_read_timeout 1h; }`
+   и `location /media/ { alias /home/ubuntu/FE/media/; }`, `client_max_body_size 6m;`.
+4. `pip install -r requirements.txt`, `migrate` (Events.0012, Users.0008, Chat.0001), `collectstatic`, бэкап `media/`.

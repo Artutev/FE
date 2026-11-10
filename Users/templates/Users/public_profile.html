@@ -15,6 +15,14 @@
                 <h1>{{ profile_user.username }}</h1>
                 <p class="muted-text">{% lang "Профиль пользователя" "User profile" %}</p>
             </div>
+            {% if is_friend %}
+                <div class="pf-head-actions">
+                    <form method="post" action="{% url 'Chat:start_direct' profile_user.username %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Написать" "Send message" %}</button>
+                    </form>
+                </div>
+            {% endif %}
             {% if user == profile_user %}
                 <div class="pf-head-actions">
                     <a href="{% url 'Users:profile' %}" class="btn btn-secondary">{% lang "Изменить" "Edit" %}</a>

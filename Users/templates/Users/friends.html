@@ -76,10 +76,16 @@
                             {% include "Users/_avatar.html" with u=person size="sm" %}
                             <span>{{ person.username }}</span>
                         </a>
+                        <div class="fr-actions">
+                        <form method="post" action="{% url 'Chat:start_direct' person.username %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-sm">{% lang "Написать" "Send message" %}</button>
+                        </form>
                         <form method="post" action="{% url 'Users:remove_friend' person.id %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-secondary btn-sm">{% lang "Удалить" "Remove" %}</button>
                         </form>
+                        </div>
                     </li>
                 {% empty %}
                     <li class="fr-empty">{% lang "У вас пока нет друзей." "You have no friends yet." %}</li>

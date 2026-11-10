@@ -14,7 +14,7 @@
     <script>window.ET_LANG = "{{ current_language }}";</script>
     <script src="{% static 'js/i18n.js' %}?v=3"></script>
     <script src="{% static 'js/theme.js' %}?v=3"></script>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=7">
     <link rel="stylesheet" href="{% static 'css/event_list.css' %}?v=2">
     {% block extra_css %}{% endblock %}
 </head>
@@ -39,6 +39,7 @@
                         <li><a href="{% url 'Events:event_archive' %}"{% if ns == 'Events' and url_name == 'event_archive' %} class="is-active" aria-current="page"{% endif %}>{% lang "Архив" "Archive" %}</a></li>
                         {% if user.is_authenticated %}
                             <li><a href="{% url 'Users:friends' %}"{% if url_name == 'friends' %} class="is-active" aria-current="page"{% endif %}>{% lang "Друзья" "Friends" %}</a></li>
+                            <li><a href="{% url 'Chat:list' %}"{% if ns == 'Chat' %} class="is-active" aria-current="page"{% endif %}>{% lang "Сообщения" "Messages" %}<span class="nav-badge" data-chat-badge{% if not chat_unread %} hidden{% endif %}>{{ chat_unread|default:0 }}</span></a></li>
                         {% endif %}
                         <li><a href="{% url 'about' %}"{% if url_name == 'about' %} class="is-active" aria-current="page"{% endif %}>{% lang "О нас" "About" %}</a></li>
                     </ul>
@@ -164,14 +165,23 @@
 
     {% with url_name=request.resolver_match.url_name ns=request.resolver_match.namespace %}
     <nav class="bottom-nav" aria-label="{% lang "Быстрая навигация" "Quick navigation" %}">
+        {% if not user.is_authenticated %}
         <a href="{% url 'base' %}"{% if url_name == 'base' %} class="is-active" aria-current="page"{% endif %}>
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>
             <span>{% lang "Главная" "Home" %}</span>
         </a>
+        {% endif %}
         <a href="{% url 'Events:event_list' %}"{% if ns == 'Events' and url_name == 'event_list' or ns == 'Events' and url_name == 'event_archive' %} class="is-active" aria-current="page"{% endif %}>
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
             <span>{% lang "Афиша" "Events" %}</span>
         </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'Chat:list' %}" class="bottom-nav-chat{% if ns == 'Chat' %} is-active{% endif %}"{% if ns == 'Chat' %} aria-current="page"{% endif %}>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>
+            <span class="nav-badge bottom-nav-badge" data-chat-badge{% if not chat_unread %} hidden{% endif %}>{{ chat_unread|default:0 }}</span>
+            <span>{% lang "Сообщения" "Messages" %}</span>
+        </a>
+        {% endif %}
         <a href="{% url 'Events:create_event' %}" class="bottom-nav-create" aria-label="{% lang "Создать мероприятие" "Create event" %}">
             <span class="bottom-nav-plus"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
         </a>
@@ -213,6 +223,7 @@
         });
     </script>
     <script src="{% static 'js/menu.js' %}?v=3"></script>
+    {% if user.is_authenticated %}<script src="{% static 'js/chat-notify.js' %}?v=1"></script>{% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>
