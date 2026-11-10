@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from Chat.fields import EncryptedTextField
+
 
 class Conversation(models.Model):
     DIRECT = 'direct'
@@ -46,7 +48,8 @@ class Message(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='chat_messages',
     )
-    text = models.TextField('Текст', max_length=MAX_LENGTH)
+    # В базе хранится зашифрованным (Chat/crypto.py)
+    text = EncryptedTextField('Текст', max_length=MAX_LENGTH)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

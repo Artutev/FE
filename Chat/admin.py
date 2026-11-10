@@ -12,4 +12,5 @@ class ConversationAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'conversation', 'author', 'created_at')
-    search_fields = ('text',)
+    # текст зашифрован в базе — искать можно только по автору
+    search_fields = ('author__username',)

@@ -31,6 +31,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
+# Ключи шифрования сообщений чата в базе (Fernet), через запятую: первый шифрует, остальные только читают.
+# Сгенерировать: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+CHAT_ENCRYPTION_KEYS = [k for k in os.getenv('CHAT_ENCRYPTION_KEYS', '').split(',') if k.strip()]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'

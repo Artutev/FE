@@ -5,10 +5,11 @@ from asgiref.sync import async_to_sync
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.core.cache import cache
+from django.db import connection
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
-from Chat import services
+from Chat import crypto, services
 from Chat.models import Conversation, Message
 from Chat.routing import websocket_urlpatterns
 from Events.models import Event, EventRegistration
@@ -228,3 +229,51 @@ class ChatWebSocketTests(TransactionTestCase):
         errors = async_to_sync(scenario)()
         self.assertGreater(errors, 0)
         self.assertEqual(Message.objects.count(), 15)
+
+
+class MessageEncryptionTests(TestCase):
+    def setUp(self):
+        self.ann = User.objects.create_user('ann', 'ann@example.test', 'Pass12345!x')
+        self.bob = User.objects.create_user('bob', 'bob@example.test', 'Pass12345!x')
+        make_friends(self.ann, self.bob)
+        self.conversation = services.get_or_create_direct(self.ann, self.bob)
+
+    def raw_text(self, message):
+        with connection.cursor() as cursor:
+            cursor.execute(f'SELECT text FROM "{Message._meta.db_table}" WHERE id = %s', [message.pk])
+            return cursor.fetchone()[0]
+
+    def test_text_is_encrypted_in_db_and_plain_in_app(self):
+        message = services.create_message(self.conversation, self.ann, 'Секретная встреча в 19:00')
+        raw = self.raw_text(message)
+        self.assertTrue(crypto.is_encrypted(raw))
+        self.assertNotIn('Секретная', raw)
+        self.assertEqual(Message.objects.get(pk=message.pk).text, 'Секретная встреча в 19:00')
+        # последнее сообщение в списке чатов (Subquery) тоже расшифровано
+        self.assertEqual(services.conversations_for(self.bob)[0].last_text, 'Секретная встреча в 19:00')
+
+    def test_same_text_gives_different_ciphertext(self):
+        a = services.create_message(self.conversation, self.ann, 'привет')
+        b = services.create_message(self.conversation, self.ann, 'привет')
+        self.assertNotEqual(self.raw_text(a), self.raw_text(b))
+
+    def test_text_that_looks_encrypted_is_still_encrypted(self):
+        message = services.create_message(self.conversation, self.ann, 'fernet:hello')
+        self.assertNotEqual(self.raw_text(message), 'fernet:hello')
+        self.assertEqual(Message.objects.get(pk=message.pk).text, 'fernet:hello')
+
+    def test_legacy_plaintext_rows_are_still_readable(self):
+        message = services.create_message(self.conversation, self.ann, 'x')
+        with connection.cursor() as cursor:
+            cursor.execute(f'UPDATE "{Message._meta.db_table}" SET text = %s WHERE id = %s', ['старое', message.pk])
+        self.assertEqual(Message.objects.get(pk=message.pk).text, 'старое')
+
+    def test_key_rotation_keeps_old_messages_readable(self):
+        from cryptography.fernet import Fernet
+        old_key, new_key = Fernet.generate_key().decode(), Fernet.generate_key().decode()
+        with self.settings(CHAT_ENCRYPTION_KEYS=[old_key]):
+            message = services.create_message(self.conversation, self.ann, 'до смены ключа')
+        with self.settings(CHAT_ENCRYPTION_KEYS=[new_key, old_key]):
+            self.assertEqual(Message.objects.get(pk=message.pk).text, 'до смены ключа')
+        with self.settings(CHAT_ENCRYPTION_KEYS=[new_key]):
+            self.assertEqual(Message.objects.get(pk=message.pk).text, '🔒')
