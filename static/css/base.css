@@ -276,6 +276,29 @@ html.dark-mode .theme-toggle .icon-moon { display: none; }
     text-decoration: none;
 }
 
+.nav-pill--create {
+    gap: 6px;
+    padding: 0 14px 0 10px;
+}
+
+.nav-pill--create .icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.4;
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+    .nav-pill--create { padding: 0 9px; }
+    .nav-pill--create .nav-pill-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+}
+
 .nav-pill--ghost {
     background: transparent;
     color: var(--text);

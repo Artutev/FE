@@ -51,7 +51,7 @@ CS = {
     'Sign up': 'Registrace',
 
     # --- Home ---
-    'Find your people. <em>Find your event.</em>': 'Najdi své lidi. <em>Najdi svou akci.</em>',
+    'Find your event. <em>Find your people.</em>': 'Najdi svou akci. <em>Najdi své lidi.</em>',
     'Concerts, meetups, lectures and celebrations — everything nearby, in one place.': 'Koncerty, setkání, přednášky i oslavy — všechno, co se děje kolem vás, na jednom místě.',
     'Name or place': 'Název nebo místo',
     'Search events': 'Hledat akce',
@@ -293,7 +293,7 @@ CS = {
     'Share': 'Sdílet',
     'Everyone attending will see the changes right away.': 'Změny hned uvidí všichni účastníci.',
     'Delete event': 'Smazat akci',
-    'Find your people. Find your event.': 'Najdi své lidi. Najdi svou akci.',
+    'Find your event. Find your people.': 'Najdi svou akci. Najdi své lidi.',
     'Concerts, meetups and lectures nearby': 'Koncerty, setkání a přednášky ve vašem okolí',
     'One-click event sign-up': 'Registrace na akce jedním kliknutím',
     'Friends and a shared calendar': 'Přátelé a společný kalendář',

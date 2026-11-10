@@ -14,7 +14,7 @@
     <script>window.ET_LANG = "{{ current_language }}";</script>
     <script src="{% static 'js/i18n.js' %}?v=3"></script>
     <script src="{% static 'js/theme.js' %}?v=3"></script>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'css/event_list.css' %}?v=2">
     {% block extra_css %}{% endblock %}
 </head>
@@ -63,7 +63,7 @@
 
                     {% if user.is_authenticated %}
                         <a href="{% url 'Users:profile' %}" class="nav-pill nav-pill--ghost">{% lang "Профиль" "Profile" %}</a>
-                        <a href="{% url 'Events:create_event' %}" class="nav-pill">{% lang "Создать" "Create" %}</a>
+                        <a href="{% url 'Events:create_event' %}" class="nav-pill nav-pill--create" title="{% lang "Создать событие" "Create event" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nav-pill-label">{% lang "Создать событие" "Create event" %}</span></a>
                         <form method="post" action="{% url 'Users:logout' %}" class="inline-form">
                             {% csrf_token %}
                             <button type="submit" class="icon-btn" title="{% lang "Выход" "Logout" %}" aria-label="{% lang "Выход" "Logout" %}">
@@ -93,7 +93,7 @@
         {% if is_home %}
         <section class="home-hero">
             <div class="container">
-                <h1>{% lang "Найди своих людей. <em>Найди своё событие.</em>" "Find your people. <em>Find your event.</em>" as hero_title %}{{ hero_title|safe }}</h1>
+                <h1>{% lang "Найди своё событие. <em>Найди своих людей.</em>" "Find your event. <em>Find your people.</em>" as hero_title %}{{ hero_title|safe }}</h1>
                 <p class="section-lead">{% lang "Концерты, встречи, лекции и праздники — всё, что происходит рядом, в одной афише." "Concerts, meetups, lectures and celebrations — everything nearby, in one place." %}</p>
                 <form class="home-search" action="{% url 'Events:event_list' %}" method="get" role="search">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
