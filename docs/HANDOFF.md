@@ -1,6 +1,6 @@
 # Handoff: текущее состояние проекта
 
-Обновлено: 2026-11-09. Django-проект FastEvent / EventTown (приложения `Events`, `Users`, проект `FE`).
+Обновлено: 2026-11-10. Django-проект FastEvent / EventTown (приложения `Events`, `Users`, проект `FE`).
 
 ## Ветка `feat/redesign-violet`
 - **Редизайн** всех страниц: палитра «Виноград» (фиолетовая), шрифт Onest, логотип-билет, светлая/тёмная тема,
@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 25 тестов
+python manage.py test        # 87 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -29,41 +29,47 @@ python manage.py test        # 25 тестов
 - Мероприятия с префиксом `[demo]` и пользователь `demo_ui` — для проверки вёрстки. Удалить:
   `Event.objects.filter(name__startswith='[demo]').delete(); User.objects.filter(username='demo_ui').delete()`.
 
+
+## Ветка `feat/chat-photos` — НА ПРОДЕ (обновлено 2026-11-10)
+
+Прод (`/home/ubuntu/FE`, https://fastevent.duckdns.org) работает на `feat/chat-photos`, последний выкаченный коммит `12ce9ad`.
+В `main` ещё не смержено. Выкладку делает сессия «Шурик — сервер (прод)» (прав sudo у неё нет — системные шаги делает Шеф).
+
+**Инфраструктура прода (сделано):** daphne вместо gunicorn (`fe.service`), Redis (`REDIS_URL`), nginx с `/ws/`, `/media/`,
+`client_max_body_size 6m`, `X-Forwarded-Proto` (ссылки строятся с https). `media/` принадлежит `ubuntu:ubuntu`.
+Ошибки 500 пишутся в `journalctl -u fe` (LOGGING → stderr). Бэкапы базы — `/home/fastdev/backups/` (новые с правами 600).
+
+**Что есть на ветке:**
+- Чат на WebSockets + фото (обложки, аватары). Галочки «прочитано» ✓/✓✓ (`read` рассылается в группу чата, `chatReads` при загрузке).
+  Ссылки в сообщениях кликабельные (только текстовые узлы и `<a>`).
+- Слой каналов Redis без socket timeout (`CHANNEL_LAYERS` hosts — dict с `socket_timeout: None`): иначе redis-py ≥ 6 рвал WS каждые 5 с.
+- **Шифрование сообщений в БД**: `Chat/fields.py` `EncryptedTextField` + `Chat/crypto.py` (Fernet, `CHAT_ENCRYPTION_KEYS` в `.env.local`,
+  первый ключ шифрует, остальные только читают — ротация). Без ключа — производный от `SECRET_KEY` (только dev/тесты).
+  На проде ключ задан, копия у Шефа вне сервера. **Без ключа переписку не восстановить.** Старые бэкапы (до 2026-11-10 19:08) — открытым текстом.
+- Страница мероприятия в стиле «билет»; «Чат участников» — главная кнопка; «Отменить регистрацию» — ссылка.
+- Страница «Друзья»: входящие заявки сверху, карточки друзей с ближайшим публичным событием, поиск во вкладке «Найти людей».
+- «Пригласить друзей» на событие: `Events/invites.py`, модель `EventInvite` (один раз на человека), приглашение приходит в личный чат.
+- Письмо организатору при создании (`event_created`). Все письма-уведомления уходят **в фоне** (`Users/emails.py:in_background`, `EMAIL_ASYNC`).
+  Код подтверждения почты — синхронно.
+- **Конструктор пригласительных**: `Events/card_designs.py` (5 шаблонов × 4 палитры, 5 шрифтов, форматы story/square/a5),
+  модель `InvitationCard`, редактор `/Event/<id>/card/` (только организатор), публичная `/i/<code>/` (без входа; для приватных
+  событий ведёт на событие с токеном — так задумано, Шеф в курсе). Вёрстка — одна разметка `_invite_card.html`, вид — `static/css/invite_card.css`.
+  PNG — `html-to-image@1.11.11` с jsdelivr, шрифты — Google Fonts.
+- Фото уменьшаются в браузере до загрузки (`static/js/photo-input.js`, 2000 px / аватар 1000 px), WebP `method=4`.
+- Письма-билеты: `emails/ticket_base.html` — рамка рисуется по секциям, прорези на линии отрыва (исправлено `12ce9ad`).
+
+**Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
+`send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
+
+**Тесты:** `python manage.py test` — 87 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+
+**Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
+«[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.
+Локально на 8000 обычно запущен сервер Шефа, для проверок — `django-preview` на 8010 (`.claude/launch.json`).
+
 ## Дальше
-- Выкатить ветку на сервер (сначала FE-dev), смержить в `main`.
-- Свои HTML-письма подтверждения + «Отправить код ещё раз» + сброс пароля.
-- PWA (манифест, иконки), позже REST API под мобильное приложение.
-- Фото-обложки мероприятий (`ImageField`), пагинация афиши, лимит участников.
-
-
-## В работе: ветка `feat/chat-photos` (НЕ выкатывать на прод без команды Шефа)
-
-Шеф попросил: чат на WebSockets (вариант 2) + фото мероприятий и аватары. Только локально.
-
-**Сделано (WIP-коммит):**
-- Зависимости: `channels==4.1.0`, `daphne==4.1.2`, `channels-redis==4.2.0` (в requirements.txt, локально установлены).
-- Settings: `daphne` и `channels` в INSTALLED_APPS, `ASGI_APPLICATION`, `CHANNEL_LAYERS` (Redis при `REDIS_URL`, иначе InMemory), `MEDIA_URL/MEDIA_ROOT`; media отдаётся Django только при DEBUG.
-- Фото: `Users/images.py` (проверка, EXIF transpose + удаление метаданных, WebP, cover 1600x1000, avatar 400x400 crop).
-  Поля `Event.cover`, `User.avatar` (миграции Events.0012_photos, Users.0008_photos, применены локально).
-  Форма события: поле `cover_upload` + `remove_cover`, блок выбора с предпросмотром (`static/js/photo-input.js`).
-  Аватар: view `Users:update_avatar` (POST, загрузка/удаление), в шапке профиля кликабельный аватар.
-  Партиал `Users/_avatar.html` (u=..., size=xs|sm|lg) уже стоит в друзьях, профиле, публичном профиле, странице события.
-- Чат: приложение `Chat` — модели Conversation (direct/event), Membership (last_read_at), Message; миграция Chat.0001;
-  `Chat/services.py` (доступ: личный — только друзья; чат события — участники и организатор; непрочитанные; сериализация).
-
-**Готово (проверено локально, 62 теста):**
-- Обложки в карточках и шапке страницы события; аватары по всему сайту.
-- Чат на WebSockets: `Chat/consumers.py` (сообщения, «печатает…», кто в чате, прочитано, лимит 15 сообщений / 10 с),
-  `ws/notify/` — живой значок непрочитанных в шапке и нижней панели; HTTP-запасной путь отправки; подгрузка истории.
-- Страницы: `/Chat/` (список + «написать другу»), `/Chat/<id>/`, кнопки «Написать» (друзья, профиль, публичный профиль)
-  и «Чат участников» на странице события.
-- Локальные тестовые пользователи для проверки чата: `.claude/dev_test_users.txt` (в git не попадает).
-
-**Перед выкладкой на прод (когда Шеф скажет):**
-1. Сервер: `sudo apt install redis-server`; в `.env.local` добавить `REDIS_URL=redis://127.0.0.1:6379/0`.
-2. `fe.service`: заменить gunicorn на ASGI — `daphne -b 127.0.0.1 -p 8000 FE.asgi:application`
-   (или `gunicorn -k uvicorn.workers.UvicornWorker FE.asgi:application`).
-3. nginx: `location /ws/ { proxy_pass http://127.0.0.1:8000; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade;
-   proxy_set_header Connection "upgrade"; proxy_set_header Host $host; proxy_read_timeout 1h; }`
-   и `location /media/ { alias /home/ubuntu/FE/media/; }`, `client_max_body_size 6m;`.
-4. `pip install -r requirements.txt`, `migrate` (Events.0012, Users.0008, Chat.0001), `collectstatic`, бэкап `media/`.
+- Конструктор, этап 2: своё фото на фон, «Приду / Не смогу» прямо с открытки, новые шаблоны.
+- Безопасность (Шеф выбрал пока только шифрование): права/срок хранения бэкапов и удаление старых открытых, заголовки безопасности,
+  лимит попыток входа.
+- Очередь писем, переживающая перезапуск (сейчас фоновый поток может потерять письмо при рестарте `fe`).
+- Смержить `feat/chat-photos` в `main`; PWA; REST API; пагинация афиши, лимит участников.
