@@ -633,7 +633,33 @@ html.dark-mode .ed-ticket::before { color: #160F2E; }
 .ed-cta::before { left: calc(var(--notch) * -1); }
 .ed-cta::after { right: calc(var(--notch) * -1); clip-path: inset(0 50% 0 0); }
 
-.ed-secondary { margin: 0; padding: 0 22px 22px; }
+.ed-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+    padding: 0 22px 22px;
+}
+/* odd number of buttons: the last one takes the full row */
+.ed-secondary .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.ed-secondary:empty { display: none; }
+
+.ed-unregister {
+    margin: -8px 0 0;
+    padding: 0 22px 18px;
+    text-align: center;
+}
+.ed-unregister button {
+    padding: 4px 8px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.ed-unregister button:hover { color: var(--danger); }
 .ed-private-note { margin: 0; padding: 0 22px 18px; }
 
 .ed-section h2 {

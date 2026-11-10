@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=7">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -149,15 +149,15 @@
                     {% if user.is_authenticated %}
                         {% if is_registered %}
                             <p class="ed-going"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% lang "Вы идёте" "You're going" %}</p>
-                            <form method="post" action="{% url 'Events:unregister_event' event.id %}{{ token_param }}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-secondary btn-block">{% lang "Отменить регистрацию" "Unregister" %}</button>
-                            </form>
+                            <a href="{% url 'Chat:event' event.id %}" class="btn btn-primary btn-block ed-chat-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Чат участников" "Attendees chat" %}</a>
                         {% elif not event.has_passed %}
                             <form method="post" action="{% url 'Events:register_event' event.id %}{{ token_param }}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
                             </form>
+                        {% endif %}
+                        {% if not is_registered and user == event.creator %}
+                            <a href="{% url 'Chat:event' event.id %}" class="btn btn-secondary btn-block ed-chat-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Чат участников" "Attendees chat" %}</a>
                         {% endif %}
                     {% elif not event.has_passed %}
                         <a href="{% url 'Users:login' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary btn-block">{% lang "Войти для регистрации" "Login to register" %}</a>
@@ -165,9 +165,6 @@
                 </div>
 
                 <div class="ed-secondary">
-                    {% if is_registered or user.is_authenticated and user == event.creator %}
-                        <a href="{% url 'Chat:event' event.id %}" class="btn btn-secondary ed-chat-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>{% lang "Чат участников" "Attendees chat" %}</a>
-                    {% endif %}
                     {% if user.is_authenticated and user == event.creator %}
                         <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">{% lang "Редактировать" "Edit" %}</a>
                     {% endif %}
@@ -183,6 +180,12 @@
                         <button type="button" id="shareEvent" class="btn btn-secondary">{% lang "Поделиться" "Share" %}</button>
                     {% endif %}
                 </div>
+                {% if is_registered %}
+                    <form method="post" action="{% url 'Events:unregister_event' event.id %}{{ token_param }}" class="ed-unregister">
+                        {% csrf_token %}
+                        <button type="submit">{% lang "Отменить регистрацию" "Unregister" %}</button>
+                    </form>
+                {% endif %}
                 {% if event.is_private %}
                     <p class="ed-private-note">{% lang "Доступно только по ссылке" "Available by link only" %}</p>
                 {% endif %}
