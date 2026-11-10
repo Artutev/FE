@@ -8,6 +8,7 @@ urlpatterns = [
     path('archive/', views.event_archive, name='event_archive'),
     path('create/', views.create_event, name='create_event'),
     path('<int:event_id>/', views.event_detail, name='event_detail'),
+    path('<int:event_id>/calendar.ics', views.event_calendar, name='event_calendar'),
     path('<int:event_id>/invitation/', views.download_invitation, name='download_invitation'),
     path('<int:event_id>/edit/', views.edit_event, name='edit_event'),
     path('<int:event_id>/delete/', views.delete_event, name='delete_event'),

@@ -1,9 +1,19 @@
-{% extends "emails/base.html" %}{% load language_tags %}
-{% block preheader %}{% lang "Мероприятие отменено" "Event cancelled" %}: {{ event.name }}{% endblock %}
-{% block content %}
-<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Мероприятие отменено" "Event cancelled" %}</h1>
-<p style="margin:0;font-size:16px;line-height:24px;color:#3B3550;">{% lang "К сожалению, организатор отменил мероприятие, на которое вы были записаны." "Unfortunately, the organizer cancelled an event you were going to." %}</p>
-{% include "emails/_event_box.html" %}
-{% lang "Найти другое событие" "Find another event" as button_label %}{% include "emails/_button.html" with url=events_url label=button_label %}
+{% extends "emails/ticket_base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "К сожалению, мероприятие отменено." "Unfortunately, the event was cancelled." %}{% endblock %}
+{% block header_color %}#6B6880{% endblock %}
+{% block kicker %}{% lang "Билет аннулирован" "Ticket cancelled" %}{% endblock %}
+{% block date_style %}text-decoration:line-through;color:#9A97AB;{% endblock %}
+{% block guests_cell %}{% endblock %}
+{% block intro %}
+<tr><td style="padding:0 6px 16px;">
+  <div style="font-size:22px;font-weight:800;line-height:28px;">{% lang "Мероприятие отменено" "Event cancelled" %}</div>
+  <div style="font-size:15px;line-height:22px;color:#3B3550;margin-top:4px;">{% lang "К сожалению, организатор отменил мероприятие, на которое вы были записаны." "Unfortunately, the organizer cancelled an event you were going to." %}</div>
+</td></tr>
 {% endblock %}
-{% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}
+{% block actions %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td align="center" style="border-radius:12px;background:#7C3AED;">
+    <a href="{{ events_url }}" style="display:block;padding:14px 18px;color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">{% lang "Найти другое событие" "Find another event" %}</a>
+  </td>
+</tr></table>
+{% endblock %}

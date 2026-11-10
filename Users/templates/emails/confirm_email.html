@@ -1,12 +1,63 @@
-{% extends "emails/base.html" %}{% load language_tags %}
-{% block preheader %}{% lang "Ваш код подтверждения:" "Your confirmation code:" %} {{ code }}{% endblock %}
-{% block content %}
-<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Подтвердите email" "Confirm your email" %}</h1>
-<p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Привет," "Hi," %} {{ username }}! {% lang "Осталось подтвердить адрес почты, и аккаунт EventTown готов." "Just confirm your email address and your EventTown account is ready." %}</p>
-<p style="margin:0 0 8px;font-size:14px;color:#6B6880;">{% lang "Ваш код подтверждения" "Your confirmation code" %}</p>
-<div style="display:inline-block;padding:14px 22px;border-radius:12px;background:#F4F2F8;font-size:32px;font-weight:700;letter-spacing:10px;color:#18122B;font-family:'SFMono-Regular',Consolas,monospace;">{{ code }}</div>
-<p style="margin:20px 0 0;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Или просто нажмите кнопку:" "Or just press the button:" %}</p>
-{% lang "Подтвердить email" "Confirm email" as button_label %}{% include "emails/_button.html" with url=confirm_url label=button_label %}
-<p style="margin:0;font-size:13px;line-height:20px;color:#6B6880;">{% lang "Код действует" "The code is valid for" %} {{ expires_minutes }} {% lang "минут. Если вы не регистрировались в EventTown, просто проигнорируйте это письмо." "minutes. If you didn't sign up for EventTown, you can safely ignore this email." %}</p>
-{% endblock %}
-{% block footer %}{% lang "Это письмо отправлено при регистрации в EventTown." "This email was sent because someone signed up for EventTown with this address." %}{% endblock %}
+{% load language_tags %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F2F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#18122B;">
+<div style="display:none;max-height:0;overflow:hidden;">{% lang "Ваш код подтверждения:" "Your confirmation code:" %} {{ code }}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F2F8;">
+<tr><td align="center" style="padding:28px 14px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+
+  <tr><td align="center" style="padding:0 0 18px;">
+    {% include "emails/_logo.html" %}
+  </td></tr>
+
+  <tr><td style="background:#FFFFFF;border:1px solid #E7E5EF;border-radius:18px;padding:30px 26px 26px;">
+    <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#6D28D9;font-weight:700;">{% lang "Код подтверждения" "Confirmation code" %}</div>
+    <div style="font-size:24px;line-height:30px;font-weight:800;margin-top:8px;">{% lang "Привет," "Hi," %} {{ username }}!</div>
+    <div style="font-size:15px;line-height:23px;color:#3B3550;margin-top:6px;">{% lang "Осталось подтвердить адрес почты, и аккаунт EventTown готов. Введите этот код на странице подтверждения:" "Just confirm your email address and your EventTown account is ready. Enter this code on the confirmation page:" %}</div>
+
+    <!-- Code -->
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto 8px;"><tr>
+      {% for digit in code %}
+      <td style="padding:0 3px;">
+        <div style="width:44px;height:56px;line-height:56px;border-radius:12px;background:#F4F2F8;border:1px solid #E1DCEC;text-align:center;font-size:28px;font-weight:800;color:#18122B;font-family:'SFMono-Regular',Consolas,'Courier New',monospace;">{{ digit }}</div>
+      </td>
+      {% endfor %}
+    </tr></table>
+    <div style="text-align:center;font-size:13px;color:#6B6880;">{% lang "Код действует" "The code is valid for" %} {{ expires_minutes }} {% lang "минут" "minutes" %}</div>
+
+    <!-- Divider -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0;"><tr>
+      <td style="border-top:1px solid #EEEAF5;font-size:0;line-height:0;">&nbsp;</td>
+      <td width="60" align="center" style="width:60px;font-size:12px;color:#9A97AB;text-transform:uppercase;letter-spacing:1px;">{% lang "или" "or" %}</td>
+      <td style="border-top:1px solid #EEEAF5;font-size:0;line-height:0;">&nbsp;</td>
+    </tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td align="center" style="border-radius:12px;background:#7C3AED;">
+        <a href="{{ confirm_url }}" style="display:block;padding:14px 18px;color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">{% lang "Подтвердить в один клик" "Confirm in one click" %}</a>
+      </td>
+    </tr></table>
+
+    <!-- Safety -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;background:#F7F5FB;border-radius:12px;"><tr>
+      <td style="padding:12px 14px;font-size:13px;line-height:19px;color:#5B5670;">
+        <strong style="color:#18122B;">{% lang "Никому не сообщайте этот код." "Never share this code." %}</strong>
+        {% lang "Сотрудники EventTown никогда его не спрашивают. Если вы не регистрировались, просто проигнорируйте письмо." "EventTown staff will never ask for it. If you didn't sign up, just ignore this email." %}
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <tr><td align="center" style="padding:18px 8px 0;font-size:12px;line-height:18px;color:#6B6880;">
+    {% lang "Это письмо отправлено при регистрации в EventTown." "This email was sent because someone signed up for EventTown with this address." %}<br>© 2026 EventTown
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

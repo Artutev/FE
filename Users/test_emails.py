@@ -122,6 +122,9 @@ class EventNotificationTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['fan@example.test'])
         self.assertEqual(mail.outbox[0].subject, "You're going: Rooftop jazz")
+        html = html_of(mail.outbox[0])
+        self.assertIn('/static/img/logo-mark.png', html)
+        self.assertIn(f'/Event/{self.event.id}/calendar.ics', html)
 
     def test_opted_out_user_gets_no_email(self):
         self.client.force_login(self.quiet)

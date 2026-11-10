@@ -1,9 +1,10 @@
-{% extends "emails/base.html" %}{% load language_tags %}
-{% block preheader %}{% lang "Завтра:" "Tomorrow:" %} {{ event.name }}{% endblock %}
-{% block content %}
-<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Завтра мероприятие" "See you tomorrow" %}</h1>
-<p style="margin:0;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Напоминаем: вы записаны на мероприятие, и оно уже завтра." "Just a reminder: the event you signed up for is tomorrow." %}</p>
-{% include "emails/_event_box.html" %}
-{% lang "Открыть мероприятие" "Open event" as button_label %}{% include "emails/_button.html" with url=event_url label=button_label %}
+{% extends "emails/ticket_base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Напоминаем: мероприятие уже завтра." "Reminder: the event is tomorrow." %}{% endblock %}
+{% block kicker %}{% lang "Уже завтра" "Tomorrow" %}{% endblock %}
+{% block intro %}
+<tr><td style="padding:0 6px 16px;">
+  <div style="font-size:22px;font-weight:800;line-height:28px;">{% lang "До встречи завтра!" "See you tomorrow!" %}</div>
+  <div style="font-size:15px;line-height:22px;color:#3B3550;margin-top:4px;">{% lang "Напоминаем: вы записаны на мероприятие, и оно уже завтра. Билет ниже." "Just a reminder: the event you signed up for is tomorrow. Your ticket is below." %}</div>
+</td></tr>
 {% endblock %}
-{% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}
+{% block actions %}{% lang "Открыть мероприятие" "Open event" as primary_label %}{% include "emails/_ticket_buttons.html" %}{% endblock %}

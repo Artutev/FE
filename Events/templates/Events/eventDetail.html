@@ -168,6 +168,9 @@
                     {% if user.is_authenticated and user == event.creator %}
                         <a href="{% url 'Events:edit_event' event.id %}" class="btn btn-secondary">{% lang "Редактировать" "Edit" %}</a>
                     {% endif %}
+                    {% if event.date and not event.has_passed %}
+                        <a href="{% url 'Events:event_calendar' event.id %}{{ token_param }}" class="btn btn-secondary">{% lang "В календарь" "Add to calendar" %}</a>
+                    {% endif %}
                     {% if event.event_type == 'wedding' %}
                         <a href="{% url 'Events:download_invitation' event.id %}{{ token_param }}" class="btn btn-secondary">{% lang "Скачать приглашение" "Download invitation" %}</a>
                     {% endif %}

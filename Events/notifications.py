@@ -51,6 +51,13 @@ def _event_url(event, request=None):
     return request.build_absolute_uri(path) if request else absolute_url(path)
 
 
+def _calendar_url(event, request=None):
+    path = reverse('Events:event_calendar', args=[event.id])
+    if event.is_private and event.access_token:
+        path += f'?token={event.access_token}'
+    return request.build_absolute_uri(path) if request else absolute_url(path)
+
+
 def notify_registered(event, user, request=None):
     if not user.email or not user.email_notifications or user.id == event.creator_id:
         return False
@@ -58,7 +65,7 @@ def notify_registered(event, user, request=None):
         to=user.email,
         template='event_registered',
         subject=('Вы записались: ', "You're going: ", event.name),
-        context={'event': event, 'event_url': _event_url(event, request)},
+        context={'event': event, 'event_url': _event_url(event, request), 'calendar_url': _calendar_url(event, request)},
         language=user_language(user),
         fail_silently=True,
     )
@@ -83,7 +90,8 @@ def notify_updated(event, before, fields, request=None):
             to=user.email,
             template='event_updated',
             subject=('Изменения в мероприятии: ', 'Event update: ', event.name),
-            context={'event': event, 'event_url': event_url, 'changes': changes},
+            context={'event': event, 'event_url': event_url, 'changes': changes,
+                     'calendar_url': _calendar_url(event, request)},
             language=language,
         ))
     return send_bulk(messages)
@@ -115,7 +123,7 @@ def send_reminders(events):
                 to=user.email,
                 template='event_reminder',
                 subject=('Завтра: ', 'Tomorrow: ', event.name),
-                context={'event': event, 'event_url': event_url},
+                context={'event': event, 'event_url': event_url, 'calendar_url': _calendar_url(event)},
                 language=user_language(user),
             )
             for user in _recipients(event, exclude_creator=False)

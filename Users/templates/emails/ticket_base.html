@@ -1,0 +1,86 @@
+{% load language_tags %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F2F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#18122B;">
+<div style="display:none;max-height:0;overflow:hidden;">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F2F8;">
+<tr><td align="center" style="padding:28px 14px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+
+  <!-- Logo -->
+  <tr><td align="center" style="padding:0 0 18px;">
+    {% include "emails/_logo.html" %}
+  </td></tr>
+
+  {% block intro %}{% endblock %}
+
+  <!-- Ticket -->
+  <tr><td style="background:#FFFFFF;border:1px solid #E7E5EF;border-radius:18px;padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="background:{% block header_color %}#7C3AED{% endblock %};border-radius:17px 17px 0 0;padding:22px 24px 20px;color:#FFFFFF;">
+        <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#E9DDFF;">{% block kicker %}{% endblock %}</div>
+        <div style="font-size:24px;line-height:30px;font-weight:800;margin-top:6px;color:#FFFFFF;">{{ event.name }}</div>
+        <div style="font-size:14px;margin-top:4px;color:#EDE6FF;">{% event_type_label event.event_type %}</div>
+      </td></tr>
+
+      {% block before_details %}{% endblock %}
+
+      <!-- Details -->
+      <tr><td style="padding:18px 24px 4px;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:24px;vertical-align:top;">
+            <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Дата" "Date" %}</div>
+            <div style="font-size:16px;font-weight:700;margin-top:3px;{% block date_style %}{% endblock %}">{% if event.date %}{% event_date event.date %}{% else %}—{% endif %}</div>
+          </td>
+          <td style="padding-right:24px;vertical-align:top;">
+            <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Время" "Time" %}</div>
+            <div style="font-size:16px;font-weight:700;margin-top:3px;">{% if event.time %}{{ event.time|time:"H:i" }}{% else %}—{% endif %}</div>
+          </td>
+          {% block guests_cell %}
+          <td style="vertical-align:top;">
+            <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Идут" "Going" %}</div>
+            <div style="font-size:16px;font-weight:700;margin-top:3px;">{{ event.registrations.count }}</div>
+          </td>
+          {% endblock %}
+        </tr></table>
+      </td></tr>
+      {% if event.location %}
+      <tr><td style="padding:14px 24px 4px;">
+        <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Место" "Location" %}</div>
+        <div style="font-size:15px;font-weight:600;line-height:21px;margin-top:3px;">{{ event.location }}</div>
+      </td></tr>
+      {% endif %}
+
+      {% block after_details %}{% endblock %}
+
+      <!-- Perforation -->
+      <tr><td style="padding:18px 0 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td width="12" style="width:12px;height:22px;background:#F4F2F8;border-radius:0 11px 11px 0;font-size:0;line-height:0;">&nbsp;</td>
+          <td style="border-top:2px dashed #E1DCEC;font-size:0;line-height:0;">&nbsp;</td>
+          <td width="12" style="width:12px;height:22px;background:#F4F2F8;border-radius:11px 0 0 11px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Actions -->
+      <tr><td align="center" style="padding:6px 24px 24px;">
+        {% block actions %}{% endblock %}
+      </td></tr>
+    </table>
+  </td></tr>
+
+  {% block after %}{% endblock %}
+
+  <tr><td align="center" style="padding:18px 8px 0;font-size:12px;line-height:18px;color:#6B6880;">
+    {% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}<br>© 2026 EventTown
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

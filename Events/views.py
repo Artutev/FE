@@ -159,6 +159,24 @@ def event_detail(request, event_id):
     }
     return render(request, 'Events/eventDetail.html', context)
 
+def event_calendar(request, event_id):
+    """Файл .ics — «Добавить в календарь» (Google, Apple, Outlook)."""
+    from Events.ics import build_ics
+
+    event = get_object_or_404(Event, id=event_id)
+    if not _has_access(request, event):
+        raise Http404()
+    path = reverse('Events:event_detail', args=[event.id])
+    if event.is_private and event.access_token:
+        path += f'?token={event.access_token}'
+    response = HttpResponse(
+        build_ics(event, request.build_absolute_uri(path), request.get_host()),
+        content_type='text/calendar; charset=utf-8',
+    )
+    response['Content-Disposition'] = f'attachment; filename="event-{event.id}.ics"'
+    return response
+
+
 def download_invitation(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     if not _has_access(request, event):

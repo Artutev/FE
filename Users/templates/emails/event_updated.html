@@ -1,20 +1,26 @@
-{% extends "emails/base.html" %}{% load language_tags %}
-{% block preheader %}{% lang "Изменения в мероприятии" "Event update" %}: {{ event.name }}{% endblock %}
-{% block content %}
-<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Мероприятие изменилось" "The event has changed" %}</h1>
-<p style="margin:0 0 4px;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Организатор обновил детали мероприятия, на которое вы записаны. Что изменилось:" "The organizer updated an event you're going to. What changed:" %}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;">
-  {% for change in changes %}
-  <tr>
-    <td style="padding:8px 0;border-bottom:1px solid #F0EEF5;font-size:14px;color:#6B6880;width:110px;" valign="top">{{ change.label }}</td>
-    <td style="padding:8px 0;border-bottom:1px solid #F0EEF5;font-size:14px;line-height:20px;" valign="top">
-      <span style="color:#9A97AB;text-decoration:line-through;">{{ change.old|default:"—" }}</span><br>
-      <strong style="color:#18122B;">{{ change.new|default:"—" }}</strong>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-{% include "emails/_event_box.html" %}
-{% lang "Открыть мероприятие" "Open event" as button_label %}{% include "emails/_button.html" with url=event_url label=button_label %}
+{% extends "emails/ticket_base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Организатор изменил детали мероприятия." "The organizer changed the event details." %}{% endblock %}
+{% block header_color %}#6D28D9{% endblock %}
+{% block kicker %}{% lang "Обновлённый билет" "Updated ticket" %}{% endblock %}
+{% block intro %}
+<tr><td style="padding:0 6px 16px;">
+  <div style="font-size:22px;font-weight:800;line-height:28px;">{% lang "Мероприятие изменилось" "The event has changed" %}</div>
+  <div style="font-size:15px;line-height:22px;color:#3B3550;margin-top:4px;">{% lang "Организатор обновил детали мероприятия, на которое вы записаны. Ниже — актуальный билет." "The organizer updated an event you're going to. Here's your updated ticket." %}</div>
+</td></tr>
 {% endblock %}
-{% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}
+{% block before_details %}
+<tr><td style="padding:16px 24px 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFF7E6;border-radius:12px;">
+    <tr><td style="padding:12px 14px 4px;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#92400E;">{% lang "Что изменилось" "What changed" %}</td></tr>
+    {% for change in changes %}
+    <tr><td style="padding:4px 14px 10px;font-size:14px;line-height:20px;">
+      <span style="color:#92400E;">{{ change.label }}:</span>
+      <span style="color:#9A97AB;text-decoration:line-through;">{{ change.old|default:"—" }}</span>
+      <span style="color:#92400E;">→</span>
+      <strong style="color:#18122B;">{{ change.new|default:"—" }}</strong>
+    </td></tr>
+    {% endfor %}
+  </table>
+</td></tr>
+{% endblock %}
+{% block actions %}{% lang "Открыть мероприятие" "Open event" as primary_label %}{% include "emails/_ticket_buttons.html" %}{% endblock %}

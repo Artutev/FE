@@ -1,0 +1,6 @@
+{% load language_tags %}<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td align="center" style="border-radius:12px;background:#7C3AED;">
+    <a href="{{ event_url }}" style="display:block;padding:14px 18px;color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">{{ primary_label }}</a>
+  </td>
+</tr></table>
+{% if calendar_url %}<a href="{{ calendar_url }}" style="display:inline-block;margin-top:14px;color:#6D28D9;font-size:14px;font-weight:600;text-decoration:none;">{% lang "Добавить в календарь" "Add to calendar" %}</a>{% endif %}

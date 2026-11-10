@@ -1,10 +1,13 @@
-{% extends "emails/base.html" %}{% load language_tags %}
-{% block preheader %}{% lang "Вы записались:" "You're going:" %} {{ event.name }}{% endblock %}
-{% block content %}
-<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{% lang "Вы идёте!" "You're going!" %}</h1>
-<p style="margin:0;font-size:16px;line-height:24px;color:#3B3550;">{% lang "Регистрация подтверждена. Сохраните детали:" "Your spot is confirmed. Here are the details:" %}</p>
-{% include "emails/_event_box.html" %}
-{% lang "Открыть мероприятие" "Open event" as button_label %}{% include "emails/_button.html" with url=event_url label=button_label %}
-<p style="margin:0;font-size:13px;line-height:20px;color:#6B6880;">{% lang "Мы напомним за день до начала. Передумали — отменить регистрацию можно на странице мероприятия." "We'll remind you a day before. Changed your mind? You can cancel on the event page." %}</p>
+{% extends "emails/ticket_base.html" %}{% load language_tags %}
+{% block preheader %}{% lang "Регистрация подтверждена — сохраните билет." "Your spot is confirmed — keep your ticket." %}{% endblock %}
+{% block kicker %}{% lang "Ваш билет" "Your ticket" %}{% endblock %}
+{% block intro %}
+<tr><td style="padding:0 6px 16px;">
+  <div style="font-size:22px;font-weight:800;line-height:28px;">{% lang "Вы идёте!" "You're going!" %}</div>
+  <div style="font-size:15px;line-height:22px;color:#3B3550;margin-top:4px;">{% lang "Регистрация подтверждена. Мы напомним за день до начала." "Your spot is confirmed. We'll remind you a day before." %}</div>
+</td></tr>
 {% endblock %}
-{% block footer %}{% include "emails/_notify_footer.html" %}{% endblock %}
+{% block actions %}{% lang "Открыть мероприятие" "Open event" as primary_label %}{% include "emails/_ticket_buttons.html" %}{% endblock %}
+{% block after %}
+<tr><td align="center" style="padding:14px 8px 0;font-size:13px;line-height:19px;color:#6B6880;">{% lang "Передумали? Отменить регистрацию можно на странице мероприятия." "Changed your mind? You can cancel on the event page." %}</td></tr>
+{% endblock %}

@@ -93,3 +93,35 @@ class MapLinksTests(TestCase):
 
     def test_no_links_without_location(self):
         self.assertEqual(build_map_links(Event(name='Jazz')), {})
+
+
+class CalendarFileTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('cal_owner', 'cal@example.test', 'Pass12345!x')
+
+    def test_ics_for_public_event(self):
+        from datetime import time
+        event = Event.objects.create(
+            name='Jazz, rooftop; night', date=date.today() + timedelta(days=3), time=time(19, 0),
+            location='Abay 10', creator=self.owner,
+        )
+        response = self.client.get(reverse('Events:event_calendar', args=[event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/calendar; charset=utf-8')
+        body = response.content.decode()
+        self.assertIn('BEGIN:VEVENT', body)
+        self.assertIn('SUMMARY:Jazz\, rooftop\; night', body)
+        self.assertIn('LOCATION:Abay 10', body)
+        self.assertRegex(body, r'DTSTART:\d{8}T\d{6}Z')
+
+    def test_ics_all_day_without_time(self):
+        event = Event.objects.create(name='Fair', date=date.today() + timedelta(days=3), creator=self.owner)
+        body = self.client.get(reverse('Events:event_calendar', args=[event.id])).content.decode()
+        self.assertIn('DTSTART;VALUE=DATE:', body)
+
+    def test_ics_private_event_requires_token(self):
+        event = Event.objects.create(name='Secret', date=date.today() + timedelta(days=3),
+                                     creator=self.owner, is_private=True)
+        url = reverse('Events:event_calendar', args=[event.id])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.get(f'{url}?token={event.access_token}').status_code, 200)
