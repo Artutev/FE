@@ -7,6 +7,7 @@ ws/notify/   — личный канал пользователя: обновл�
   клиент → {"type": "message", "text": "...", "client_id": "..."} | {"type": "typing"} | {"type": "read"}
   сервер → {"type": "message", "message": {...}, "client_id": "..."}
            {"type": "typing", "user_id": 1, "username": "..."}
+           {"type": "read", "user_id": 1, "read_at": "ISO"}   — участник дочитал чат до read_at
            {"type": "presence", "online": [user_id, ...]}
            {"type": "unread", "total": 3}
            {"type": "error", "code": "...", "detail": "..."}
@@ -55,7 +56,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 'type': 'chat.typing', 'user_id': self.user.id, 'username': self.user.username,
             })
         elif kind == 'read':
-            await database_sync_to_async(services.mark_read)(self.conversation, self.user)
+            read_at = await database_sync_to_async(services.mark_read)(self.conversation, self.user)
+            await self.channel_layer.group_send(self.group, {
+                'type': 'chat.read', 'user_id': self.user.id, 'read_at': read_at.isoformat(),
+            })
             await self._send_own_unread()
 
     async def _handle_message(self, content):
@@ -91,6 +95,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def chat_typing(self, event):
         if event['user_id'] != self.user.id:
             await self.send_json({'type': 'typing', 'user_id': event['user_id'], 'username': event['username']})
+
+    async def chat_read(self, event):
+        if event['user_id'] != self.user.id:
+            await self.send_json({'type': 'read', 'user_id': event['user_id'], 'read_at': event['read_at']})
 
     async def chat_presence(self, event):
         await self.send_json({'type': 'presence', 'online': event['online']})

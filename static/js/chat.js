@@ -1,4 +1,4 @@
-// Чат EventTown: WebSocket с переподключением, «печатает…», в сети, подгрузка истории.
+// Чат EventTown: WebSocket с переподключением, «печатает…», в сети, подгрузка истории, ✓/✓✓ прочитано.
 (function () {
     const room = document.getElementById('chatRoom');
     if (!room) return;
@@ -27,7 +27,50 @@
         failed: etT('Не отправлено. Нажмите, чтобы повторить.', 'Not sent. Tap to retry.', 'Neodesláno. Klepnutím zopakujete.'),
         rate: etT('Слишком много сообщений подряд, подождите немного.', 'Too many messages in a row, wait a moment.', 'Příliš mnoho zpráv za sebou, chvíli počkejte.'),
         forbidden: etT('Писать в этот чат больше нельзя.', "You can't write in this chat anymore.", 'Do tohoto chatu už psát nemůžete.'),
+        sent: etT('Отправлено', 'Sent', 'Odesláno'),
+        read: etT('Прочитано', 'Read', 'Přečteno'),
+        readBy: etT('Прочитали: ', 'Read by: ', 'Přečetli: '),
     };
+
+    // ---------- read receipts ----------
+    // user_id -> до какого момента (мс) участник дочитал чат
+    const reads = new Map();
+    Object.entries(JSON.parse((document.getElementById('chatReads') || {}).textContent || '{}'))
+        .forEach(([userId, iso]) => reads.set(Number(userId), Date.parse(iso)));
+
+    function markRead(userId, ms) {
+        if (!userId || userId === me || !ms) return false;
+        if ((reads.get(userId) || 0) >= ms) return false;
+        reads.set(userId, ms);
+        return true;
+    }
+
+    function readersOf(ms) {
+        let count = 0;
+        reads.forEach((readAt, userId) => { if (userId !== me && readAt >= ms) count += 1; });
+        return count;
+    }
+
+    const TICK_ONE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l4.5 4.5L19.5 6.5"/></svg>';
+    const TICK_TWO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12.5l4.5 4.5L16 7"/><path d="M10.5 16l1 1L22 6.5"/></svg>';
+
+    function paintTick(row) {
+        const tick = row.querySelector('.ch-tick');
+        if (!tick) return;
+        const count = readersOf(Number(row.dataset.ts));
+        const isRead = count > 0;
+        if (tick.dataset.read === String(isRead) && tick.dataset.count === String(count)) return;
+        tick.dataset.read = String(isRead);
+        tick.dataset.count = String(count);
+        tick.innerHTML = isRead ? TICK_TWO : TICK_ONE;
+        const label = !isRead ? T.sent : kind === 'event' ? `${T.readBy}${count}` : T.read;
+        tick.title = label;
+        tick.setAttribute('aria-label', label);
+    }
+
+    function paintTicks() {
+        feed.querySelectorAll('.ch-msg.is-mine[data-id]').forEach(paintTick);
+    }
 
     const timeFmt = new Intl.DateTimeFormat(window.etLocale || undefined, { hour: '2-digit', minute: '2-digit' });
     const dayFmt = new Intl.DateTimeFormat(window.etLocale || undefined, { day: 'numeric', month: 'long' });
@@ -84,13 +127,24 @@
         text.className = 'ch-text';
         text.textContent = message.text; // только textContent — никакого HTML от пользователей
         body.appendChild(text);
+        const meta = document.createElement('span');
+        meta.className = 'ch-meta';
         const time = document.createElement('time');
         time.className = 'ch-time';
         const date = new Date(message.created_at || Date.now());
         time.dateTime = date.toISOString();
         time.textContent = timeFmt.format(date);
-        body.appendChild(time);
+        meta.appendChild(time);
+        if (mine && message.id) {
+            row.dataset.ts = String(date.getTime());
+            const tick = document.createElement('span');
+            tick.className = 'ch-tick';
+            tick.setAttribute('role', 'img');
+            meta.appendChild(tick);
+        }
+        body.appendChild(meta);
         row.appendChild(body);
+        if (mine && message.id) paintTick(row);
         return row;
     }
 
@@ -109,6 +163,7 @@
             lastDayKey = dayKey(date);
             if (!firstDayKey) firstDayKey = lastDayKey;
         }
+        if (message.author && message.id) markRead(message.author.id, date.getTime());
         const el = bubble(message, pending);
         feed.appendChild(el);
         return el;
@@ -141,6 +196,7 @@
     // initial history
     const initial = JSON.parse(document.getElementById('chatInitial').textContent || '[]');
     initial.forEach((m) => append(m, false));
+    paintTicks();
     scrollToBottom();
 
     // ---------- older messages ----------
@@ -209,9 +265,12 @@
             append(data.message, false);
             if (stick) scrollToBottom();
             if (data.message.author && data.message.author.id !== me) {
+                paintTicks();
                 hideTyping();
                 if (document.visibilityState === 'visible') send({ type: 'read' });
             }
+        } else if (data.type === 'read') {
+            if (markRead(data.user_id, Date.parse(data.read_at))) paintTicks();
         } else if (data.type === 'typing') {
             showTyping(data.username);
         } else if (data.type === 'presence') {

@@ -52,6 +52,7 @@ def chat_detail(request, conversation_id):
         'conversation': conversation,
         'peer': peer,
         'chat_messages_json': [services.serialize_message(m) for m in recent],
+        'chat_reads_json': services.read_marks(conversation),
         'has_more': conversation.messages.count() > len(recent),
         'can_write': services.can_write(request.user, conversation),
         'member_count': conversation.memberships.count(),

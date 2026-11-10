@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 
 from asgiref.sync import async_to_sync
@@ -85,6 +86,18 @@ class ChatAccessTests(TestCase):
         self.assertEqual(len(rest['messages']), 11)
         self.assertFalse(rest['has_more'])
 
+    def test_detail_page_passes_read_marks(self):
+        conversation = services.get_or_create_direct(self.ann, self.bob)
+        services.create_message(conversation, self.ann, 'привет')
+        self.assertEqual(list(services.read_marks(conversation)), [self.ann.pk])
+        read_at = services.mark_read(conversation, self.bob)
+        self.assertEqual(services.read_marks(conversation)[self.bob.pk], read_at.isoformat())
+
+        self.client.force_login(self.ann)
+        content = self.client.get(reverse('Chat:detail', args=[conversation.pk])).content.decode()
+        raw = content.split('<script id="chatReads" type="application/json">', 1)[1].split('</script>', 1)[0]
+        self.assertEqual(json.loads(raw)[str(self.bob.pk)], read_at.isoformat())
+
     def test_list_page_shows_conversations_and_badge(self):
         conversation = services.get_or_create_direct(self.ann, self.bob)
         services.create_message(conversation, self.bob, 'yo')
@@ -149,6 +162,40 @@ class ChatWebSocketTests(TransactionTestCase):
 
         async_to_sync(scenario)()
         self.assertEqual(Message.objects.filter(conversation=self.conversation).count(), 1)
+
+    def test_read_receipt_reaches_the_sender(self):
+        async def scenario():
+            path = f'/ws/chat/{self.conversation.pk}/'
+            ann = self.connect(self.ann, path)
+            bob = self.connect(self.bob, path)
+            await ann.connect()
+            await bob.connect()
+            await ann.send_json_to({'type': 'message', 'text': 'Ты тут?', 'client_id': 'c1'})
+            # как клиент: «прочитано» Боб шлёт, когда сообщение уже пришло
+            got = await bob.receive_json_from()
+            while got['type'] != 'message':
+                got = await bob.receive_json_from()
+            await bob.send_json_to({'type': 'read'})
+
+            got = await ann.receive_json_from()
+            while got['type'] != 'read':
+                got = await ann.receive_json_from()
+            self.assertEqual(got['user_id'], self.bob.pk)
+            # своё «прочитано» Бобу не возвращается
+            bob_events = []
+            while not await bob.receive_nothing(timeout=0.3):
+                bob_events.append((await bob.receive_json_from())['type'])
+            self.assertNotIn('read', bob_events)
+            for c in (ann, bob):
+                await c.disconnect()
+            return got['read_at']
+
+        read_at = async_to_sync(scenario)()
+        message = Message.objects.get(conversation=self.conversation)
+        bob_mark = services.read_marks(self.conversation)[self.bob.pk]
+        self.assertEqual(read_at, bob_mark)
+        membership = self.conversation.memberships.get(user=self.bob)
+        self.assertGreaterEqual(membership.last_read_at, message.created_at)
 
     def test_stranger_and_anonymous_are_rejected(self):
         from django.contrib.auth.models import AnonymousUser

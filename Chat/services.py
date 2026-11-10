@@ -87,7 +87,18 @@ def create_message(conversation, author, text):
 
 
 def mark_read(conversation, user):
-    Membership.objects.filter(conversation=conversation, user=user).update(last_read_at=timezone.now())
+    """Отметить чат прочитанным; возвращает время отметки (его рассылаем остальным)."""
+    now = timezone.now()
+    Membership.objects.filter(conversation=conversation, user=user).update(last_read_at=now)
+    return now
+
+
+def read_marks(conversation):
+    """{user_id: ISO-время} — до какого момента каждый участник дочитал чат (для галочек ✓✓)."""
+    return {
+        membership.user_id: membership.last_read_at.isoformat()
+        for membership in conversation.memberships.exclude(last_read_at=None)
+    }
 
 
 def unread_count(conversation, user):
