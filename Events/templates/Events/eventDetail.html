@@ -248,7 +248,9 @@
         const mapDiv = document.getElementById('detailMap');
         if (!mapDiv || typeof L === 'undefined') return;
         const map = L.map(mapDiv, { scrollWheelZoom: false }).setView([lat, lon], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // OSM требует Referer с адресом сайта, иначе отдаёт 403 «Access blocked»
+            referrerPolicy: 'strict-origin-when-cross-origin',
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
         L.marker([lat, lon]).addTo(map);
