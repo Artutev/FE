@@ -280,11 +280,24 @@
 
 .pf-person {
     display: inline-flex;
+    flex: 1 1 140px;
     align-items: center;
     gap: 10px;
     min-width: 0;
     color: var(--text);
     font-weight: 500;
+}
+
+.pf-person-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-friend-actions {
+    display: flex;
+    flex: none;
+    gap: 2px;
 }
 
 .pf-person-actions {
