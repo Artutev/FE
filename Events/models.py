@@ -163,3 +163,66 @@ class EventInvite(models.Model):
 
     def __str__(self):
         return f"{self.inviter} → {self.invitee}: {self.event}"
+
+
+def _card_code():
+    return secrets.token_urlsafe(8)
+
+
+class InvitationCard(models.Model):
+    """Оформленное пригласительное мероприятия (конструктор: шаблон + палитра + шрифт + тексты)."""
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='card')
+    # Публичная ссылка /i/<code>/ — работает и для приватных событий (код случайный)
+    code = models.CharField(max_length=24, unique=True, default=_card_code)
+    template = models.CharField('Шаблон', max_length=20, default='ticket')
+    palette = models.CharField('Палитра', max_length=20, default='grape')
+    font = models.CharField('Шрифт', max_length=20, default='clean')
+    accent = models.CharField('Свой цвет акцента', max_length=7, blank=True)
+    background = models.CharField('Фон', max_length=10, default='decor')
+    format = models.CharField('Формат', max_length=10, default='story')
+    title = models.CharField('Заголовок', max_length=120)
+    subtitle = models.CharField('Подзаголовок', max_length=120, blank=True)
+    message = models.TextField('Обращение', max_length=300, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Пригласительное'
+        verbose_name_plural = 'Пригласительные'
+
+    def __str__(self):
+        return f'Пригласительное: {self.event}'
+
+    @classmethod
+    def initial_for(cls, event, language='ru'):
+        """Несохранённая карточка с разумными значениями по типу мероприятия."""
+        from Events import card_designs as designs
+        from Users.i18n import tr
+        template = designs.DEFAULT_TEMPLATE.get(event.event_type, 'ticket')
+        subtitle = ''
+        if event.event_type == 'wedding' and (event.bride_name or event.groom_name):
+            subtitle = ' & '.join(n for n in (event.bride_name, event.groom_name) if n)
+        message = designs.DEFAULT_MESSAGE.get(event.event_type, designs.FALLBACK_MESSAGE)
+        return cls(
+            event=event,
+            template=template,
+            palette=designs.first_palette(template),
+            font=designs.TEMPLATES[template]['font'],
+            background='cover' if event.cover else 'decor',
+            title=event.name[:120],
+            subtitle=subtitle,
+            message=tr(language, *message),
+        )
+
+    @property
+    def colors(self):
+        from Events import card_designs as designs
+        colors = designs.palette(self.template, self.palette)
+        if self.accent:
+            colors['accent'] = self.accent
+        return colors
+
+    @property
+    def fonts(self):
+        from Events import card_designs as designs
+        display, body, _ru, _en = designs.FONTS.get(self.font, designs.FONTS['clean'])
+        return {'display': display, 'body': body}

@@ -17,5 +17,6 @@
 {% endblock %}
 {% block actions %}{% lang "Открыть мероприятие" "Open event" as primary_label %}{% include "emails/_ticket_buttons.html" %}{% endblock %}
 {% block after %}
-<tr><td align="center" style="padding:14px 8px 0;font-size:13px;line-height:19px;color:#6B6880;">{% lang "Нужно что-то поправить?" "Need to change something?" %} <a href="{{ edit_url }}" style="color:#6D28D9;font-weight:600;text-decoration:none;">{% lang "Редактировать" "Edit" %}</a></td></tr>
+<tr><td align="center" style="padding:16px 8px 0;font-size:14px;line-height:20px;color:#3B3550;">{% lang "Хотите красивое приглашение для гостей?" "Want a beautiful invitation for your guests?" %} <a href="{{ card_url }}" style="color:#6D28D9;font-weight:700;text-decoration:none;">{% lang "Оформить пригласительное" "Design an invitation" %}</a></td></tr>
+<tr><td align="center" style="padding:10px 8px 0;font-size:13px;line-height:19px;color:#6B6880;">{% lang "Нужно что-то поправить?" "Need to change something?" %} <a href="{{ edit_url }}" style="color:#6D28D9;font-weight:600;text-decoration:none;">{% lang "Редактировать" "Edit" %}</a></td></tr>
 {% endblock %}

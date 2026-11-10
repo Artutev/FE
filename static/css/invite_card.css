@@ -1,0 +1,647 @@
+/* =========================================================
+   Invitation card (constructor). One markup (Events/_invite_card.html),
+   five looks: .ic--classic | party | minimal | kids | ticket.
+   Sizes are in px on a fixed "canvas" so the PNG export looks the same everywhere;
+   the editor/public page scale the whole card with transform.
+   Colours come from --ic-bg / --ic-bg2 / --ic-fg / --ic-muted / --ic-accent,
+   fonts from --ic-display / --ic-body (set inline from the chosen palette & font).
+   ========================================================= */
+.ic {
+    --ic-w: 540px;
+    --ic-h: 960px;
+    position: relative;
+    width: var(--ic-w);
+    height: var(--ic-h);
+    flex-shrink: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--ic-bg);
+    color: var(--ic-fg);
+    font-family: var(--ic-body), system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.45;
+    text-align: left;
+    -webkit-font-smoothing: antialiased;
+}
+
+.ic *, .ic *::before, .ic *::after { box-sizing: border-box; }
+.ic [hidden] { display: none !important; }
+
+.ic[data-format="story"]  { --ic-w: 540px; --ic-h: 960px; }
+.ic[data-format="square"] { --ic-w: 640px; --ic-h: 640px; }
+.ic[data-format="a5"]     { --ic-w: 560px; --ic-h: 794px; }
+
+/* ---------- Background: decor / plain / event cover ---------- */
+.ic-photo,
+.ic-shade { display: none; }
+
+.ic-bg--cover .ic-photo {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ic-bg--cover .ic-shade {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--ic-bg) 35%, transparent) 0%,
+        color-mix(in srgb, var(--ic-bg) 80%, transparent) 45%,
+        var(--ic-bg) 85%);
+}
+
+.ic-decor {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.ic-decor i { position: absolute; display: block; }
+.ic-bg--plain .ic-decor,
+.ic-bg--cover .ic-decor { display: none; }
+
+/* ---------- Shared content ---------- */
+.ic-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding: 56px 48px;
+}
+
+.ic-kicker {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.ic-title {
+    margin: 0;
+    font-family: var(--ic-display), Georgia, serif;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.04;
+    overflow-wrap: anywhere;
+    color: var(--ic-fg);
+}
+
+.ic-subtitle {
+    margin-top: 12px;
+    font-size: 24px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.ic-message {
+    margin: 0;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    color: var(--ic-muted);
+}
+
+.ic-when { margin-top: 28px; line-height: 1.15; }
+.ic-weekday { text-transform: capitalize; }
+.ic-place { margin-top: 16px; overflow-wrap: anywhere; }
+
+.ic-brand {
+    margin-top: auto;
+    padding-top: 24px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ic-muted);
+}
+
+/* =========================================================
+   1. Classic — framed, centred, serif, ornaments
+   ========================================================= */
+.ic--classic::before,
+.ic--classic::after {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.ic--classic::before { inset: 22px; border: 1.5px solid var(--ic-accent); }
+.ic--classic::after { inset: 30px; border: 1px solid color-mix(in srgb, var(--ic-accent) 45%, transparent); }
+
+.ic--classic .ic-decor i:nth-child(-n+4) {
+    width: 150px;
+    height: 150px;
+    border: 1.5px solid color-mix(in srgb, var(--ic-accent) 70%, transparent);
+    border-radius: 50%;
+}
+
+.ic--classic .ic-decor i:nth-child(1) { top: -75px; left: -75px; }
+.ic--classic .ic-decor i:nth-child(2) { top: -75px; right: -75px; }
+.ic--classic .ic-decor i:nth-child(3) { bottom: -75px; left: -75px; }
+.ic--classic .ic-decor i:nth-child(4) { bottom: -75px; right: -75px; }
+
+.ic--classic .ic-decor i:nth-child(5),
+.ic--classic .ic-decor i:nth-child(6) {
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    background: var(--ic-accent);
+    transform: rotate(45deg);
+}
+
+.ic--classic .ic-decor i:nth-child(5) { top: 16px; }
+.ic--classic .ic-decor i:nth-child(6) { bottom: 16px; }
+
+.ic--classic .ic-content {
+    align-items: center;
+    justify-content: center;
+    padding: 80px 64px;
+    text-align: center;
+}
+
+.ic--classic .ic-kicker { color: var(--ic-accent); letter-spacing: 0.4em; }
+.ic--classic .ic-title { margin-top: 22px; font-size: 70px; font-weight: 600; line-height: 1; }
+
+.ic--classic .ic-subtitle {
+    margin-top: 16px;
+    font-family: var(--ic-display), Georgia, serif;
+    font-size: 32px;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--ic-accent);
+}
+
+.ic--classic .ic-rule {
+    position: relative;
+    width: 180px;
+    height: 1px;
+    margin: 30px auto;
+    background: var(--ic-accent);
+}
+
+.ic--classic .ic-rule span {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    background: var(--ic-bg);
+    border: 1.5px solid var(--ic-accent);
+    transform: rotate(45deg);
+}
+
+.ic--classic .ic-message {
+    max-width: 380px;
+    font-family: var(--ic-display), Georgia, serif;
+    font-size: 24px;
+    font-style: italic;
+    line-height: 1.35;
+}
+
+.ic--classic .ic-when {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: 18px;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 34px;
+}
+
+.ic--classic .ic-weekday,
+.ic--classic .ic-month {
+    padding: 9px 0;
+    border-top: 1px solid var(--ic-accent);
+    border-bottom: 1px solid var(--ic-accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.ic--classic .ic-weekday { grid-column: 1; grid-row: 1; }
+.ic--classic .ic-month { grid-column: 3; grid-row: 1; }
+
+.ic--classic .ic-day {
+    grid-column: 2;
+    grid-row: 1;
+    font-family: var(--ic-display), Georgia, serif;
+    font-size: 76px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ic-accent);
+}
+
+.ic--classic .ic-time {
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+}
+
+.ic--classic .ic-place { max-width: 380px; margin-top: 18px; color: var(--ic-muted); }
+
+.ic--classic .ic-brand {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 44px;
+    padding: 0;
+    font-size: 11px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* =========================================================
+   2. Party — dark, glowing blobs, huge uppercase type
+   ========================================================= */
+.ic--party .ic-decor i:nth-child(1) {
+    top: -200px;
+    right: -220px;
+    width: 640px;
+    height: 640px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ic-bg2) 0%, color-mix(in srgb, var(--ic-bg2) 40%, transparent) 40%, transparent 70%);
+}
+
+.ic--party .ic-decor i:nth-child(2) {
+    bottom: -220px;
+    left: -200px;
+    width: 560px;
+    height: 560px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--ic-accent) 55%, transparent) 0%, transparent 65%);
+}
+
+.ic--party .ic-decor i:nth-child(3) {
+    top: 120px;
+    left: -60px;
+    width: 220px;
+    height: 220px;
+    border: 2px solid color-mix(in srgb, var(--ic-accent) 60%, transparent);
+    border-radius: 50%;
+}
+
+.ic--party .ic-decor i:nth-child(4) {
+    top: 70px;
+    right: 64px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, var(--ic-accent) 2px, transparent 2.5px) 0 0 / 20px 20px;
+    opacity: 0.6;
+}
+
+.ic--party .ic-content { padding: 56px 48px 60px; }
+
+.ic--party .ic-kicker {
+    align-self: flex-start;
+    margin-bottom: auto;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--ic-accent);
+    color: var(--ic-bg);
+    font-family: var(--ic-display), sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.ic--party .ic-title {
+    font-size: 66px;
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+}
+
+.ic--party .ic-subtitle { color: var(--ic-accent); font-weight: 700; }
+
+.ic--party .ic-rule {
+    width: 72px;
+    height: 6px;
+    margin: 28px 0 22px;
+    border-radius: 3px;
+    background: var(--ic-accent);
+}
+
+.ic--party .ic-message { max-width: 420px; font-size: 20px; }
+
+.ic--party .ic-when {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: end;
+    column-gap: 18px;
+    margin-top: 30px;
+}
+
+.ic--party .ic-day {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    font-family: var(--ic-display), sans-serif;
+    font-size: 116px;
+    font-weight: 800;
+    line-height: 0.78;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--ic-accent);
+}
+
+.ic--party .ic-weekday { font-size: 16px; color: var(--ic-muted); }
+.ic--party .ic-month { font-size: 22px; font-weight: 700; }
+.ic--party .ic-time { font-family: var(--ic-display), sans-serif; font-size: 22px; font-weight: 800; color: var(--ic-accent); }
+
+.ic--party .ic-place {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, var(--ic-fg) 20%, transparent);
+    font-weight: 600;
+}
+
+.ic--party .ic-brand { margin-top: 18px; padding-top: 0; }
+
+/* =========================================================
+   3. Minimal — lots of air, one accent circle
+   ========================================================= */
+.ic--minimal .ic-decor i:nth-child(1) {
+    top: 56px;
+    right: 56px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: var(--ic-accent);
+}
+
+.ic--minimal .ic-decor i:nth-child(2) {
+    top: 56px;
+    right: 136px;
+    width: 150px;
+    height: 150px;
+    border: 1.5px solid var(--ic-fg);
+    border-radius: 50%;
+    opacity: 0.25;
+}
+
+.ic--minimal .ic-content { padding: 64px 56px; }
+
+.ic--minimal .ic-kicker {
+    margin-bottom: auto;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    color: var(--ic-muted);
+}
+
+.ic--minimal .ic-title { font-size: 62px; font-weight: 700; line-height: 1; letter-spacing: -0.045em; }
+.ic--minimal .ic-subtitle { font-size: 24px; font-weight: 500; color: var(--ic-muted); }
+
+.ic--minimal .ic-rule {
+    height: 1px;
+    margin: 32px 0 24px;
+    background: color-mix(in srgb, var(--ic-fg) 18%, transparent);
+}
+
+.ic--minimal .ic-message { max-width: 400px; font-size: 18px; }
+
+.ic--minimal .ic-when {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 22px;
+    margin-top: 28px;
+}
+
+.ic--minimal .ic-day {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    font-size: 92px;
+    font-weight: 700;
+    line-height: 0.82;
+    letter-spacing: -0.06em;
+}
+
+.ic--minimal .ic-weekday { font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ic-muted); }
+.ic--minimal .ic-month { font-size: 20px; font-weight: 600; }
+.ic--minimal .ic-time { font-size: 20px; font-weight: 700; color: var(--ic-accent); }
+.ic--minimal .ic-place { margin-top: 20px; font-size: 18px; font-weight: 500; }
+.ic--minimal .ic-brand { margin-top: 0; padding-top: 32px; }
+
+/* =========================================================
+   4. Kids — confetti and a soft rounded card
+   ========================================================= */
+.ic--kids .ic-decor i { border-radius: 50%; }
+.ic--kids .ic-decor i:nth-child(1) { top: 40px; left: -30px; width: 120px; height: 120px; background: var(--ic-bg2); }
+.ic--kids .ic-decor i:nth-child(2) { top: 26px; right: 70px; width: 44px; height: 44px; background: var(--ic-accent); }
+.ic--kids .ic-decor i:nth-child(3) { bottom: 70px; right: -50px; width: 180px; height: 180px; background: var(--ic-bg2); }
+.ic--kids .ic-decor i:nth-child(4) { bottom: 24px; left: 60px; width: 30px; height: 30px; background: var(--ic-accent); }
+.ic--kids .ic-decor i:nth-child(5) { top: 50%; left: 14px; width: 18px; height: 18px; background: var(--ic-accent); opacity: 0.6; }
+.ic--kids .ic-decor i:nth-child(6) { top: 160px; right: 18px; width: 24px; height: 24px; border: 5px solid var(--ic-accent); }
+
+.ic--kids .ic-content {
+    align-items: center;
+    justify-content: center;
+    height: calc(100% - 96px);
+    margin: 48px 40px;
+    padding: 40px 34px;
+    border-radius: 40px;
+    background: color-mix(in srgb, #FFFFFF 78%, var(--ic-bg));
+    box-shadow: 0 12px 0 var(--ic-bg2);
+    text-align: center;
+}
+
+.ic--kids .ic-kicker {
+    padding: 9px 20px;
+    border-radius: 999px;
+    background: var(--ic-accent);
+    color: #FFFFFF;
+    font-family: var(--ic-display), sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    transform: rotate(-3deg);
+}
+
+.ic--kids .ic-title { margin-top: 26px; font-size: 54px; line-height: 1.08; }
+.ic--kids .ic-subtitle { font-family: var(--ic-display), sans-serif; font-weight: 700; color: var(--ic-accent); }
+
+.ic--kids .ic-rule {
+    width: 120px;
+    height: 0;
+    margin: 24px auto;
+    border-top: 5px dotted var(--ic-accent);
+}
+
+.ic--kids .ic-message { font-size: 19px; }
+
+.ic--kids .ic-when {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: center;
+    column-gap: 16px;
+    margin-top: 26px;
+    text-align: left;
+}
+
+.ic--kids .ic-day {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--ic-accent);
+    color: #FFFFFF;
+    font-family: var(--ic-display), sans-serif;
+    font-size: 44px;
+    font-weight: 700;
+}
+
+.ic--kids .ic-weekday { font-size: 15px; color: var(--ic-muted); }
+.ic--kids .ic-month { font-size: 20px; font-weight: 700; }
+.ic--kids .ic-time { font-size: 20px; font-weight: 700; color: var(--ic-accent); }
+.ic--kids .ic-place { margin-top: 18px; font-weight: 700; }
+.ic--kids .ic-brand { margin-top: 22px; padding-top: 0; }
+
+/* =========================================================
+   5. Ticket — ticket on a coloured background
+   ========================================================= */
+.ic--ticket { background: var(--ic-bg2); }
+
+.ic--ticket .ic-decor i:nth-child(1) {
+    inset: 0;
+    background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.22) 1.4px, transparent 1.8px) 0 0 / 20px 20px;
+}
+
+.ic--ticket .ic-decor i:nth-child(2) {
+    top: -160px;
+    right: -160px;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, transparent 65%);
+}
+
+.ic--ticket.ic-bg--plain { background: var(--ic-bg2); }
+
+.ic--ticket .ic-content {
+    height: calc(100% - 88px);
+    margin: 44px;
+    padding: 44px 40px 34px;
+    border-radius: 30px;
+    background: var(--ic-bg);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+}
+
+.ic--ticket .ic-kicker { font-size: 13px; font-weight: 800; color: var(--ic-accent); }
+.ic--ticket .ic-title { margin-top: 14px; font-size: 54px; font-weight: 800; line-height: 1.02; letter-spacing: -0.03em; }
+.ic--ticket .ic-subtitle { font-size: 22px; color: var(--ic-muted); }
+
+.ic--ticket .ic-rule {
+    position: relative;
+    height: 0;
+    margin: 30px -40px 26px;
+    border-top: 2px dashed color-mix(in srgb, var(--ic-fg) 20%, transparent);
+}
+
+.ic--ticket .ic-rule::before,
+.ic--ticket .ic-rule::after {
+    content: '';
+    position: absolute;
+    top: -16px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ic-bg2);
+}
+
+.ic--ticket .ic-rule::before { left: -15px; }
+.ic--ticket .ic-rule::after { right: -15px; }
+
+.ic--ticket .ic-message { font-size: 18px; }
+
+.ic--ticket .ic-when {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 16px;
+    margin-top: 24px;
+}
+
+.ic--ticket .ic-day {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    font-size: 76px;
+    font-weight: 800;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    color: var(--ic-accent);
+}
+
+.ic--ticket .ic-month { grid-column: 2; grid-row: 1; align-self: end; font-size: 20px; font-weight: 700; }
+.ic--ticket .ic-weekday { grid-column: 2; grid-row: 2; align-self: start; font-size: 15px; color: var(--ic-muted); }
+
+.ic--ticket .ic-time {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ic-accent) 14%, transparent);
+    color: var(--ic-accent);
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.ic--ticket .ic-place {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ic-fg) 6%, transparent);
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.ic--ticket .ic-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.ic--ticket .ic-brand::after {
+    content: '';
+    width: 130px;
+    height: 30px;
+    background: repeating-linear-gradient(90deg,
+        var(--ic-fg) 0 2px, transparent 2px 5px, var(--ic-fg) 5px 6px, transparent 6px 9px,
+        var(--ic-fg) 9px 12px, transparent 12px 14px);
+    opacity: 0.55;
+}
+
+/* ---------- Square format: tighter spacing ---------- */
+.ic[data-format="square"] .ic-content { padding-top: 44px; padding-bottom: 40px; }
+.ic[data-format="square"].ic--classic .ic-content { padding: 64px 70px; }
+.ic[data-format="square"] .ic-when { margin-top: 18px; }
+.ic[data-format="square"] .ic-rule { margin-top: 18px; margin-bottom: 16px; }
+.ic[data-format="square"].ic--classic .ic-brand { bottom: 38px; }
+.ic[data-format="square"].ic--kids .ic-content,
+.ic[data-format="square"].ic--ticket .ic-content { height: calc(100% - 72px); margin: 36px; padding: 30px 32px; }
+
+/* ---------- Printing (A5 postcard) ---------- */
+@media print {
+    @page { size: A5; margin: 0; }
+    body * { visibility: hidden; }
+    .ic-print-root, .ic-print-root * { visibility: visible; }
+    .ic-print-root { position: fixed; inset: 0; display: grid; place-items: center; }
+    .ic-print-root .ic { transform: none !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

@@ -77,6 +77,7 @@ def notify_created(event, request=None):
     if not user or not user.email or not user.email_notifications:
         return False
     edit_path = reverse('Events:edit_event', args=[event.id])
+    card_path = reverse('Events:card_editor', args=[event.id])
     return send_email(
         to=user.email,
         template='event_created',
@@ -86,6 +87,7 @@ def notify_created(event, request=None):
             'event_url': _event_url(event, request),
             'calendar_url': _calendar_url(event, request),
             'edit_url': request.build_absolute_uri(edit_path) if request else absolute_url(edit_path),
+            'card_url': request.build_absolute_uri(card_path) if request else absolute_url(card_path),
         },
         language=user_language(user),
         fail_silently=True,

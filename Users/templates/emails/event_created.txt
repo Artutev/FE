@@ -10,6 +10,7 @@
 {% endif %}
 {% lang "Позовите друзей прямо со страницы мероприятия — кнопка «Пригласить друзей»." "Invite friends right from the event page with the “Invite friends” button." %}
 
+{% lang "Оформить пригласительное" "Design an invitation" %}: {{ card_url }}
 {% lang "Редактировать" "Edit" %}: {{ edit_url }}
 
 — EventTown

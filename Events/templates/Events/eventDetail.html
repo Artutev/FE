@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=8">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=9">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -37,6 +37,15 @@
         <div class="ed-main">
             {% if event.has_passed %}
                 <div class="ed-notice">{% lang "Это событие уже прошло" "This event has already passed" %}</div>
+            {% endif %}
+            {% if show_card_prompt %}
+                <div class="ed-card-prompt">
+                    <div>
+                        <strong>{% lang "Мероприятие создано! Оформим пригласительное?" "Event created! Shall we design an invitation?" %}</strong>
+                        <p>{% lang "Пять готовых шаблонов, свои цвета и текст. Картинку можно скачать для сторис или отправить ссылкой." "Five ready templates, your colours and text. Download it for stories or share a link." %}</p>
+                    </div>
+                    <a href="{% url 'Events:card_editor' event.id %}" class="btn btn-primary">{% lang "Оформить" "Design it" %}</a>
+                </div>
             {% endif %}
 
             <section class="ed-section">
@@ -164,9 +173,16 @@
                     {% endif %}
                 </div>
 
-                {% if can_invite %}
+                {% if can_invite or is_creator or event_card %}
                     <div class="ed-invite">
-                        <button type="button" class="btn btn-secondary btn-block" data-open-invite aria-haspopup="dialog"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"/></svg>{% lang "Пригласить друзей" "Invite friends" %}</button>
+                        {% if can_invite %}
+                            <button type="button" class="btn btn-secondary btn-block" data-open-invite aria-haspopup="dialog"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"/></svg>{% lang "Пригласить друзей" "Invite friends" %}</button>
+                        {% endif %}
+                        {% if event_card %}
+                            <a href="{% url 'invite_card' event_card.code %}" class="btn btn-secondary btn-block"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>{% lang "Пригласительное" "Invitation card" %}</a>
+                        {% elif is_creator %}
+                            <a href="{% url 'Events:card_editor' event.id %}" class="btn btn-secondary btn-block"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>{% lang "Оформить пригласительное" "Design an invitation" %}</a>
+                        {% endif %}
                     </div>
                 {% endif %}
                 <div class="ed-secondary">
@@ -175,9 +191,6 @@
                     {% endif %}
                     {% if event.date and not event.has_passed %}
                         <a href="{% url 'Events:event_calendar' event.id %}{{ token_param }}" class="btn btn-secondary">{% lang "В календарь" "Add to calendar" %}</a>
-                    {% endif %}
-                    {% if event.event_type == 'wedding' %}
-                        <a href="{% url 'Events:download_invitation' event.id %}{{ token_param }}" class="btn btn-secondary">{% lang "Скачать приглашение" "Download invitation" %}</a>
                     {% endif %}
                     {% if private_link %}
                         <button type="button" id="copyPrivateLink" class="btn btn-secondary">{% lang "Скопировать приватную ссылку" "Copy private link" %}</button>

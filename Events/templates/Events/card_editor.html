@@ -1,0 +1,135 @@
+{% extends 'Users/base.html' %}
+{% load static language_tags %}
+
+{% block title %}{% lang "Пригласительное" "Invitation" %} · {{ event.name }} | EventTown{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ fonts_url }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/invite_card.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'css/card_editor.css' %}?v=3">
+{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="container ce">
+        <a href="{% url 'Events:event_detail' event.id %}" class="ce-back">← {{ event.name }}</a>
+        <div class="section-header">
+            <div>
+                <h1>{% lang "Пригласительное" "Invitation" %}</h1>
+                <p class="section-lead">{% lang "Выберите шаблон и настройте под себя — превью обновляется сразу." "Pick a template and make it yours — the preview updates instantly." %}</p>
+            </div>
+        </div>
+
+        <form method="post" class="ce-layout" id="cardForm">
+            {% csrf_token %}
+            <div class="ce-controls">
+                {# ---------- Template ---------- #}
+                <fieldset class="ce-group">
+                    <legend>{% lang "Шаблон" "Template" %}</legend>
+                    <div class="ce-templates">
+                        {% for preview in template_previews %}
+                            <label class="ce-template">
+                                <input type="radio" name="template" value="{{ preview.key }}"{% if preview.key == card.template %} checked{% endif %}>
+                                <span class="ic-stage" data-max-height="150"><span class="ic-stage-inner">{% include "Events/_invite_card.html" with card=preview.card card_when=preview.card_when %}</span></span>
+                                <span class="ce-template-name">{{ preview.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                {# ---------- Palette + accent ---------- #}
+                <fieldset class="ce-group">
+                    <legend>{% lang "Цвета" "Colours" %}</legend>
+                    <div class="ce-swatches" id="paletteList">
+                        {% for p in palettes %}
+                            <label class="ce-swatch" title="{{ p.name }}">
+                                <input type="radio" name="palette" value="{{ p.key }}"{% if p.key == card.palette %} checked{% endif %}>
+                                <span class="ce-swatch-dot" style="--a: {{ p.bg }}; --b: {{ p.bg2 }}; --c: {{ p.accent }};"></span>
+                                <span class="ce-swatch-name">{{ p.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <div class="ce-accent">
+                        <label for="accentPicker">{% lang "Свой цвет акцента" "Custom accent colour" %}</label>
+                        <input type="color" id="accentPicker" value="{% if card.accent %}{{ card.accent }}{% else %}{{ default_accent }}{% endif %}">
+                        <input type="hidden" name="accent" id="accentInput" value="{{ card.accent }}">
+                        <button type="button" class="btn btn-secondary btn-sm" id="accentReset"{% if not card.accent %} hidden{% endif %}>{% lang "Как в палитре" "Use palette" %}</button>
+                    </div>
+                </fieldset>
+
+                {# ---------- Font ---------- #}
+                <fieldset class="ce-group">
+                    <legend>{% lang "Шрифт" "Font" %}</legend>
+                    <div class="ce-pills">
+                        {% for f in fonts %}
+                            <label class="ce-pill">
+                                <input type="radio" name="font" value="{{ f.key }}"{% if f.key == card.font %} checked{% endif %}>
+                                <span style="font-family: '{{ f.display }}', serif;">{{ f.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                {# ---------- Texts ---------- #}
+                <fieldset class="ce-group ce-texts">
+                    <legend>{% lang "Текст" "Text" %}</legend>
+                    <label class="ce-field">
+                        <span>{% lang "Заголовок" "Title" %}</span>
+                        <input type="text" name="title" value="{{ card.title }}" maxlength="120" required data-bind-input="title">
+                    </label>
+                    <label class="ce-field">
+                        <span>{% lang "Подзаголовок" "Subtitle" %} <em>{% lang "например, имена" "e.g. names" %}</em></span>
+                        <input type="text" name="subtitle" value="{{ card.subtitle }}" maxlength="120" data-bind-input="subtitle">
+                    </label>
+                    <label class="ce-field">
+                        <span>{% lang "Обращение к гостям" "Message to guests" %}</span>
+                        <textarea name="message" rows="3" maxlength="300" data-bind-input="message">{{ card.message }}</textarea>
+                    </label>
+                    <p class="ce-hint">{% lang "Дата, время и место берутся из мероприятия." "Date, time and place come from the event." %}</p>
+                </fieldset>
+
+                {# ---------- Background + format ---------- #}
+                <fieldset class="ce-group">
+                    <legend>{% lang "Фон" "Background" %}</legend>
+                    <div class="ce-pills">
+                        {% for b in backgrounds %}
+                            <label class="ce-pill{% if b.key == 'cover' and not event.cover %} is-disabled{% endif %}">
+                                <input type="radio" name="background" value="{{ b.key }}"{% if b.key == card.background %} checked{% endif %}{% if b.key == 'cover' and not event.cover %} disabled{% endif %}>
+                                <span>{{ b.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {% if not event.cover %}<p class="ce-hint">{% lang "Чтобы поставить фото на фон, добавьте обложку в настройках мероприятия." "To use a photo as the background, add a cover to the event." %}</p>{% endif %}
+                </fieldset>
+
+                <fieldset class="ce-group">
+                    <legend>{% lang "Формат" "Format" %}</legend>
+                    <div class="ce-pills">
+                        {% for f in formats %}
+                            <label class="ce-pill">
+                                <input type="radio" name="format" value="{{ f.key }}"{% if f.key == card.format %} checked{% endif %}>
+                                <span>{{ f.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            </div>
+
+            <aside class="ce-preview">
+                <div class="ic-stage ce-stage" id="previewStage" data-max-height="620" data-mobile-vh="0.5">
+                    <div class="ic-stage-inner">{% include "Events/_invite_card.html" %}</div>
+                </div>
+                <div class="ce-actions">
+                    <button type="submit" class="btn btn-primary">{% if is_saved %}{% lang "Сохранить" "Save" %}{% else %}{% lang "Сохранить и получить ссылку" "Save and get the link" %}{% endif %}</button>
+                    <button type="button" class="btn btn-secondary" data-card-download="#previewStage .ic" data-filename="invitation-{{ event.id }}.png">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>{% lang "Скачать PNG" "Download PNG" %}
+                    </button>
+                </div>
+            </aside>
+        </form>
+    </div>
+</section>
+
+{{ catalog|json_script:"cardCatalog" }}
+<script src="{% static 'js/invite_card.js' %}?v=3"></script>
+<script src="{% static 'js/card_editor.js' %}?v=1"></script>
+{% endblock %}

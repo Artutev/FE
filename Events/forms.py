@@ -227,3 +227,39 @@ class EventForm(forms.ModelForm):
 
         return cleaned_data
 
+
+
+class InvitationCardForm(forms.ModelForm):
+    """Конструктор пригласительного: все значения проверяются по каталогу Events/card_designs.py."""
+
+    class Meta:
+        from Events.models import InvitationCard
+        model = InvitationCard
+        fields = ['template', 'palette', 'font', 'accent', 'background', 'format', 'title', 'subtitle', 'message']
+
+    def __init__(self, *args, event=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.event = event or self.instance.event
+        self.fields['title'].max_length = 120
+        self.fields['message'].max_length = 300
+
+    def clean(self):
+        import re
+        from Events import card_designs as designs
+        data = super().clean()
+        template = data.get('template')
+        if template not in designs.TEMPLATES:
+            self.add_error('template', 'Unknown template')
+            return data
+        if data.get('palette') not in designs.TEMPLATES[template]['palettes']:
+            data['palette'] = designs.first_palette(template)
+        if data.get('font') not in designs.FONTS:
+            data['font'] = designs.TEMPLATES[template]['font']
+        if data.get('format') not in designs.FORMATS:
+            data['format'] = 'story'
+        background = data.get('background')
+        if background not in designs.BACKGROUNDS or (background == 'cover' and not self.event.cover):
+            data['background'] = 'decor'
+        accent = (data.get('accent') or '').strip()
+        data['accent'] = accent.upper() if re.fullmatch(r'#[0-9a-fA-F]{6}', accent) else ''
+        return data

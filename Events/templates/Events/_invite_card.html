@@ -1,0 +1,25 @@
+{% load language_tags %}{% with c=card.colors f=card.fonts %}
+<div class="ic ic--{{ card.template }} ic-bg--{{ card.background }}" data-format="{{ card.format }}" data-invite-card
+     style="--ic-bg: {{ c.bg }}; --ic-bg2: {{ c.bg2 }}; --ic-fg: {{ c.fg }}; --ic-muted: {{ c.muted }}; --ic-accent: {{ c.accent }}; --ic-display: '{{ f.display }}'; --ic-body: '{{ f.body }}';">
+    {% if card.event.cover %}<img class="ic-photo" src="{{ card.event.cover.url }}" alt="" crossorigin="anonymous">{% endif %}
+    <div class="ic-shade" aria-hidden="true"></div>
+    <div class="ic-decor" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="ic-content">
+        <div class="ic-kicker">{% lang "Приглашение" "Invitation" %}</div>
+        <h1 class="ic-title" data-bind="title">{{ card.title }}</h1>
+        <div class="ic-subtitle" data-bind="subtitle"{% if not card.subtitle %} hidden{% endif %}>{{ card.subtitle }}</div>
+        <div class="ic-rule" aria-hidden="true"><span></span></div>
+        <p class="ic-message" data-bind="message"{% if not card.message %} hidden{% endif %}>{{ card.message }}</p>
+        {% if card_when %}
+        <div class="ic-when">
+            <div class="ic-weekday">{{ card_when.weekday }}</div>
+            <div class="ic-day">{{ card_when.day }}</div>
+            <div class="ic-month">{{ card_when.month }} {{ card_when.year }}</div>
+            {% if card_when.time %}<div class="ic-time">{{ card_when.time }}</div>{% endif %}
+        </div>
+        {% endif %}
+        {% if card.event.location %}<div class="ic-place">{{ card.event.location }}</div>{% endif %}
+        <div class="ic-brand">EventTown</div>
+    </div>
+</div>
+{% endwith %}

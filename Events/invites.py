@@ -36,6 +36,11 @@ def invite_candidates(user, event):
 
 
 def event_link(event, request):
+    """Ссылка для приглашения: на оформленное пригласительное, если оно есть, иначе на страницу события."""
+    from Events.models import InvitationCard
+    card = InvitationCard.objects.filter(event=event).only('code').first()
+    if card:
+        return request.build_absolute_uri(reverse('invite_card', args=[card.code]))
     path = reverse('Events:event_detail', args=[event.id])
     if event.is_private and event.access_token:
         path += f'?token={event.access_token}'

@@ -218,8 +218,12 @@ class ChatWebSocketTests(TransactionTestCase):
             kinds = []
             for i in range(20):
                 await ann.send_json_to({'type': 'message', 'text': f'spam {i}'})
-            while not await ann.receive_nothing(timeout=0.5):
-                event = await ann.receive_json_from()
+            # 20 отправок = 20 ответов (сообщение или ошибка лимита); ждём каждый, а не «тишину»
+            # (иначе на медленной машине тест заканчивался раньше, чем доходили ошибки)
+            while len(kinds) < 20:
+                event = await ann.receive_json_from(timeout=10)
+                if event['type'] == 'presence':
+                    continue
                 kinds.append(event['type'])
                 if event['type'] == 'error' and event['code'] == 'rate_limited':
                     errors += 1

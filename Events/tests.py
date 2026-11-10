@@ -217,3 +217,107 @@ class InviteFriendsTests(TestCase):
         self.assertIn(f'value="{self.bob.pk}"', content)
         self.assertIn('invite-tag--going', content)
         self.assertNotIn(f'value="{self.eve.pk}"', content)
+
+
+class InvitationCardTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('host', 'host@example.test', 'Pass12345!x')
+        self.guest = User.objects.create_user('guest', 'guest@example.test', 'Pass12345!x')
+        future = date.today() + timedelta(days=10)
+        self.wedding = Event.objects.create(
+            name='Свадьба', event_type='wedding', bride_name='Анна', groom_name='Макс',
+            date=future, creator=self.owner, is_private=True,
+        )
+        self.editor_url = reverse('Events:card_editor', args=[self.wedding.id])
+
+    def post_card(self, **overrides):
+        data = {
+            'template': 'party', 'palette': 'sunset', 'font': 'grotesk', 'accent': '',
+            'background': 'decor', 'format': 'square', 'title': 'Наша свадьба',
+            'subtitle': 'Анна & Макс', 'message': 'Ждём вас!',
+        }
+        data.update(overrides)
+        return self.client.post(self.editor_url, data)
+
+    def test_only_organizer_can_open_editor(self):
+        self.assertEqual(self.client.get(self.editor_url).status_code, 302)  # на вход
+        self.client.force_login(self.guest)
+        self.assertEqual(self.client.get(self.editor_url).status_code, 404)
+
+    def test_editor_starts_from_event_defaults(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(self.editor_url)
+        self.assertEqual(response.status_code, 200)
+        card = response.context['card']
+        self.assertIsNone(card.pk)
+        self.assertEqual(card.template, 'classic')
+        self.assertEqual(card.subtitle, 'Анна & Макс')
+        self.assertContains(response, 'ic--classic')
+
+    def test_save_and_open_public_page_without_login(self):
+        from Events.models import InvitationCard
+        self.client.force_login(self.owner)
+        response = self.post_card()
+        card = InvitationCard.objects.get(event=self.wedding)
+        self.assertRedirects(response, reverse('invite_card', args=[card.code]))
+        self.assertEqual((card.template, card.palette, card.format), ('party', 'sunset', 'square'))
+
+        self.client.logout()
+        page = self.client.get(reverse('invite_card', args=[card.code]))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'Наша свадьба')
+        self.assertContains(page, 'data-format="square"')
+        # приватное событие: кнопка ведёт со ссылкой-токеном
+        self.assertContains(page, f'token={self.wedding.access_token}')
+        self.assertEqual(self.client.get('/i/nope/').status_code, 404)
+
+    def test_values_are_checked_against_catalog(self):
+        from Events.models import InvitationCard
+        self.client.force_login(self.owner)
+        self.post_card(palette='ivory', font='comic', accent='red', background='cover', format='poster')
+        card = InvitationCard.objects.get(event=self.wedding)
+        self.assertEqual(card.palette, 'neon')         # палитра от другого шаблона → первая своя
+        self.assertEqual(card.font, 'grotesk')         # неизвестный шрифт → шрифт шаблона
+        self.assertEqual(card.accent, '')               # не #RRGGBB
+        self.assertEqual(card.background, 'decor')     # обложки у события нет
+        self.assertEqual(card.format, 'story')
+        self.post_card(accent='#12abef')
+        self.assertEqual(InvitationCard.objects.get(event=self.wedding).accent, '#12ABEF')
+
+    def test_unknown_template_is_rejected(self):
+        from Events.models import InvitationCard
+        self.client.force_login(self.owner)
+        response = self.post_card(template='hacker')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(InvitationCard.objects.exists())
+
+    def test_user_text_is_escaped(self):
+        from Events.models import InvitationCard
+        self.client.force_login(self.owner)
+        self.post_card(title='<script>alert(1)</script>')
+        card = InvitationCard.objects.get(event=self.wedding)
+        content = self.client.get(reverse('invite_card', args=[card.code])).content.decode()
+        self.assertNotIn('<script>alert(1)</script>', content)
+        self.assertIn('&lt;script&gt;', content)
+
+    def test_friend_invite_links_to_card(self):
+        from Chat.models import Message
+        from Events.models import InvitationCard
+        from Users.models import FriendRequest
+        FriendRequest.objects.create(from_user=self.owner, to_user=self.guest, status='accepted')
+        card = InvitationCard.initial_for(self.wedding)
+        card.save()
+        self.client.force_login(self.owner)
+        self.client.post(reverse('Events:invite_friends', args=[self.wedding.id]), {'friends': [self.guest.pk]})
+        self.assertIn(reverse('invite_card', args=[card.code]), Message.objects.get().text)
+
+    def test_prompt_after_create_shows_once(self):
+        self.client.force_login(self.owner)
+        self.client.post(reverse('Events:create_event'), {
+            'name': 'Днюха', 'event_type': 'other',
+            'date': (date.today() + timedelta(days=3)).isoformat(), 'time': '18:00',
+        })
+        event = Event.objects.get(name='Днюха')
+        url = reverse('Events:event_detail', args=[event.id])
+        self.assertContains(self.client.get(url), 'ed-card-prompt')
+        self.assertNotContains(self.client.get(url), 'ed-card-prompt')
