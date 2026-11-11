@@ -81,8 +81,10 @@ def map_link(request):
     return JsonResponse(found)
 
 def event_list(request):
+    language = get_language(request)
     # Показываем только мероприятия, которые еще не прошли
-    events = Event.objects.filter(date__gte=date.today(), is_private=False).order_by('date', 'time')
+    upcoming = Event.objects.filter(date__gte=date.today(), is_private=False)
+    events = upcoming.order_by('date', 'time')
 
     # Фильтр по типу события
     event_type = request.GET.get('type', '')
@@ -92,18 +94,56 @@ def event_list(request):
     # Поиск мероприятий (работаем через queryset, поддерживает кириллицу)
     search_query = request.GET.get('search', '')
     if search_query:
-        from django.db.models import Q
         events = events.filter(
             Q(name__icontains=search_query) |
             Q(description__icontains=search_query) |
-            Q(location__icontains=search_query)
+            Q(location__icontains=search_query) |
+            Q(venue_name__icontains=search_query) |
+            Q(city__icontains=search_query)
         )
+
+    # Город: «online» — онлайн-мероприятия, иначе город из адреса
+    city = request.GET.get('city', '').strip()
+    if city == 'online':
+        events = events.filter(is_online=True)
+    elif city:
+        events = events.filter(city__iexact=city)
+
+    from django.db.models import Count
+    cities = list(
+        upcoming.exclude(city='').values_list('city', flat=True)
+        .annotate(n=Count('id')).order_by('-n', 'city')[:12]
+    )
+    view_mode = 'map' if request.GET.get('view') == 'map' else 'list'
+
+    map_points = []
+    if view_mode == 'map':
+        from Users.templatetags.language_tags import event_date
+        for event in events.exclude(latitude__isnull=True).exclude(longitude__isnull=True):
+            map_points.append({
+                'name': event.name,
+                'url': reverse('Events:event_detail', args=[event.id]),
+                'when': ' · '.join(filter(None, (
+                    event_date({'LANGUAGE_CODE': language}, event.date),
+                    event.time.strftime('%H:%M') if event.time else '',
+                ))),
+                'place': event.place_title,
+                'type': event.event_type,
+                'lat': event.latitude,
+                'lon': event.longitude,
+            })
 
     context = {
         'events': events,
         'search_query': search_query,
         'event_type': event_type,
-        'event_types': EventType.localized_choices(get_language(request))
+        'event_types': EventType.localized_choices(language),
+        'city': city,
+        'cities': cities,
+        'has_online': upcoming.filter(is_online=True).exists(),
+        'view_mode': view_mode,
+        'map_points': map_points,
+        'show_city_filter': True,
     }
     return render(request, 'Events/eventList.html', context)
 

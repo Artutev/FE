@@ -89,6 +89,10 @@ class Event(models.Model):
     venue_name = models.CharField("Название места", max_length=120, blank=True)
     location = models.CharField("Место проведения", max_length=200, blank=True)
     directions = models.TextField("Как найти", max_length=500, blank=True)
+    city = models.CharField("Город", max_length=100, blank=True)
+    country = models.CharField("Страна", max_length=100, blank=True)
+    is_online = models.BooleanField("Онлайн-мероприятие", default=False)
+    online_url = models.URLField("Ссылка на трансляцию", max_length=500, blank=True)
     description = models.TextField("Описание", blank=True)
     latitude = models.FloatField("Широта", null=True, blank=True)
     longitude = models.FloatField("Долгота", null=True, blank=True)
@@ -127,7 +131,9 @@ class Event(models.Model):
 
     @property
     def place_title(self):
-        """Название места и адрес одной строкой: «Лофт „Крыша“, ул. Ленина, 5»."""
+        """Название места и адрес одной строкой: «Лофт „Крыша“, ул. Ленина, 5». Для онлайн — «Онлайн»."""
+        if self.is_online:
+            return 'Online'
         return ', '.join(part for part in (self.venue_name, self.location) if part)
 
     @property

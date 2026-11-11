@@ -6,7 +6,7 @@
         <header class="maps-sheet-head">
             <div>
                 <h2 id="mapsSheetTitle">{% lang "Как добраться" "Get directions" %}</h2>
-                {% if event.venue_name or event.location %}<p>{{ event.place_title }}</p>{% endif %}
+                {% if event.is_online or event.venue_name or event.location %}<p>{% place_label event %}</p>{% endif %}
             </div>
             <button type="submit" class="icon-btn" aria-label="{% lang "Закрыть" "Close" %}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </header>

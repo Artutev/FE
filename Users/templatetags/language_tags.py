@@ -81,3 +81,11 @@ def month_short(context, value):
 def friend_request_status(context, status):
     labels = FRIEND_REQUEST_STATUS_LABELS.get(_language(context), FRIEND_REQUEST_STATUS_LABELS['ru'])
     return labels.get(status, status)
+
+
+@register.simple_tag(takes_context=True)
+def place_label(context, event):
+    """«Название места, адрес» или «Онлайн» на языке страницы / письма."""
+    if getattr(event, 'is_online', False):
+        return tr(_language(context), 'Онлайн', 'Online')
+    return event.place_title

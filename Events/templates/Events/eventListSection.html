@@ -1,4 +1,4 @@
-{% load language_tags %}
+{% load language_tags map_tags %}
 
 <form method="get" action="{{ request.path }}" class="search-form" role="search">
     <div class="home-search list-search">
@@ -11,6 +11,8 @@
             aria-label="{% lang "Поиск мероприятий" "Search events" %}"
         >
         {% if event_type %}<input type="hidden" name="type" value="{{ event_type }}">{% endif %}
+        {% if city %}<input type="hidden" name="city" value="{{ city }}">{% endif %}
+        {% if view_mode == 'map' %}<input type="hidden" name="view" value="map">{% endif %}
         {% if search_query %}
             <a href="{{ request.path }}{% if event_type %}?type={{ event_type }}{% endif %}" class="icon-btn" title="{% lang "Очистить поиск" "Clear search" %}" aria-label="{% lang "Очистить поиск" "Clear search" %}">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -21,15 +23,44 @@
 
     {% if event_types %}
     <div class="chip-row">
-        <a href="{{ request.path }}{% if search_query %}?search={{ search_query|urlencode }}{% endif %}" class="chip{% if not event_type %} is-active{% endif %}">{% lang "Все" "All" %}</a>
+        <a href="{% url_with type='' %}" class="chip{% if not event_type %} is-active{% endif %}">{% lang "Все" "All" %}</a>
         {% for code, label in event_types %}
-            <a href="{{ request.path }}?type={{ code }}{% if search_query %}&amp;search={{ search_query|urlencode }}{% endif %}" class="chip{% if event_type == code %} is-active{% endif %}">{{ label }}</a>
+            <a href="{% url_with type=code %}" class="chip{% if event_type == code %} is-active{% endif %}">{{ label }}</a>
         {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if show_city_filter %}
+    <div class="list-toolbar">
+        {% if cities or has_online %}
+        <div class="chip-row chip-row--cities" aria-label="{% lang "Город" "City" %}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            <a href="{% url_with city='' %}" class="chip chip--sm{% if not city %} is-active{% endif %}">{% lang "Все города" "All cities" %}</a>
+            {% for name in cities %}
+                <a href="{% url_with city=name %}" class="chip chip--sm{% if city|lower == name|lower %} is-active{% endif %}">{{ name }}</a>
+            {% endfor %}
+            {% if has_online %}<a href="{% url_with city='online' %}" class="chip chip--sm{% if city == 'online' %} is-active{% endif %}">{% lang "Онлайн" "Online" %}</a>{% endif %}
+        </div>
+        {% endif %}
+        <div class="view-switch" role="group" aria-label="{% lang "Вид" "View" %}">
+            <a href="{% url_with view='' %}" class="view-switch__btn{% if view_mode != 'map' %} is-active{% endif %}"{% if view_mode != 'map' %} aria-current="true"{% endif %}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>{% lang "Список" "List" %}</a>
+            <a href="{% url_with view='map' %}" class="view-switch__btn{% if view_mode == 'map' %} is-active{% endif %}"{% if view_mode == 'map' %} aria-current="true"{% endif %}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>{% lang "Карта" "Map" %}</a>
+        </div>
     </div>
     {% endif %}
 </form>
 
-{% if events %}
+{% if view_mode == 'map' %}
+    <div class="events-map-wrap">
+        <div id="eventsMap" class="events-map" aria-label="{% lang "Мероприятия на карте" "Events on the map" %}"></div>
+        <button type="button" class="btn btn-secondary events-map-near" id="nearMe">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+            <span>{% lang "Рядом со мной" "Near me" %}</span>
+        </button>
+    </div>
+    <p class="events-map-note" id="eventsMapNote">{% if not map_points %}{% lang "Для этих фильтров нет мероприятий с точкой на карте." "No events with a map pin for these filters." %}{% else %}{% lang "Мероприятий на карте:" "Events on the map:" %} <strong>{{ map_points|length }}</strong>{% endif %}</p>
+    {{ map_points|json_script:"eventsMapData" }}
+{% elif events %}
     {% if search_query %}
         <p class="search-results-info">{% lang "Найдено:" "Found:" %} <strong>{{ events.count }}</strong></p>
     {% endif %}
@@ -40,7 +71,7 @@
     </div>
 {% else %}
     <div class="empty-state">
-        {% if search_query or event_type %}
+        {% if search_query or event_type or city %}
             <h3>{% lang "Ничего не нашлось" "Nothing found" %}</h3>
             <p>{% lang "Попробуйте изменить запрос или" "Try a different search or" %} <a href="{{ request.path }}">{% lang "сбросить фильтры" "reset filters" %}</a>.</p>
         {% else %}

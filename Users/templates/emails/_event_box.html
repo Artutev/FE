@@ -11,7 +11,7 @@
       <div style="font-size:17px;font-weight:700;line-height:23px;margin:2px 0 6px;color:#18122B;">{{ event.name }}</div>
       <div style="font-size:14px;line-height:20px;color:#6B6880;">
         {% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
-        {% if event.venue_name or event.location %}<br>{{ event.place_title }}{% endif %}
+        {% if event.is_online or event.venue_name or event.location %}<br>{% place_label event %}{% endif %}
       </div>
     </td>
   </tr>

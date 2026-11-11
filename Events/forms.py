@@ -109,6 +109,9 @@ class EventForm(forms.ModelForm):
 
     latitude = forms.FloatField(required=False, widget=forms.HiddenInput())
     longitude = forms.FloatField(required=False, widget=forms.HiddenInput())
+    # Город и страну подставляет скрипт карты из подсказки адреса — для фильтра афиши по городу
+    city = forms.CharField(required=False, max_length=100, widget=forms.HiddenInput())
+    country = forms.CharField(required=False, max_length=100, widget=forms.HiddenInput())
 
     class Meta:
         model = Event
@@ -122,6 +125,10 @@ class EventForm(forms.ModelForm):
             'venue_name',
             'location',
             'directions',
+            'city',
+            'country',
+            'is_online',
+            'online_url',
             'is_private',
             'bride_name',
             'groom_name',
@@ -143,6 +150,8 @@ class EventForm(forms.ModelForm):
             }),
             'venue_name': forms.TextInput(attrs={'class': 'form-control', 'maxlength': 120}),
             'directions': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'maxlength': 500}),
+            'is_online': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'online_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://zoom.us/j/…'}),
             'is_private': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -180,6 +189,11 @@ class EventForm(forms.ModelForm):
         self.fields['date'].label = LABELS[lang]['date']
         self.fields['time'].label = LABELS[lang]['time']
         self.fields['location'].label = LABELS[lang]['location']
+        self.fields['is_online'].label = tr(lang, 'Онлайн-мероприятие', 'Online event')
+        self.fields['online_url'].label = tr(lang, 'Ссылка на трансляцию или звонок', 'Stream or call link')
+        self.fields['online_url'].required = False
+        self.fields['online_url'].error_messages['invalid'] = tr(
+            lang, 'Введите ссылку целиком, начиная с https://', 'Enter the full link, starting with https://')
         for name in ('venue_name', 'directions'):
             self.fields[name].label = LABELS[lang][name]
             self.fields[name].required = False
@@ -227,6 +241,15 @@ class EventForm(forms.ModelForm):
         event_time = cleaned_data.get('time')
         event_type = cleaned_data.get('event_type')
         location = cleaned_data.get('location')
+
+        if cleaned_data.get('is_online'):
+            # Онлайн: адрес и карта не нужны — чистим, чтобы на странице не висело старое место
+            for name in ('location', 'venue_name', 'directions', 'city', 'country'):
+                cleaned_data[name] = ''
+            cleaned_data['latitude'] = cleaned_data['longitude'] = None
+            location = 'online'
+        else:
+            cleaned_data['online_url'] = ''
 
         if event_type != 'other' and not location and not cleaned_data.get('venue_name'):
             message = tr(self.language, 'Укажите место проведения.', 'Please enter a location.')

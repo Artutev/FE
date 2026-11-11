@@ -20,6 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Photon знает только en/de/fr; «default» — местные названия (по-русски в России, по-чешски в Чехии)
     const PHOTON_LANG = lang === 'en' ? 'en' : 'default';
     const venueInput = document.querySelector('input[name="venue_name"]');
+    const cityInput = document.querySelector('input[name="city"]');
+    const countryInput = document.querySelector('input[name="country"]');
+
+    // Город и страна — для фильтра афиши по городу (берём из ответа геокодера)
+    function setPlaceMeta(place) {
+        const a = (place && place.address) || {};
+        if (cityInput) cityInput.value = (a.city || a.town || a.village || a.municipality || '').slice(0, 100);
+        if (countryInput) countryInput.value = (a.country || '').slice(0, 100);
+    }
 
     const T = {
         hint: etT('Начните вводить адрес или нажмите на карту, чтобы поставить точку.', 'Start typing an address or tap the map to drop a pin.', 'Začněte psát adresu nebo klepněte do mapy a umístěte špendlík.'),
@@ -68,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const [startCenter, startZoom] = initialCenter();
     const map = L.map(mapDiv, { scrollWheelZoom: false, zoomControl: true }).setView(startCenter, startZoom);
+    window.etLocationMap = map; // форма прячет/показывает карту (онлайн-мероприятие) — пересчитать размер
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             // OSM требует Referer с адресом сайта, иначе отдаёт 403 «Access blocked»
             referrerPolicy: 'strict-origin-when-cross-origin',
@@ -206,16 +216,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fillFromPoint(lat, lon) {
-        // Не затираем то, что пользователь написал сам (например, «Лофт Крыша»)
-        if (input.value.trim() && !autoFilled) return;
+        // Город уточняем всегда, а текст адреса — только если его не писали руками (например, «Лофт Крыша»)
+        const keepText = input.value.trim() && !autoFilled;
         try {
             const place = await reverse(lat, lon);
             if (place && !place.error) {
-                input.value = formatPlace(place).value;
-                autoFilled = true;
+                setPlaceMeta(place);
+                if (!keepText) {
+                    input.value = formatPlace(place).value;
+                    autoFilled = true;
+                }
             }
         } catch (error) {
-            setStatus(T.offline, true);
+            if (!keepText) setStatus(T.offline, true);
         }
     }
 
@@ -246,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!place) return;
         const formatted = formatPlace(place);
         input.value = formatted.value;
+        setPlaceMeta(place);
         // Выбрали заведение («Кафе Пушкин») — подставим его в «Название места», а в адрес — улицу и город
         if (place.venue && venueInput && !venueInput.value.trim()) {
             venueInput.value = place.venue;
@@ -325,6 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!place) return;
             if (venueInput) venueInput.value = place.venue || '';
             input.value = place.address || '';
+            if (cityInput) cityInput.value = place.city || '';
+            if (countryInput) countryInput.value = place.country || '';
             autoFilled = false; // это текст организатора — не затираем при перетаскивании метки
             closeSuggest();
             if (place.lat != null && place.lon != null) placePin(place.lat, place.lon, { zoom: 17 });
@@ -341,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             useMapLink(query);
             return;
         }
+        if (!marker) setPlaceMeta(null); // адрес без точки — город неизвестен, не оставляем старый
         if (query.length < 3) {
             closeSuggest();
             picker.classList.remove('is-loading');

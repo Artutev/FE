@@ -51,7 +51,13 @@
           {% endblock %}
         </tr></table>
       </td></tr>
-      {% if event.venue_name or event.location %}
+      {% if event.is_online %}
+      <tr><td style="padding:14px 24px 4px;">
+        <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Место" "Location" %}</div>
+        <div style="font-size:15px;font-weight:600;line-height:21px;margin-top:3px;">{% lang "Онлайн" "Online" %}</div>
+        {% if event.online_url %}<div style="font-size:14px;line-height:20px;margin-top:4px;"><a href="{{ event.online_url }}" style="color:#7C3AED;">{{ event.online_url }}</a></div>{% endif %}
+      </td></tr>
+      {% elif event.venue_name or event.location %}
       <tr><td style="padding:14px 24px 4px;">
         <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Место" "Location" %}</div>
         {% if event.venue_name %}<div style="font-size:15px;font-weight:600;line-height:21px;margin-top:3px;">{{ event.venue_name }}</div>{% endif %}

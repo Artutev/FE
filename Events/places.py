@@ -16,7 +16,7 @@ def recent_places(user, limit=5):
     events = (Event.objects.filter(creator=user)
               .exclude(location='', venue_name='')
               .order_by('-created_at')
-              .values('venue_name', 'location', 'latitude', 'longitude')[:50])
+              .values('venue_name', 'location', 'latitude', 'longitude', 'city', 'country')[:50])
     for event in events:
         key = (event['venue_name'].strip().lower(), event['location'].strip().lower())
         if key in seen:
@@ -27,6 +27,8 @@ def recent_places(user, limit=5):
             'address': event['location'],
             'lat': event['latitude'],
             'lon': event['longitude'],
+            'city': event['city'],
+            'country': event['country'],
         })
         if len(places) == limit:
             break

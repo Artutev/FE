@@ -19,7 +19,7 @@
             {% if card_when.time %}<div class="ic-time">{{ card_when.time }}</div>{% endif %}
         </div>
         {% endif %}
-        {% if card.event.venue_name or card.event.location %}<div class="ic-place">{{ card.event.place_title }}</div>{% endif %}
+        {% if card.event.is_online or card.event.venue_name or card.event.location %}<div class="ic-place">{% place_label card.event %}</div>{% endif %}
         <div class="ic-brand">EventTown</div>
     </div>
 </div>

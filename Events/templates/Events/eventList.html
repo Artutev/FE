@@ -2,6 +2,14 @@
 {% load static language_tags %}
 
 {% block title %}{% lang "Мероприятия | EventTown" "Events | EventTown" %}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/event_list_map.css' %}?v=1">
+    {% if view_mode == 'map' %}
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <section class="page-section events-section">
@@ -20,4 +28,9 @@
         {% include 'Events/eventListSection.html' %}
     </div>
 </section>
+{% if view_mode == 'map' %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+    <script src="{% static 'js/events-map.js' %}?v=1"></script>
+{% endif %}
 {% endblock %}

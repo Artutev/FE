@@ -67,7 +67,7 @@
                 </section>
             {% endif %}
 
-            {% if event.directions %}
+            {% if event.directions and not event.is_online %}
                 <section class="ed-section ed-directions">
                     <h2>{% lang "Как найти" "How to find it" %}</h2>
                     {% if is_creator or is_registered %}
@@ -185,7 +185,16 @@
                         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
                         <div>
                             <span>{% lang "Место" "Location" %}</span>
-                            {% if event.venue_name or event.location %}
+                            {% if event.is_online %}
+                                <strong class="ed-venue">{% lang "Онлайн" "Online" %}</strong>
+                                {% if event.online_url %}
+                                    {% if is_creator or is_registered %}
+                                        <span class="ed-route-row"><a class="ed-route" href="{{ event.online_url }}" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>{% lang "Присоединиться" "Join" %}</a></span>
+                                    {% else %}
+                                        <em class="ed-online-hint">{% lang "Ссылка появится после регистрации" "The link appears after you register" %}</em>
+                                    {% endif %}
+                                {% endif %}
+                            {% elif event.venue_name or event.location %}
                                 {% if event.venue_name %}<strong class="ed-venue">{{ event.venue_name }}</strong>{% endif %}
                                 {% if event.location %}<button type="button" class="ed-address" data-open-maps aria-haspopup="dialog">{{ event.location }}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>{% endif %}
                                 {% if event.location or event.latitude %}
@@ -266,7 +275,7 @@
     <div class="ed-mobile-bar">
         <div>
             <strong>{% if event.date %}{% event_date event.date %}{% endif %}</strong>
-            <span>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.venue_name or event.location %} · {{ event.place_title }}{% endif %}</span>
+            <span>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.is_online or event.venue_name or event.location %} · {% place_label event %}{% endif %}</span>
         </div>
         {% if user.is_authenticated %}
             <form method="post" action="{% url 'Events:register_event' event.id %}{{ token_param }}">

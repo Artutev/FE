@@ -3,6 +3,8 @@
     {% csrf_token %}
     {{ form.latitude }}
     {{ form.longitude }}
+    {{ form.city }}
+    {{ form.country }}
 
     {% if form.errors %}
         <div class="alert alert-danger ef-errors" role="alert">
@@ -68,12 +70,27 @@
                 {{ form.time.label_tag }}
                 {{ form.time }}
             </div>
-            <div class="form-group ef-span-2{% if form.venue_name.errors %} has-error{% endif %}">
+            <div class="form-group ef-span-2 privacy-toggle">
+                <label class="privacy-card" for="{{ form.is_online.id_for_label }}">
+                    {{ form.is_online }}
+                    <span class="privacy-card__content">
+                        <span class="privacy-card__title">{{ form.is_online.label }}</span>
+                        <span class="privacy-card__hint">{% lang "Встреча в Zoom, Meet, Telegram или трансляция — вместо адреса будет ссылка" "Zoom, Meet, Telegram or a stream — a link instead of an address" %}</span>
+                    </span>
+                </label>
+            </div>
+            <div class="form-group ef-span-2{% if form.online_url.errors %} has-error{% endif %}" data-online-field{% if not form.is_online.value %} hidden{% endif %}>
+                {{ form.online_url.label_tag }}
+                {{ form.online_url }}
+                <span class="form-hint">{% lang "Ссылку увидят только участники и вы. Можно добавить позже." "Only attendees and you will see the link. You can add it later." %}</span>
+                {% for error in form.online_url.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="form-group ef-span-2{% if form.venue_name.errors %} has-error{% endif %}" data-place-field{% if form.is_online.value %} hidden{% endif %}>
                 {{ form.venue_name.label_tag }}
                 {{ form.venue_name }}
                 <span class="form-hint">{% lang "Необязательно. Так место будет проще узнать в приглашении и в письмах." "Optional. Makes the place easier to recognise in the invitation and emails." %}</span>
             </div>
-            <div class="form-group ef-span-2 loc-picker{% if form.location.errors %} has-error{% endif %}" id="locPicker" data-map-link-url="{% url 'Events:map_link' %}">
+            <div class="form-group ef-span-2 loc-picker{% if form.location.errors %} has-error{% endif %}" id="locPicker" data-place-field{% if form.is_online.value %} hidden{% endif %} data-map-link-url="{% url 'Events:map_link' %}">
                 <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
                 <div class="loc-search">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -103,7 +120,7 @@
                     <button type="button" class="loc-clear-point" id="locClearPoint" hidden>{% lang "Убрать точку" "Remove pin" %}</button>
                 </div>
             </div>
-            <div class="form-group ef-span-2{% if form.directions.errors %} has-error{% endif %}">
+            <div class="form-group ef-span-2{% if form.directions.errors %} has-error{% endif %}" data-place-field{% if form.is_online.value %} hidden{% endif %}>
                 {{ form.directions.label_tag }}
                 {{ form.directions }}
                 <span class="form-hint">{% lang "Увидят только участники и вы — сюда можно написать код домофона." "Only attendees and you will see this — fine for a door code." %}</span>
@@ -156,4 +173,18 @@
 <script src="{% static 'js/photo-input.js' %}?v=2"></script>
 <script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="{% static 'js/location-map.js' %}?v=8"></script>
+<script src="{% static 'js/location-map.js' %}?v=9"></script>
+<script>
+    // Онлайн-мероприятие: прячем адрес, карту и «Как найти», показываем поле ссылки
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.getElementById('{{ form.is_online.id_for_label }}');
+        if (!toggle) return;
+        const sync = () => {
+            document.querySelectorAll('[data-place-field]').forEach((el) => { el.hidden = toggle.checked; });
+            document.querySelectorAll('[data-online-field]').forEach((el) => { el.hidden = !toggle.checked; });
+            if (!toggle.checked && window.etLocationMap) window.etLocationMap.invalidateSize();
+        };
+        toggle.addEventListener('change', sync);
+        sync();
+    });
+</script>

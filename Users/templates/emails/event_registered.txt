@@ -2,8 +2,9 @@
 
 {{ event.name }}
 {% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
-{% if event.venue_name or event.location %}{{ event.place_title }}
-{% endif %}{% if event.directions %}{{ event.directions }}
+{% if event.is_online or event.venue_name or event.location %}{% place_label event %}
+{% endif %}{% if event.is_online and event.online_url %}{{ event.online_url }}
+{% elif event.directions %}{{ event.directions }}
 {% endif %}
 {{ event_url }}
 

@@ -66,3 +66,18 @@ def map_links(context, event):
             names = PROVIDERS[key]
             result.append({'key': key, 'name': names[index], 'url': links[key], 'color': names[3]})
     return result
+
+
+@register.simple_tag(takes_context=True)
+def url_with(context, **changes):
+    """Текущий адрес с изменёнными параметрами: {% url_with city='Москва' view='' %} (пустое — убрать)."""
+    from urllib.parse import urlencode as _urlencode
+    request = context['request']
+    params = request.GET.copy()
+    for key, value in changes.items():
+        if value in ('', None):
+            params.pop(key, None)
+        else:
+            params[key] = value
+    query = _urlencode([(k, v) for k in params for v in params.getlist(k) if v])
+    return f'{request.path}?{query}' if query else request.path

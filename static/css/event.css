@@ -715,3 +715,6 @@
     cursor: pointer;
 }
 .loc-recent-chip:hover { border-color: var(--primary); color: var(--primary-text); }
+
+.ef-form [data-place-field][hidden],
+.ef-form [data-online-field][hidden] { display: none !important; }

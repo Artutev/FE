@@ -135,3 +135,72 @@ class RecentPlacesTests(TestCase):
         page = self.client.get(reverse('Events:create_event'))
         self.assertContains(page, 'loc-recent-chip')
         self.assertNotContains(page, 'Чужой адрес')
+
+
+class OnlineAndCityTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('host', 'h@example.test', 'Pass12345!x')
+        self.soon = date.today() + timedelta(days=4)
+
+    def test_online_event_hides_place_and_shows_link_to_attendees(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse('Events:create_event'), {
+            'name': 'Webinar', 'event_type': 'lecture', 'date': self.soon.strftime('%d.%m.%Y'), 'time': '18:00',
+            'is_online': 'on', 'online_url': 'https://meet.example.test/abc',
+            'location': 'Старый адрес', 'venue_name': 'Лофт', 'latitude': '55.7', 'longitude': '37.6', 'city': 'Москва',
+            'description': '',
+        })
+        self.assertEqual(response.status_code, 302)
+        event = Event.objects.get(name='Webinar')
+        self.assertTrue(event.is_online)
+        self.assertEqual((event.location, event.venue_name, event.city, event.latitude), ('', '', '', None))
+        url = reverse('Events:event_detail', args=[event.id])
+        self.assertContains(self.client.get(url), 'https://meet.example.test/abc')  # организатор
+        guest = User.objects.create_user('guest', 'g@example.test', 'Pass12345!x')
+        self.client.force_login(guest)
+        page = self.client.get(url)
+        self.assertNotContains(page, 'meet.example.test')
+        self.assertContains(page, 'Ссылка появится после регистрации')
+        EventRegistration.objects.create(user=guest, event=event)
+        self.assertContains(self.client.get(url), 'https://meet.example.test/abc')
+
+    def test_online_url_dropped_for_offline_event(self):
+        self.client.force_login(self.owner)
+        self.client.post(reverse('Events:create_event'), {
+            'name': 'Party', 'event_type': 'other', 'date': self.soon.strftime('%d.%m.%Y'), 'time': '18:00',
+            'online_url': 'https://meet.example.test/x', 'location': 'ул. Ленина, 5', 'city': 'Москва', 'description': '',
+        })
+        event = Event.objects.get(name='Party')
+        self.assertEqual((event.online_url, event.city), ('', 'Москва'))
+
+    def test_city_filter_and_map_view(self):
+        Event.objects.create(name='Moscow jazz', creator=self.owner, date=self.soon, city='Москва',
+                             location='Тверская 7', latitude=55.758, longitude=37.611)
+        Event.objects.create(name='Prague talk', creator=self.owner, date=self.soon, city='Praha')
+        Event.objects.create(name='Webinar', creator=self.owner, date=self.soon, is_online=True)
+        url = reverse('Events:event_list')
+        page = self.client.get(url)
+        self.assertEqual(set(page.context['cities']), {'Москва', 'Praha'})
+        self.assertTrue(page.context['has_online'])
+        names = lambda r: [e.name for e in r.context['events']]
+        self.assertEqual(names(self.client.get(url, {'city': 'москва'})), ['Moscow jazz'])
+        self.assertEqual(names(self.client.get(url, {'city': 'online'})), ['Webinar'])
+        page = self.client.get(url, {'view': 'map', 'city': 'Москва'})
+        self.assertEqual([p['name'] for p in page.context['map_points']], ['Moscow jazz'])
+        self.assertContains(page, 'eventsMapData')
+        self.assertContains(page, 'markercluster')
+        # Чипы сохраняют остальные фильтры
+        self.assertContains(page, 'view=map&amp;city=Praha')
+
+    def test_fill_event_cities_command(self):
+        from io import StringIO
+        from django.core.management import call_command
+        event = Event.objects.create(name='Old', creator=self.owner, date=self.soon, latitude=50.08, longitude=14.43)
+        with mock.patch('Events.management.commands.fill_event_cities.reverse_city', return_value=('Praha', 'Česko')), \
+                mock.patch('Events.management.commands.fill_event_cities.time.sleep'):
+            call_command('fill_event_cities', '--dry-run', stdout=StringIO())
+            event.refresh_from_db()
+            self.assertEqual(event.city, '')
+            call_command('fill_event_cities', stdout=StringIO())
+        event.refresh_from_db()
+        self.assertEqual((event.city, event.country), ('Praha', 'Česko'))

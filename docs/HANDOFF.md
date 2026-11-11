@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 133 теста
+python manage.py test        # 137 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -73,12 +73,16 @@ python manage.py test        # 133 теста
   в браузере → город по часовому поясу; вставка ссылки Яндекс/Google/2ГИС/Mapy/OSM/Apple (`/Event/map-link/`,
   короткие ссылки раскрываются на сервере, редиректы только на хосты карт, 30 запросов/мин); тёмная карта — CSS-фильтр
   тайлов при `html.dark-mode`.
+  Онлайн-мероприятия (`Event.is_online`, `online_url` — ссылку видят только участники и организатор; адрес и точка
+  при онлайне очищаются). Город и страна (`Event.city`/`country`) приходят из геокодера в скрытые поля формы; для старых
+  событий — `python manage.py fill_event_cities` (Photon, 1 запрос/с). Афиша: фильтр по городу и «Онлайн», вид
+  «Список / Карта» (`?view=map`, Leaflet.markercluster с unpkg), «Рядом со мной». Тег `{% url_with %}` сохраняет фильтры.
 - Письма-билеты: `emails/ticket_base.html` — рамка рисуется по секциям, прорези на линии отрыва (исправлено `12ce9ad`).
 
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 133 теста. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 137 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.
