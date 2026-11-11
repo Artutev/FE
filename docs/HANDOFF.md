@@ -1,6 +1,6 @@
 # Handoff: текущее состояние проекта
 
-Обновлено: 2026-11-10. Django-проект FastEvent / EventTown (приложения `Events`, `Users`, проект `FE`).
+Обновлено: 2026-11-11. Django-проект FastEvent / EventTown (приложения `Events`, `Users`, проект `FE`).
 
 ## Ветка `feat/redesign-violet`
 - **Редизайн** всех страниц: палитра «Виноград» (фиолетовая), шрифт Onest, логотип-билет, светлая/тёмная тема,
@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 87 тестов
+python manage.py test        # 112 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -30,9 +30,9 @@ python manage.py test        # 87 тестов
   `Event.objects.filter(name__startswith='[demo]').delete(); User.objects.filter(username='demo_ui').delete()`.
 
 
-## Ветка `feat/chat-photos` — НА ПРОДЕ (обновлено 2026-11-10)
+## Ветка `feat/chat-photos` — НА ПРОДЕ (обновлено 2026-11-11)
 
-Прод (`/home/ubuntu/FE`, https://fastevent.duckdns.org) работает на `feat/chat-photos`, последний выкаченный коммит `12ce9ad`.
+Прод (`/home/ubuntu/FE`, https://fastevent.duckdns.org) работает на `feat/chat-photos`, последний выкаченный коммит `9dcc21f` (2026-11-11, миграция Events.0015 применена; `media/cards/` создаст daphne при первой загрузке).
 В `main` ещё не смержено. Выкладку делает сессия «Шурик — сервер (прод)» (прав sudo у неё нет — системные шаги делает Шеф).
 
 **Инфраструктура прода (сделано):** daphne вместо gunicorn (`fe.service`), Redis (`REDIS_URL`), nginx с `/ws/`, `/media/`,
@@ -56,20 +56,27 @@ python manage.py test        # 87 тестов
   событий ведёт на событие с токеном — так задумано, Шеф в курсе). Вёрстка — одна разметка `_invite_card.html`, вид — `static/css/invite_card.css`.
   PNG — `html-to-image@1.11.11` с jsdelivr, шрифты — Google Fonts.
 - Фото уменьшаются в браузере до загрузки (`static/js/photo-input.js`, 2000 px / аватар 1000 px), WebP `method=4`.
+- **Вход и регистрация** (`400d803`): `Users/backends.py` — имя без учёта регистра и пробелов по краям
+  (при «близнецах» по регистру решает пароль); `UserLoginForm.clean` — ошибки «неверно», «email не подтверждён»
+  (ссылка на код), лимит 10 неудачных попыток на имя / 15 мин (кэш `login-failures:<имя>`). Пароль — только ASCII 33–126
+  (`Users/validators.py`), не обрезается. Имя пользователя может быть кириллицей (решение Шефа). Ошибки форм — ru/en/cs
+  через `TranslatedErrorsMixin`. Возврат после регистрации: `?next=` → `session['auth_next']` → форма входа.
+- **Конструктор, этап 2** (`9dcc21f`): фон «Своё фото» (`InvitationCard.photo`, пресет `card` 1920 px, `media/cards/`);
+  «Приду / Не смогу» на `/i/<code>/` (`card_rsvp`, POST `/i/<code>/rsvp/`): «Приду» = `EventRegistration`, «Не смогу» =
+  `EventDecline`; организатор видит «Ответы гостей» на странице события. Тесты — `Events/test_card_stage2.py`.
 - Письма-билеты: `emails/ticket_base.html` — рамка рисуется по секциям, прорези на линии отрыва (исправлено `12ce9ad`).
 
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 87 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 112 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.
 Локально на 8000 обычно запущен сервер Шефа, для проверок — `django-preview` на 8010 (`.claude/launch.json`).
 
 ## Дальше
-- Конструктор, этап 2: своё фото на фон, «Приду / Не смогу» прямо с открытки, новые шаблоны.
-- Безопасность (Шеф выбрал пока только шифрование): права/срок хранения бэкапов и удаление старых открытых, заголовки безопасности,
-  лимит попыток входа.
+- Конструктор: новые шаблоны (этап 2 сделан).
+- Безопасность (Шеф выбрал пока только шифрование): права/срок хранения бэкапов и удаление старых открытых, заголовки безопасности.
 - Очередь писем, переживающая перезапуск (сейчас фоновый поток может потерять письмо при рестарте `fe`).
 - Смержить `feat/chat-photos` в `main`; PWA; REST API; пагинация афиши, лимит участников.
