@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 134 тестов
+python manage.py test        # 133 теста
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -78,7 +78,7 @@ python manage.py test        # 134 тестов
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 134 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 133 теста. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.
