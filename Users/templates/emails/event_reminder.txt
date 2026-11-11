@@ -1,6 +1,7 @@
 {% load language_tags %}{% autoescape off %}{% lang "Завтра мероприятие" "See you tomorrow" %}: {{ event.name }}
 {% if event.date %}{% event_date event.date %}{% endif %}{% if event.time %} · {{ event.time|time:"H:i" }}{% endif %}
-{% if event.location %}{{ event.location }}
+{% if event.venue_name or event.location %}{{ event.place_title }}
+{% endif %}{% if event.directions %}{{ event.directions }}
 {% endif %}
 {{ event_url }}
 

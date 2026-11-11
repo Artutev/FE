@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 118 тестов
+python manage.py test        # 125 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -64,12 +64,17 @@ python manage.py test        # 118 тестов
 - **Конструктор, этап 2** (`9dcc21f`): фон «Своё фото» (`InvitationCard.photo`, пресет `card` 1920 px, `media/cards/`);
   «Приду / Не смогу» на `/i/<code>/` (`card_rsvp`, POST `/i/<code>/rsvp/`): «Приду» = `EventRegistration`, «Не смогу» =
   `EventDecline`; организатор видит «Ответы гостей» на странице события. Тесты — `Events/test_card_stage2.py`.
+- **Карты и адреса** (2026-11-11): подсказки адреса — Photon (`photon.komoot.io`, сделан для автодополнения;
+  Nominatim такое запрещает и остался только запасным для «адрес по точке»). Новые поля `Event.venue_name`
+  («Название места») и `Event.directions` («Как найти», видно только организатору и участникам, есть в письмах, нет в .ics);
+  `Event.place_title` — название + адрес. Кнопка «Маршрут» запоминает приложение (`localStorage['et-maps-app']`),
+  ссылки Google/Яндекс/Apple сразу строят маршрут. Тесты — `Events/test_places.py`.
 - Письма-билеты: `emails/ticket_base.html` — рамка рисуется по секциям, прорези на линии отрыва (исправлено `12ce9ad`).
 
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 118 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 125 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.

@@ -693,3 +693,6 @@
     min-width: 90px;
     padding: 10px 16px;
 }
+
+/* ---------- Field hints (venue name, directions) ---------- */
+.form-hint { display: block; margin-top: 6px; font-size: 0.85rem; color: var(--muted); }

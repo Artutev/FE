@@ -797,3 +797,41 @@ html.dark-mode .ed-ticket::before { color: #160F2E; }
 .ed-answer { display: grid; align-content: start; gap: 4px; }
 .ed-answer--yes .ed-person-label { color: var(--success); }
 .ed-answers-hint { margin: 12px 0 0; font-size: 0.88rem; }
+
+/* ---------- Venue name, directions, remembered route app ---------- */
+.ed-venue { display: block; }
+.ed-venue + .ed-address { font-weight: 500; color: var(--muted); }
+.ed-route-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 8px; }
+.ed-route {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--primary);
+    border-radius: 999px;
+    background: var(--primary-tint);
+    color: var(--primary-text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ed-route:hover { background: var(--primary); color: #fff; }
+.ed-route .icon { width: 15px; height: 15px; }
+.ed-route-change {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.ed-route-change[hidden] { display: none; }
+.ed-directions p { margin: 0; }
+.maps-remember { margin: 4px 0 12px; font-size: 0.82rem; color: var(--muted); }
+/* Подпись «МЕСТО» — это тоже span в .ed-info; кнопке маршрута её стиль не нужен */
+.ed-info .ed-route-row { display: flex; font-size: inherit; font-weight: inherit; letter-spacing: normal; text-transform: none; color: inherit; }
+.ed-info .ed-route span { display: inline; font: inherit; letter-spacing: normal; text-transform: none; color: inherit; }

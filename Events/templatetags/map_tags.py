@@ -19,15 +19,16 @@ def build_map_links(event):
 
     if coords:
         lat, lon = coords
-        links['google'] = 'https://www.google.com/maps/search/?' + urlencode({'api': 1, 'query': f'{lat},{lon}'})
-        links['yandex'] = 'https://yandex.ru/maps/?' + urlencode({'pt': f'{lon},{lat}', 'z': 17, 'l': 'map'})
+        # Google, Яндекс и Apple — сразу маршрут до точки (на телефоне откроется приложение)
+        links['google'] = 'https://www.google.com/maps/dir/?' + urlencode({'api': 1, 'destination': f'{lat},{lon}'})
+        links['yandex'] = 'https://yandex.ru/maps/?' + urlencode({'rtext': f'~{lat},{lon}', 'rtt': 'auto', 'pt': f'{lon},{lat}', 'z': 17})
         links['2gis'] = f'https://2gis.ru/geo/{lon},{lat}'
-        links['apple'] = 'https://maps.apple.com/?' + urlencode({'ll': f'{lat},{lon}', 'q': address or event.name})
+        links['apple'] = 'https://maps.apple.com/?' + urlencode({'daddr': f'{lat},{lon}', 'q': address or event.name})
         links['mapy'] = 'https://mapy.cz/zakladni?' + urlencode({'x': lon, 'y': lat, 'z': 17, 'source': 'coor', 'id': f'{lon},{lat}'})
         links['osm'] = f'https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=17/{lat}/{lon}'
         links['waze'] = 'https://waze.com/ul?' + urlencode({'ll': f'{lat},{lon}', 'navigate': 'yes'})
     elif address:
-        links['google'] = 'https://www.google.com/maps/search/?' + urlencode({'api': 1, 'query': address})
+        links['google'] = 'https://www.google.com/maps/dir/?' + urlencode({'api': 1, 'destination': address})
         links['yandex'] = 'https://yandex.ru/maps/?' + urlencode({'text': address})
         links['2gis'] = 'https://2gis.ru/search/' + quote(address, safe='')
         links['apple'] = 'https://maps.apple.com/?' + urlencode({'q': address})

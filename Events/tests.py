@@ -85,11 +85,13 @@ class MapLinksTests(TestCase):
         links = build_map_links(event)
         self.assertIn('2gis.ru/geo/76.889700,43.238900', links['2gis'])
         self.assertIn('pt=76.889700%2C43.238900', links['yandex'])
+        self.assertIn('rtext=~43.238900%2C76.889700', links['yandex'])  # сразу маршрут
+        self.assertIn('destination=43.238900%2C76.889700', links['google'])
 
     def test_links_fall_back_to_address(self):
         links = build_map_links(Event(name='Jazz', location='Abay 10'))
         self.assertIn('text=Abay+10', links['yandex'])
-        self.assertIn('query=Abay+10', links['google'])
+        self.assertIn('destination=Abay+10', links['google'])
 
     def test_no_links_without_location(self):
         self.assertEqual(build_map_links(Event(name='Jazz')), {})

@@ -78,7 +78,7 @@
                                         <span class="pf-going-date">{% if event.date %}<b>{{ event.date.day }}</b>{% month_short event.date %}{% else %}—{% endif %}</span>
                                         <span class="pf-going-body">
                                             <strong>{{ event.name }}</strong>
-                                            <em>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</em>
+                                            <em>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.venue_name or event.location %} · {{ event.place_title }}{% endif %}</em>
                                         </span>
                                         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
                                     </a>

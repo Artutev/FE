@@ -68,6 +68,11 @@
                 {{ form.time.label_tag }}
                 {{ form.time }}
             </div>
+            <div class="form-group ef-span-2{% if form.venue_name.errors %} has-error{% endif %}">
+                {{ form.venue_name.label_tag }}
+                {{ form.venue_name }}
+                <span class="form-hint">{% lang "Необязательно. Так место будет проще узнать в приглашении и в письмах." "Optional. Makes the place easier to recognise in the invitation and emails." %}</span>
+            </div>
             <div class="form-group ef-span-2 loc-picker{% if form.location.errors %} has-error{% endif %}" id="locPicker">
                 <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
                 <div class="loc-search">
@@ -87,6 +92,12 @@
                     <span class="location-map-hint" id="locStatus">{% lang "Начните вводить адрес или нажмите на карту, чтобы поставить точку." "Start typing an address or tap the map to drop a pin." %}</span>
                     <button type="button" class="loc-clear-point" id="locClearPoint" hidden>{% lang "Убрать точку" "Remove pin" %}</button>
                 </div>
+            </div>
+            <div class="form-group ef-span-2{% if form.directions.errors %} has-error{% endif %}">
+                {{ form.directions.label_tag }}
+                {{ form.directions }}
+                <span class="form-hint">{% lang "Увидят только участники и вы — сюда можно написать код домофона." "Only attendees and you will see this — fine for a door code." %}</span>
+                {% for error in form.directions.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
             </div>
         </div>
     </section>
@@ -135,4 +146,4 @@
 <script src="{% static 'js/photo-input.js' %}?v=2"></script>
 <script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="{% static 'js/location-map.js' %}?v=5"></script>
+<script src="{% static 'js/location-map.js' %}?v=7"></script>

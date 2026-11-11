@@ -1,5 +1,7 @@
 // Выбор места мероприятия: поиск адреса с подсказками, точка на карте,
-// перетаскиваемая метка, «Я здесь». Геокодер — OpenStreetMap Nominatim.
+// перетаскиваемая метка, «Я здесь».
+// Подсказки по мере ввода — Photon (komoot, данные OpenStreetMap): он сделан для автодополнения.
+// Nominatim такое запрещает правилами, поэтому он остался только запасным для «адрес по точке».
 document.addEventListener('DOMContentLoaded', () => {
     const picker = document.getElementById('locPicker');
     const input = document.querySelector('input[name="location"]');
@@ -14,6 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const geoBtn = document.getElementById('locGeo');
     const lang = window.etLang || 'ru';
     const NOMINATIM = 'https://nominatim.openstreetmap.org';
+    const PHOTON = 'https://photon.komoot.io';
+    // Photon знает только en/de/fr; «default» — местные названия (по-русски в России, по-чешски в Чехии)
+    const PHOTON_LANG = lang === 'en' ? 'en' : 'default';
+    const venueInput = document.querySelector('input[name="venue_name"]');
 
     const T = {
         hint: etT('Начните вводить адрес или нажмите на карту, чтобы поставить точку.', 'Start typing an address or tap the map to drop a pin.', 'Začněte psát adresu nebo klepněte do mapy a umístěte špendlík.'),
@@ -102,28 +108,60 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchController = null;
     const cache = new Map();
 
+    // Ответ Photon (GeoJSON) → тот же вид, что у Nominatim, чтобы formatPlace работал с обоими
+    // Здание с собственным именем («Центральный телеграф») — тоже место, а улица или город — нет
+    const NOT_A_VENUE = ['place', 'highway', 'boundary', 'landuse', 'railway'];
+    function fromPhoton(feature) {
+        const p = feature.properties || {};
+        const [lon, lat] = feature.geometry.coordinates;
+        const street = p.street || (p.osm_key === 'highway' ? p.name : '');
+        return {
+            lat,
+            lon,
+            name: p.name || '',
+            venue: p.name && !NOT_A_VENUE.includes(p.osm_key) ? p.name : '',
+            address: {
+                road: street,
+                house_number: p.housenumber,
+                city: p.city || p.town || p.village,
+                suburb: p.district || p.locality,
+                country: p.country,
+            },
+            display_name: [p.name, street, p.city, p.country].filter(Boolean).join(', '),
+        };
+    }
+
     async function search(query) {
-        const bounds = map.getBounds();
+        const center = map.getCenter();
         const params = new URLSearchParams({
-            format: 'jsonv2',
-            addressdetails: '1',
-            limit: '6',
-            'accept-language': lang,
             q: query,
-            viewbox: [bounds.getWest(), bounds.getNorth(), bounds.getEast(), bounds.getSouth()].join(','),
+            limit: '6',
+            lang: PHOTON_LANG,
+            // ближе к тому, что видно на карте, — выше в списке
+            lat: center.lat.toFixed(4),
+            lon: center.lng.toFixed(4),
+            zoom: String(Math.round(map.getZoom())),
         });
         const key = params.toString();
         if (cache.has(key)) return cache.get(key);
         if (searchController) searchController.abort();
         searchController = new AbortController();
-        const response = await fetch(`${NOMINATIM}/search?${key}`, { signal: searchController.signal });
+        const response = await fetch(`${PHOTON}/api/?${key}`, { signal: searchController.signal });
         if (!response.ok) throw new Error('search failed');
-        const results = await response.json();
+        const results = ((await response.json()).features || []).map(fromPhoton);
         cache.set(key, results);
         return results;
     }
 
     async function reverse(lat, lon) {
+        try {
+            const params = new URLSearchParams({ lat, lon, lang: PHOTON_LANG, limit: '1' });
+            const response = await fetch(`${PHOTON}/reverse?${params}`);
+            if (!response.ok) throw new Error('photon reverse failed');
+            const feature = ((await response.json()).features || [])[0];
+            if (feature) return fromPhoton(feature);
+        } catch (error) { /* запасной вариант ниже */ }
+        // Один запрос на клик/перетаскивание — это Nominatim разрешает
         const params = new URLSearchParams({
             format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': lang, lat, lon,
         });
@@ -173,6 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!place) return;
         const formatted = formatPlace(place);
         input.value = formatted.value;
+        // Выбрали заведение («Кафе Пушкин») — подставим его в «Название места», а в адрес — улицу и город
+        if (place.venue && venueInput && !venueInput.value.trim()) {
+            venueInput.value = place.venue;
+            const a = place.address || {};
+            const street = [a.road, a.house_number].filter(Boolean).join(' ');
+            const rest = [street, a.city].filter(Boolean).join(', ');
+            if (rest) input.value = rest;
+        }
         autoFilled = true;
         placePin(parseFloat(place.lat), parseFloat(place.lon), { zoom: 17 });
         closeSuggest();

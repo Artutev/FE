@@ -86,7 +86,9 @@ class Event(models.Model):
     name = models.CharField("Название", max_length=200)
     date = models.DateField(null=True, blank=True)
     time = models.TimeField(null=True, blank=True)
+    venue_name = models.CharField("Название места", max_length=120, blank=True)
     location = models.CharField("Место проведения", max_length=200, blank=True)
+    directions = models.TextField("Как найти", max_length=500, blank=True)
     description = models.TextField("Описание", blank=True)
     latitude = models.FloatField("Широта", null=True, blank=True)
     longitude = models.FloatField("Долгота", null=True, blank=True)
@@ -122,6 +124,11 @@ class Event(models.Model):
         while Event.objects.filter(access_token=token).exists():
             token = secrets.token_urlsafe(24)
         return token
+
+    @property
+    def place_title(self):
+        """Название места и адрес одной строкой: «Лофт „Крыша“, ул. Ленина, 5»."""
+        return ', '.join(part for part in (self.venue_name, self.location) if part)
 
     @property
     def has_passed(self):

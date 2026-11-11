@@ -51,10 +51,12 @@
           {% endblock %}
         </tr></table>
       </td></tr>
-      {% if event.location %}
+      {% if event.venue_name or event.location %}
       <tr><td style="padding:14px 24px 4px;">
         <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#6B6880;">{% lang "Место" "Location" %}</div>
-        <div style="font-size:15px;font-weight:600;line-height:21px;margin-top:3px;">{{ event.location }}</div>
+        {% if event.venue_name %}<div style="font-size:15px;font-weight:600;line-height:21px;margin-top:3px;">{{ event.venue_name }}</div>{% endif %}
+        {% if event.location %}<div style="font-size:{% if event.venue_name %}14px;color:#6B6880{% else %}15px;font-weight:600{% endif %};line-height:21px;margin-top:3px;">{{ event.location }}</div>{% endif %}
+        {% if event.directions %}<div style="font-size:14px;line-height:20px;margin-top:6px;">{{ event.directions|linebreaksbr }}</div>{% endif %}
       </td></tr>
       {% endif %}
 

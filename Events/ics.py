@@ -56,8 +56,8 @@ def build_ics(event, url, site_host='eventtown'):
         f'DESCRIPTION:{_escape((event.description or "") + chr(10) + chr(10) + url)}',
         f'URL:{url}',
     ]
-    if event.location:
-        lines.append(f'LOCATION:{_escape(event.location)}')
+    if event.place_title:
+        lines.append(f'LOCATION:{_escape(event.place_title)}')
     if event.latitude is not None and event.longitude is not None:
         lines.append(f'GEO:{event.latitude:.6f};{event.longitude:.6f}')
     lines += ['END:VEVENT', 'END:VCALENDAR']

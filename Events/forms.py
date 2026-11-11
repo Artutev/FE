@@ -10,7 +10,9 @@ PLACEHOLDERS = {
         'event_type': 'Выберите тип события',
         'date': 'ДД.MM.ГГГГ',
         'time': 'ЧЧ:ММ',
-        'location': 'Введите место проведения',
+        'location': 'Начните вводить адрес',
+        'venue_name': 'Например, лофт «Крыша» или кафе «Пушкин»',
+        'directions': 'Подъезд, этаж, код домофона, где оставить машину',
         'bride_name': 'Имя невесты (для свадеб)',
         'groom_name': 'Имя жениха (для свадеб)',
         'wedding_theme': 'Тема свадьбы (например, винтаж, рустик и т.п.)',
@@ -22,7 +24,9 @@ PLACEHOLDERS = {
         'event_type': 'Select event type',
         'date': 'DD.MM.YYYY',
         'time': 'HH:MM',
-        'location': 'Enter the location',
+        'location': 'Start typing the address',
+        'venue_name': 'e.g. Rooftop Loft or Café Pushkin',
+        'directions': 'Entrance, floor, door code, where to park',
         'bride_name': 'Bride name (for weddings)',
         'groom_name': 'Groom name (for weddings)',
         'wedding_theme': 'Wedding theme (e.g. vintage, rustic, etc.)',
@@ -37,7 +41,9 @@ LABELS = {
         'event_type': 'Тип мероприятия',
         'date': 'Дата',
         'time': 'Время',
-        'location': 'Место проведения',
+        'location': 'Адрес',
+        'venue_name': 'Название места',
+        'directions': 'Как найти',
         'is_private': 'Приватное мероприятие',
         'bride_name': 'Имя невесты',
         'groom_name': 'Имя жениха',
@@ -50,7 +56,9 @@ LABELS = {
         'event_type': 'Event type',
         'date': 'Date',
         'time': 'Time',
-        'location': 'Location',
+        'location': 'Address',
+        'venue_name': 'Venue name',
+        'directions': 'How to find it',
         'is_private': 'Private event',
         'bride_name': 'Bride name',
         'groom_name': 'Groom name',
@@ -111,7 +119,9 @@ class EventForm(forms.ModelForm):
             'time',
             'latitude',
             'longitude',
+            'venue_name',
             'location',
+            'directions',
             'is_private',
             'bride_name',
             'groom_name',
@@ -131,6 +141,8 @@ class EventForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': PLACEHOLDERS['ru']['location']
             }),
+            'venue_name': forms.TextInput(attrs={'class': 'form-control', 'maxlength': 120}),
+            'directions': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'maxlength': 500}),
             'is_private': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -168,6 +180,10 @@ class EventForm(forms.ModelForm):
         self.fields['date'].label = LABELS[lang]['date']
         self.fields['time'].label = LABELS[lang]['time']
         self.fields['location'].label = LABELS[lang]['location']
+        for name in ('venue_name', 'directions'):
+            self.fields[name].label = LABELS[lang][name]
+            self.fields[name].required = False
+            self.fields[name].widget.attrs.update({'placeholder': PLACEHOLDERS[lang][name]})
         self.fields['is_private'].label = LABELS[lang]['is_private']
         self.fields['bride_name'].label = LABELS[lang]['bride_name']
         self.fields['groom_name'].label = LABELS[lang]['groom_name']
@@ -212,7 +228,7 @@ class EventForm(forms.ModelForm):
         event_type = cleaned_data.get('event_type')
         location = cleaned_data.get('location')
 
-        if event_type != 'other' and not location:
+        if event_type != 'other' and not location and not cleaned_data.get('venue_name'):
             message = tr(self.language, 'Укажите место проведения.', 'Please enter a location.')
             self.add_error('location', message)
 

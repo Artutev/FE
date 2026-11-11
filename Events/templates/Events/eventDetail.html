@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=10">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=12">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -67,14 +67,25 @@
                 </section>
             {% endif %}
 
+            {% if event.directions %}
+                <section class="ed-section ed-directions">
+                    <h2>{% lang "Как найти" "How to find it" %}</h2>
+                    {% if is_creator or is_registered %}
+                        <p>{{ event.directions|linebreaksbr }}</p>
+                    {% else %}
+                        <p class="muted-text">{% lang "Организатор оставил подсказки, как найти место, — они видны после регистрации." "The organizer left tips on how to find the place — you'll see them after registering." %}</p>
+                    {% endif %}
+                </section>
+            {% endif %}
+
             {% if event.latitude and event.longitude %}
                 <section class="ed-section">
                     <h2>{% lang "Карта" "Map" %}</h2>
                     <div class="ed-map-wrap">
                         <div id="detailMap" class="ed-map"></div>
-                        <button type="button" class="btn btn-secondary ed-map-open" data-open-maps aria-haspopup="dialog">
+                        <button type="button" class="btn btn-secondary ed-map-open" data-route aria-haspopup="dialog">
                             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>
-                            {% lang "Открыть в картах" "Open in maps" %}
+                            {% lang "Маршрут" "Directions" %}<span data-route-app></span>
                         </button>
                     </div>
                 </section>
@@ -174,8 +185,15 @@
                         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
                         <div>
                             <span>{% lang "Место" "Location" %}</span>
-                            {% if event.location %}
-                                <button type="button" class="ed-address" data-open-maps aria-haspopup="dialog">{{ event.location }}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
+                            {% if event.venue_name or event.location %}
+                                {% if event.venue_name %}<strong class="ed-venue">{{ event.venue_name }}</strong>{% endif %}
+                                {% if event.location %}<button type="button" class="ed-address" data-open-maps aria-haspopup="dialog">{{ event.location }}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>{% endif %}
+                                {% if event.location or event.latitude %}
+                                    <span class="ed-route-row">
+                                        <button type="button" class="ed-route" data-route aria-haspopup="dialog"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l7-15 2 7 7 2z"/></svg>{% lang "Маршрут" "Directions" %}<span data-route-app></span></button>
+                                        <button type="button" class="ed-route-change" data-open-maps data-route-change hidden>{% lang "другое приложение" "another app" %}</button>
+                                    </span>
+                                {% endif %}
                             {% else %}
                                 <strong>{% lang "Место не указано" "Location not specified" %}</strong>
                             {% endif %}
@@ -248,7 +266,7 @@
     <div class="ed-mobile-bar">
         <div>
             <strong>{% if event.date %}{% event_date event.date %}{% endif %}</strong>
-            <span>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</span>
+            <span>{% if event.time %}{{ event.time|time:"H:i" }}{% endif %}{% if event.venue_name or event.location %} · {{ event.place_title }}{% endif %}</span>
         </div>
         {% if user.is_authenticated %}
             <form method="post" action="{% url 'Events:register_event' event.id %}{{ token_param }}">
