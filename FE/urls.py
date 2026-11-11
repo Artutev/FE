@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from Users.views import base, about
-from Events.views import card_public, create_event
+from Events.views import card_public, card_rsvp, create_event
 
 
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('About/', about, name='about'),
     path('Chat/', include('Chat.urls', namespace='Chat')),
     path('i/<str:code>/', card_public, name='invite_card'),
+    path('i/<str:code>/rsvp/', card_rsvp, name='invite_card_rsvp'),
 ]
 
 if settings.DEBUG:

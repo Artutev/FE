@@ -31,11 +31,12 @@
 .ic[data-format="square"] { --ic-w: 640px; --ic-h: 640px; }
 .ic[data-format="a5"]     { --ic-w: 560px; --ic-h: 794px; }
 
-/* ---------- Background: decor / plain / event cover ---------- */
+/* ---------- Background: decor / plain / event cover / own photo ---------- */
 .ic-photo,
 .ic-shade { display: none; }
 
-.ic-bg--cover .ic-photo {
+.ic-bg--cover .ic-photo--cover,
+.ic-bg--photo .ic-photo--own {
     display: block;
     position: absolute;
     inset: 0;
@@ -45,7 +46,8 @@
     object-fit: cover;
 }
 
-.ic-bg--cover .ic-shade {
+.ic-bg--cover .ic-shade,
+.ic-bg--photo .ic-shade {
     display: block;
     position: absolute;
     inset: 0;
@@ -65,7 +67,8 @@
 
 .ic-decor i { position: absolute; display: block; }
 .ic-bg--plain .ic-decor,
-.ic-bg--cover .ic-decor { display: none; }
+.ic-bg--cover .ic-decor,
+.ic-bg--photo .ic-decor { display: none; }
 
 /* ---------- Shared content ---------- */
 .ic-content {

@@ -82,10 +82,12 @@
                     input.value = '';
                     return;
                 }
-                preview.src = URL.createObjectURL(file);
+                const url = URL.createObjectURL(file);
+                preview.src = url;
                 drop.classList.add('has-photo');
-                const remove = drop.parentElement.querySelector('input[name="remove_cover"], input[name="remove_avatar"]');
+                const remove = drop.parentElement.querySelector('input[name="remove_cover"], input[name="remove_avatar"], input[name="remove_photo"]');
                 if (remove) remove.checked = false;
+                input.dispatchEvent(new CustomEvent('photo:ready', { detail: { file, url } }));
                 if (input.dataset.autosubmit !== undefined) input.form.submit();
             });
 

@@ -1,7 +1,8 @@
 {% load language_tags %}{% with c=card.colors f=card.fonts %}
 <div class="ic ic--{{ card.template }} ic-bg--{{ card.background }}" data-format="{{ card.format }}" data-invite-card
      style="--ic-bg: {{ c.bg }}; --ic-bg2: {{ c.bg2 }}; --ic-fg: {{ c.fg }}; --ic-muted: {{ c.muted }}; --ic-accent: {{ c.accent }}; --ic-display: '{{ f.display }}'; --ic-body: '{{ f.body }}';">
-    {% if card.event.cover %}<img class="ic-photo" src="{{ card.event.cover.url }}" alt="" crossorigin="anonymous">{% endif %}
+    {% if card.event.cover %}<img class="ic-photo ic-photo--cover" src="{{ card.event.cover.url }}" alt="" crossorigin="anonymous">{% endif %}
+    {% if card.photo %}<img class="ic-photo ic-photo--own" src="{{ card.photo.url }}" alt="" crossorigin="anonymous">{% endif %}
     <div class="ic-shade" aria-hidden="true"></div>
     <div class="ic-decor" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="ic-content">

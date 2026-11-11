@@ -90,6 +90,7 @@ BACKGROUNDS = {
     'decor': ('С украшениями', 'Decorated'),
     'plain': ('Без украшений', 'Plain'),
     'cover': ('Обложка мероприятия', 'Event cover'),
+    'photo': ('Своё фото', 'Your photo'),
 }
 
 # Шаблон по умолчанию для типа мероприятия

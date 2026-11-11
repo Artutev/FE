@@ -791,3 +791,9 @@ html.dark-mode .ed-ticket::before { color: #160F2E; }
 @media (max-width: 640px) {
     .ed-card-prompt { flex-direction: column; align-items: stretch; }
 }
+
+/* ---------- Guest replies (organizer only) ---------- */
+.ed-answers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ed-answer { display: grid; align-content: start; gap: 4px; }
+.ed-answer--yes .ed-person-label { color: var(--success); }
+.ed-answers-hint { margin: 12px 0 0; font-size: 0.88rem; }

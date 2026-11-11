@@ -27,7 +27,7 @@
     <button type="submit" class="btn btn-primary btn-block">{% lang "Войти" "Login" %}</button>
 </form>
 
-<p class="auth-footer-text">{% lang "Нет аккаунта?" "No account?" %} <a href="{% url 'Users:registration' %}">{% lang "Зарегистрируйтесь" "Sign up" %}</a></p>
+<p class="auth-footer-text">{% lang "Нет аккаунта?" "No account?" %} <a href="{% url 'Users:registration' %}{% if next %}?next={{ next|urlencode }}{% endif %}">{% lang "Зарегистрируйтесь" "Sign up" %}</a></p>
 <p class="auth-footer-text auth-footer-text--muted">{% lang "Не пришло письмо с кодом?" "Didn't get the code?" %} <a href="{% url 'Users:confirm_email_code' %}">{% lang "Подтвердить email" "Confirm email" %}</a></p>
 <script src="{% static 'js/password-toggle.js' %}?v=4"></script>
 {% endblock %}

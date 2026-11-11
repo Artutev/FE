@@ -247,3 +247,57 @@
 
 .ce [hidden],
 .cp [hidden] { display: none !important; }
+
+/* ---------- Own background photo ---------- */
+.ce-photo { display: grid; gap: 8px; margin-top: 12px; }
+.photo-drop--card { aspect-ratio: 16 / 7; max-width: 360px; }
+.ce-photo .photo-remove[hidden] { display: none; }
+
+/* ---------- RSVP on the public card ---------- */
+.cp-rsvp {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 560px;
+    padding: 18px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    text-align: center;
+}
+.cp-rsvp-title { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.cp-rsvp-hint { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.cp-rsvp-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.cp-rsvp-state .icon { width: 22px; height: 22px; }
+.cp-rsvp--going { border-color: var(--primary); background: var(--primary-tint); }
+.cp-rsvp--going .cp-rsvp-state { color: var(--primary-text); }
+.cp-rsvp--declined .cp-rsvp-state { color: var(--muted); }
+.cp-rsvp-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+.cp-rsvp-buttons .btn { flex: 1 1 180px; min-height: 46px; }
+.cp-rsvp-buttons .link-button {
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.cp-rsvp-buttons .link-button:hover { color: var(--danger); }

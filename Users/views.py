@@ -99,6 +99,12 @@ def base(request):
         'is_home': True,
     })
 
+def _safe_next(request, url):
+    if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return url
+    return ''
+
+
 def login(request):
     language = get_language(request)
     if request.method == "POST":
@@ -107,15 +113,14 @@ def login(request):
             # Пользователь уже найден формой (имя без пробелов и регистра) — второй раз не проверяем:
             # раньше повторная проверка по «сырому» имени с пробелом молча не пускала.
             auth.login(request, form.get_user())
-            next_url = request.POST.get('next', '')
-            if not url_has_allowed_host_and_scheme(
-                next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-            ):
-                next_url = reverse('base')
+            next_url = _safe_next(request, request.POST.get('next', '')) or reverse('base')
+            request.session.pop('auth_next', None)
             return HttpResponseRedirect(next_url)
     else:
         form = UserLoginForm(language=language)
-    context = {'form': form, 'next': request.POST.get('next') or request.GET.get('next', '')}
+    # «auth_next» — куда вернуть после регистрации и подтверждения почты (например, на открытку)
+    next_url = request.POST.get('next') or request.GET.get('next') or request.session.get('auth_next', '')
+    context = {'form': form, 'next': _safe_next(request, next_url)}
     return render(request, 'Users/login.html', context)
 
 def confirm_email(request, uidb64, token):
@@ -232,6 +237,9 @@ def resend_confirmation(request):
     return HttpResponseRedirect(f'{url}?{urlencode({"email": email})}' if email else url)
 
 def registration(request):
+    next_url = _safe_next(request, request.GET.get('next', ''))
+    if next_url:
+        request.session['auth_next'] = next_url
     if request.method == "POST":
         form = UserRegistrationForm(data=request.POST, language=get_language(request))
         if form.is_valid():

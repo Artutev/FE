@@ -6,8 +6,8 @@
     <meta property="og:title" content="{{ card.title }}">
     <meta property="og:description" content="{% if card.message %}{{ card.message }}{% else %}{% lang "Приглашение" "Invitation" %}{% endif %}">
     <link rel="stylesheet" href="{{ fonts_url }}" crossorigin="anonymous">
-    <link rel="stylesheet" href="{% static 'css/invite_card.css' %}?v=1">
-    <link rel="stylesheet" href="{% static 'css/card_editor.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/invite_card.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/card_editor.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
@@ -16,8 +16,33 @@
         <div class="ic-stage-inner">{% include "Events/_invite_card.html" %}</div>
     </div>
 
+    {% if can_rsvp %}
+        <div class="cp-rsvp{% if rsvp %} cp-rsvp--{{ rsvp }}{% endif %}" id="rsvp">
+            {% if rsvp == 'going' %}
+                <p class="cp-rsvp-state"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% lang "Вы идёте" "You're going" %}</p>
+            {% elif rsvp == 'declined' %}
+                <p class="cp-rsvp-state"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{% lang "Вы отказались" "You declined" %}</p>
+            {% else %}
+                <p class="cp-rsvp-title">{% lang "Придёте?" "Will you come?" %}</p>
+            {% endif %}
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'invite_card_rsvp' card.code %}" class="cp-rsvp-buttons">
+                    {% csrf_token %}
+                    {% if rsvp != 'going' %}<button type="submit" name="answer" value="yes" class="btn btn-primary">{% if rsvp == 'declined' %}{% lang "Всё-таки приду" "I'll come after all" %}{% else %}{% lang "Приду" "I'll come" %}{% endif %}</button>{% endif %}
+                    {% if rsvp != 'declined' %}<button type="submit" name="answer" value="no" class="{% if rsvp == 'going' %}link-button{% else %}btn btn-secondary{% endif %}">{% if rsvp == 'going' %}{% lang "Не смогу прийти" "I can't make it" %}{% else %}{% lang "Не смогу" "Can't make it" %}{% endif %}</button>{% endif %}
+                </form>
+            {% else %}
+                <p class="cp-rsvp-hint">{% lang "Чтобы ответить, войдите или зарегистрируйтесь — после этого вы вернётесь сюда." "Sign in or sign up to reply — you'll come right back here." %}</p>
+                <div class="cp-rsvp-buttons">
+                    <a href="{% url 'Users:login' %}?next={{ card_path|urlencode }}" class="btn btn-primary">{% lang "Войти" "Log in" %}</a>
+                    <a href="{% url 'Users:registration' %}?next={{ card_path|urlencode }}" class="btn btn-secondary">{% lang "Зарегистрироваться" "Sign up" %}</a>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
     <div class="cp-actions">
-        <a href="{{ event_url }}" class="btn btn-primary">{% lang "Открыть мероприятие" "Open event" %}</a>
+        <a href="{{ event_url }}" class="btn {% if can_rsvp %}btn-secondary{% else %}btn-primary{% endif %}">{% lang "Открыть мероприятие" "Open event" %}</a>
         <button type="button" class="btn btn-secondary" data-card-download="#cardStage .ic" data-filename="invitation-{{ event.id }}.png">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>{% lang "Скачать PNG" "Download PNG" %}
         </button>

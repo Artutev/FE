@@ -231,17 +231,27 @@ class EventForm(forms.ModelForm):
 
 class InvitationCardForm(forms.ModelForm):
     """Конструктор пригласительного: все значения проверяются по каталогу Events/card_designs.py."""
+    # Картинку проверяем сами в Users/images.py — с понятным текстом ошибки на нужном языке
+    photo_upload = forms.FileField(required=False)
+    remove_photo = forms.BooleanField(required=False)
 
     class Meta:
         from Events.models import InvitationCard
         model = InvitationCard
         fields = ['template', 'palette', 'font', 'accent', 'background', 'format', 'title', 'subtitle', 'message']
 
-    def __init__(self, *args, event=None, **kwargs):
+    def __init__(self, *args, event=None, language='ru', **kwargs):
         super().__init__(*args, **kwargs)
         self.event = event or self.instance.event
+        self.language = language
         self.fields['title'].max_length = 120
         self.fields['message'].max_length = 300
+
+    def clean_photo_upload(self):
+        upload = self.cleaned_data.get('photo_upload')
+        if not upload:
+            return None
+        return process_image(upload, 'card', self.language)
 
     def clean(self):
         import re
@@ -257,9 +267,23 @@ class InvitationCardForm(forms.ModelForm):
             data['font'] = designs.TEMPLATES[template]['font']
         if data.get('format') not in designs.FORMATS:
             data['format'] = 'story'
+        has_photo = bool(data.get('photo_upload')) or (bool(self.instance.photo) and not data.get('remove_photo'))
         background = data.get('background')
-        if background not in designs.BACKGROUNDS or (background == 'cover' and not self.event.cover):
+        if (background not in designs.BACKGROUNDS
+                or (background == 'cover' and not self.event.cover)
+                or (background == 'photo' and not has_photo)):
             data['background'] = 'decor'
         accent = (data.get('accent') or '').strip()
         data['accent'] = accent.upper() if re.fullmatch(r'#[0-9a-fA-F]{6}', accent) else ''
         return data
+
+    def save(self, commit=True):
+        card = super().save(commit=False)
+        new_photo = self.cleaned_data.get('photo_upload')
+        if new_photo is not None:
+            replace_image(card, 'photo', new_photo)
+        elif self.cleaned_data.get('remove_photo') and card.photo:
+            replace_image(card, 'photo', None)
+        if commit:
+            card.save()
+        return card

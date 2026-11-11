@@ -95,6 +95,58 @@
         applyColors();
     });
 
+    // Своё фото на фон: после уменьшения (photo-input.js) — сразу в превью и выбрать фон «Своё фото»
+    const photoInput = document.getElementById('cardPhotoInput');
+    const photoRemove = document.getElementById('cardPhotoRemove');
+    const photoRadio = form.querySelector('[name="background"][value="photo"]');
+    const ownPhoto = () => {
+        let img = card.querySelector('.ic-photo--own');
+        if (!img) {
+            img = document.createElement('img');
+            img.className = 'ic-photo ic-photo--own';
+            img.alt = '';
+            card.insertBefore(img, card.querySelector('.ic-shade'));
+        }
+        return img;
+    };
+    const savedPhoto = (card.querySelector('.ic-photo--own') || {}).src || '';
+    const setPhotoAvailable = (available) => {
+        if (!photoRadio) return;
+        photoRadio.disabled = !available;
+        photoRadio.closest('.ce-pill').classList.toggle('is-disabled', !available);
+        if (!available && photoRadio.checked) {
+            form.querySelector('[name="background"][value="decor"]').checked = true;
+        }
+    };
+    setPhotoAvailable(Boolean(savedPhoto));
+
+    if (photoInput) {
+        photoInput.addEventListener('photo:ready', (event) => {
+            ownPhoto().src = event.detail.url;
+            setPhotoAvailable(true);
+            photoRadio.checked = true;
+            if (photoRemove) photoRemove.hidden = false;
+            applyAll();
+        });
+    }
+    if (photoRemove) {
+        const removeBox = photoRemove.querySelector('input');
+        removeBox.addEventListener('change', () => {
+            const drop = document.querySelector('label.photo-drop[for="cardPhotoInput"]');
+            if (removeBox.checked) {
+                photoInput.value = '';
+                drop.classList.remove('has-photo');
+                setPhotoAvailable(false);
+            } else if (savedPhoto) {
+                ownPhoto().src = savedPhoto;
+                drop.querySelector('.photo-preview').src = savedPhoto;
+                drop.classList.add('has-photo');
+                setPhotoAvailable(true);
+            }
+            applyAll();
+        });
+    }
+
     // Тексты: сразу в карточку (textContent — без HTML)
     form.querySelectorAll('[data-bind-input]').forEach((input) => {
         input.addEventListener('input', () => {

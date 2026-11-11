@@ -165,6 +165,24 @@ class EventInvite(models.Model):
         return f"{self.inviter} → {self.invitee}: {self.event}"
 
 
+class EventDecline(models.Model):
+    """Гость ответил «Не смогу» на пригласительном (ответ «Приду» — это обычная EventRegistration)."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_declines')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='declines')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('user', 'event'), name='unique_event_decline'),
+        ]
+        ordering = ('-created_at',)
+        verbose_name = 'Отказ от приглашения'
+        verbose_name_plural = 'Отказы от приглашений'
+
+    def __str__(self):
+        return f'{self.user} не придёт на {self.event}'
+
+
 def _card_code():
     return secrets.token_urlsafe(8)
 
@@ -179,6 +197,7 @@ class InvitationCard(models.Model):
     font = models.CharField('Шрифт', max_length=20, default='clean')
     accent = models.CharField('Свой цвет акцента', max_length=7, blank=True)
     background = models.CharField('Фон', max_length=10, default='decor')
+    photo = models.ImageField('Своё фото на фон', upload_to='cards/', blank=True)
     format = models.CharField('Формат', max_length=10, default='story')
     title = models.CharField('Заголовок', max_length=120)
     subtitle = models.CharField('Подзаголовок', max_length=120, blank=True)

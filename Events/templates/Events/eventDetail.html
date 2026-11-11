@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} | EventTown{% endblock %}
 {% block body_class %}page-flush{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=9">
+    <link rel="stylesheet" href="{% static 'css/event_detail.css' %}?v=10">
     {% if event.latitude and event.longitude %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     {% endif %}
@@ -112,6 +112,39 @@
                     {% endif %}
                 </div>
             </section>
+
+            {% if is_creator %}
+                <section class="ed-section ed-answers">
+                    <h2>{% lang "Ответы гостей" "Guest replies" %}</h2>
+                    <div class="ed-answers-grid">
+                        <div class="ed-answer ed-answer--yes">
+                            <span class="ed-person-label">{% lang "Придут" "Coming" %} · {{ guests_going|length }}</span>
+                            {% if guests_going %}
+                                <div class="ed-friend-list">
+                                    {% for registration in guests_going %}
+                                        <a class="ed-friend" href="{% url 'Users:public_profile' registration.user.username %}">{% include "Users/_avatar.html" with u=registration.user size="xs" %}{{ registration.user.username }}</a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="muted-text">{% lang "Пока никто." "Nobody yet." %}</p>
+                            {% endif %}
+                        </div>
+                        <div class="ed-answer ed-answer--no">
+                            <span class="ed-person-label">{% lang "Не смогут" "Not coming" %} · {{ guests_declined|length }}</span>
+                            {% if guests_declined %}
+                                <div class="ed-friend-list">
+                                    {% for decline in guests_declined %}
+                                        <a class="ed-friend" href="{% url 'Users:public_profile' decline.user.username %}">{% include "Users/_avatar.html" with u=decline.user size="xs" %}{{ decline.user.username }}</a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="muted-text">{% lang "Пока никто." "Nobody yet." %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if event_card %}<p class="muted-text ed-answers-hint">{% lang "Гости отвечают прямо на пригласительном." "Guests reply right on the invitation card." %}</p>{% endif %}
+                </section>
+            {% endif %}
 
             {% if event.event_type == 'wedding' and user == event.creator %}
                 <section class="ed-section ed-tips">

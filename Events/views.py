@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 from datetime import date
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -8,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.urls import reverse
-from Events.models import Event, EventType, InvitationCard
+from Events.models import Event, EventDecline, EventRegistration, EventType, InvitationCard
 from Events.forms import EventForm, InvitationCardForm
 from Events import card_designs
 from Users.models import FriendRequest
@@ -160,6 +161,8 @@ def event_detail(request, event_id):
     context = {
         'event': event,
         'is_creator': is_creator,
+        'guests_going': list(event.registrations.exclude(user_id=event.creator_id).select_related('user')) if is_creator else [],
+        'guests_declined': list(event.declines.select_related('user')) if is_creator else [],
         'event_card': event_card,
         'show_card_prompt': show_card_prompt,
         'can_invite': can_invite,
@@ -257,7 +260,7 @@ def register_event(request, event_id):
         ))
         return _detail_redirect(event)
 
-    from Events.models import EventRegistration
+    EventDecline.objects.filter(user=request.user, event=event).delete()
     _registration, created = EventRegistration.objects.get_or_create(user=request.user, event=event)
     if created:
         in_background(notifications.notify_registered, event, request.user, request=request)
@@ -320,7 +323,7 @@ def card_editor(request, event_id):
     language = get_language(request)
     card = InvitationCard.objects.filter(event=event).first() or InvitationCard.initial_for(event, language)
     if request.method == 'POST':
-        form = InvitationCardForm(request.POST, instance=card, event=event)
+        form = InvitationCardForm(request.POST, request.FILES, instance=card, event=event, language=language)
         if form.is_valid():
             card = form.save(commit=False)
             card.event = event
@@ -329,7 +332,7 @@ def card_editor(request, event_id):
             return redirect('invite_card', code=card.code)
         card = form.instance
     else:
-        form = InvitationCardForm(instance=card, event=event)
+        form = InvitationCardForm(instance=card, event=event, language=language)
 
     # Мини-превью всех шаблонов на текущих текстах
     template_previews = []
@@ -364,6 +367,17 @@ def card_editor(request, event_id):
     })
 
 
+def _rsvp_state(user, event):
+    """'going' / 'declined' / '' — ответ гостя на приглашение."""
+    if not user.is_authenticated:
+        return ''
+    if EventRegistration.objects.filter(user=user, event=event).exists():
+        return 'going'
+    if EventDecline.objects.filter(user=user, event=event).exists():
+        return 'declined'
+    return ''
+
+
 def card_public(request, code):
     """Публичная страница пригласительного: открывается по ссылке и без входа (код случайный)."""
     card = get_object_or_404(InvitationCard.objects.select_related('event', 'event__creator'), code=code)
@@ -372,11 +386,47 @@ def card_public(request, code):
     event_path = reverse('Events:event_detail', args=[event.id])
     if event.is_private and event.access_token:
         event_path += f'?token={event.access_token}'
+    is_owner = request.user.is_authenticated and request.user.id == event.creator_id
+    card_path = reverse('invite_card', args=[card.code])
     return render(request, 'Events/card_public.html', {
         **_card_context(card, language),
         'event': event,
         'event_url': event_path,
         'card_link': _card_url(card, request),
-        'is_owner': request.user.is_authenticated and request.user.id == event.creator_id,
+        'card_path': card_path,
+        'is_owner': is_owner,
+        'can_rsvp': not is_owner and not event.has_passed,
+        'rsvp': _rsvp_state(request.user, event),
         'fonts_url': card_designs.GOOGLE_FONTS_URL,
     })
+
+
+@require_POST
+def card_rsvp(request, code):
+    """«Приду» / «Не смогу» прямо с пригласительного. Ссылка на открытку даёт доступ и к приватному событию."""
+    card = get_object_or_404(InvitationCard.objects.select_related('event'), code=code)
+    event = card.event
+    card_path = reverse('invite_card', args=[card.code])
+    if not request.user.is_authenticated:
+        return redirect(f"{reverse('Users:login')}?{urlencode({'next': card_path})}")
+    language = get_language(request)
+    answer = request.POST.get('answer')
+    if request.user.id == event.creator_id or answer not in ('yes', 'no'):
+        return redirect(card_path)
+    if event.has_passed:
+        messages.error(request, tr(language, 'Мероприятие уже прошло.', 'The event has already passed.'))
+        return redirect(card_path)
+
+    if answer == 'yes':
+        EventDecline.objects.filter(user=request.user, event=event).delete()
+        _registration, created = EventRegistration.objects.get_or_create(user=request.user, event=event)
+        if created:
+            in_background(notifications.notify_registered, event, request.user, request=request)
+        messages.success(request, tr(language, 'Отлично, вы идёте! Мы прислали письмо с деталями.',
+                                     "Great, you're going! We've emailed you the details."))
+    else:
+        EventRegistration.objects.filter(user=request.user, event=event).delete()
+        EventDecline.objects.get_or_create(user=request.user, event=event)
+        messages.info(request, tr(language, 'Жаль! Организатор увидит, что вы не сможете прийти.',
+                                  "Sorry to hear that. The organizer will see you can't make it."))
+    return redirect(card_path)
