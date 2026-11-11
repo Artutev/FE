@@ -178,6 +178,29 @@ class AuthTests(TestCase):
         self.assertContains(response, 'Пользователь с таким именем уже существует.')
         self.assertContains(response, 'Этот email уже зарегистрирован')
 
+    def test_superuser_logs_in_on_site_and_admin(self):
+        User.objects.create_superuser('Boss', 'boss@example.test', 'Пароль с пробелом и кириллицей ')
+        response = self._login(' boss ', 'Пароль с пробелом и кириллицей ')
+        self.assertEqual(response.status_code, 302)
+        self.client.logout()
+        response = self.client.post(reverse('admin:login'), {
+            'username': 'Boss', 'password': 'Пароль с пробелом и кириллицей ', 'next': '/admin/',
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_double_submit_does_not_crash(self):
+        """Второй запрос проскочил проверку, пока первый отправлял письмо, — раньше это была ошибка 500."""
+        User.objects.create_user('bob', 'bob@example.test', 'Strong12345!z', is_active=False)
+        with mock.patch('Users.signup.taken', return_value=False), \
+                mock.patch('Users.signup.replaceable_signups', return_value=User.objects.none()):
+            response = self._register()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('Users:confirm_email_code'), response['Location'])
+        with mock.patch('Users.signup.taken', return_value=False), \
+                mock.patch('Users.signup.replaceable_signups', return_value=User.objects.none()):
+            response = self._register(email='other@example.test')
+        self.assertContains(response, 'Пользователь с таким именем уже существует.')
+
     def test_confirmation_code_is_rate_limited(self):
         url = reverse('Users:confirm_email_code')
         statuses = [

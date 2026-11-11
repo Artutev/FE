@@ -4,7 +4,7 @@ import secrets
 from urllib.parse import urlencode
 
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.cache import cache
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.hashers import check_password, make_password
@@ -251,20 +251,31 @@ def registration(request):
             # Всё или ничего: если письмо с кодом не ушло (или что-то упало), аккаунт не остаётся в базе —
             # иначе он навсегда занимает имя, а войти в него нельзя.
             sent = False
-            with transaction.atomic():
-                signup.replaceable_signups(
-                    username=form.cleaned_data['username'], email=form.cleaned_data['email'],
-                ).delete()
-                user = form.save(commit=False)
-                user.is_active = False
-                user.language = language
-                user.save()
-                try:
-                    sent = send_confirmation_email(request, user, language)
-                except Exception:
-                    logger.exception('Registration of %s failed', user.username)
-                if not sent:
-                    transaction.set_rollback(True)
+            username, email = form.cleaned_data['username'], form.cleaned_data['email']
+            try:
+                with transaction.atomic():
+                    signup.replaceable_signups(username=username, email=email).delete()
+                    user = form.save(commit=False)
+                    user.is_active = False
+                    user.language = language
+                    user.save()
+                    try:
+                        sent = send_confirmation_email(request, user, language)
+                    except Exception:
+                        logger.exception('Registration of %s failed', user.username)
+                    if not sent:
+                        transaction.set_rollback(True)
+            except IntegrityError:
+                # Два запроса подряд (двойное нажатие, пока уходит письмо): первый уже создал аккаунт.
+                # Раньше это была ошибка 500.
+                twin = User.objects.filter(username__iexact=username, email__iexact=email, is_active=False).first()
+                if twin:
+                    confirm_url = reverse('Users:confirm_email_code')
+                    return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": twin.email})}')
+                form.add_error('username', tr(
+                    language, 'Пользователь с таким именем уже существует.', 'A user with that username already exists.'
+                ))
+                return render(request, 'Users/registration.html', {'form': form})
 
             if sent:
                 messages.success(

@@ -10,7 +10,7 @@
 <h1>{% lang "Создать аккаунт" "Create an account" %}</h1>
 <p class="section-lead">{% lang "Создайте профиль, чтобы публиковать свои события и участвовать в мероприятиях других пользователей." "Create an account to publish events and join others' activities." %}</p>
 
-<form action="{% url 'Users:registration' %}" method="post" class="styled-form auth-form" novalidate>
+<form action="{% url 'Users:registration' %}" method="post" class="styled-form auth-form" novalidate data-once>
     {% csrf_token %}
     {% if form.non_field_errors %}
         <div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }} {% endfor %}</div>
@@ -31,4 +31,17 @@
 <p class="auth-footer-text">{% lang "Уже есть аккаунт?" "Already have an account?" %} <a href="{% url 'Users:login' %}">{% lang "Войти" "Login" %}</a></p>
 <script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
 <script src="{% static 'js/password-toggle.js' %}?v=4"></script>
+<script>
+    // Письмо с кодом уходит несколько секунд — не даём отправить форму второй раз
+    document.querySelectorAll('form[data-once]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.sent) { event.preventDefault(); return; }
+            form.dataset.sent = '1';
+            form.querySelectorAll('button[type="submit"]').forEach((button) => {
+                button.disabled = true;
+                button.textContent = etT('Создаём аккаунт…', 'Creating your account…', 'Vytváříme účet…');
+            });
+        });
+    });
+</script>
 {% endblock %}
