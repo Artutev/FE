@@ -85,7 +85,10 @@ class EventForm(forms.ModelForm):
 
     time = forms.TimeField(
         required=True,
-        widget=forms.TextInput(
+        # TimeInput с форматом — при редактировании в поле «16:00», а не «16:00:00»:
+        # раньше такое значение не проходило проверку, и форма редактирования (вместе с обложкой) не сохранялась.
+        widget=forms.TimeInput(
+            format='%H:%M',
             attrs={
                 'class': 'form-control time-picker-input',
                 'autocomplete': 'off',
@@ -93,7 +96,7 @@ class EventForm(forms.ModelForm):
                 'readonly': True,
             }
         ),
-        input_formats=['%H:%M']
+        input_formats=['%H:%M', '%H:%M:%S']
     )
 
     latitude = forms.FloatField(required=False, widget=forms.HiddenInput())

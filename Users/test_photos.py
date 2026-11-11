@@ -1,4 +1,5 @@
 import io
+import os
 import shutil
 import tempfile
 from datetime import date, timedelta
@@ -69,6 +70,35 @@ class PhotoTests(TestCase):
         self.assertFalse(user.avatar)
         import os
         self.assertFalse(os.path.exists(path))
+
+    def test_cover_can_be_replaced_from_edit_page(self):
+        """Как в браузере: поля берутся со страницы редактирования, меняется только обложка."""
+        import re
+        user = User.objects.create_user('host', 'host@example.test', 'Pass12345!x')
+        self.client.force_login(user)
+        event = Event.objects.create(name='Party', event_type='other', creator=user,
+                                     date=date.today() + timedelta(days=5), time='16:00')
+        edit_url = reverse('Events:edit_event', args=[event.id])
+
+        def resubmit(color):
+            page = self.client.get(edit_url).content.decode()
+            fields = dict(re.findall(r'<input[^>]*name="(name|date|time|location)"[^>]*value="([^"]*)"', page))
+            self.assertEqual(fields['time'], '16:00')
+            image = Image.new('RGB', (800, 600), color)
+            buffer = io.BytesIO()
+            image.save(buffer, 'JPEG')
+            return self.client.post(edit_url, {
+                **fields, 'event_type': 'other', 'description': '',
+                'cover_upload': SimpleUploadedFile('c.jpg', buffer.getvalue(), 'image/jpeg'),
+            })
+
+        self.assertEqual(resubmit('red').status_code, 302)
+        event.refresh_from_db()
+        first = event.cover.path
+        self.assertEqual(resubmit('blue').status_code, 302)
+        event.refresh_from_db()
+        self.assertNotEqual(event.cover.path, first)
+        self.assertFalse(os.path.exists(first))
 
     def test_event_cover_upload_shows_on_card(self):
         user = User.objects.create_user('host', 'host@example.test', 'Pass12345!x')
