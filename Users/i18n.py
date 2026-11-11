@@ -139,6 +139,8 @@ CS = {
     'Venue name': 'Název místa',
     'How to find it': 'Jak nás najdete',
     'Get directions': 'Jak se tam dostat',
+    'My places:': 'Moje místa:',
+    "You can paste a link from Google Maps, Yandex Maps, 2GIS or Mapy.cz — we'll drop the pin for you.": 'Můžete vložit odkaz z Mapy.cz, Google Maps, Yandex Maps nebo 2GIS — špendlík umístíme sami.',
     'Directions': 'Trasa',
     'another app': 'jiná aplikace',
     'Optional. Makes the place easier to recognise in the invitation and emails.': 'Nepovinné. Místo pak hosté snáz poznají v pozvánce a v e-mailech.',

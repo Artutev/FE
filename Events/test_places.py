@@ -1,6 +1,8 @@
 """Место мероприятия: название места, «Как найти» (только участникам), маршрут."""
 from datetime import date, timedelta
 
+from unittest import mock
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -57,3 +59,79 @@ class PlaceTests(TestCase):
         self.assertEqual(response.status_code, 302)
         event = Event.objects.get(name='Party')
         self.assertEqual((event.venue_name, event.directions), ('Кафе «Пушкин»', 'Вход со двора'))
+
+
+class MapLinkTests(TestCase):
+    def test_parse_common_links(self):
+        from Events.places import parse_map_url
+        cases = {
+            'https://www.google.com/maps/place/Caf%C3%A9+Pushkin/@55.7638,37.6047,17z/data=!3m1!4b1!4m6!3m5!1s0x0:0x0!8m2!3d55.763835!4d37.604689':
+                (55.763835, 37.604689, 'Café Pushkin'),
+            'https://www.google.com/maps/dir/?api=1&destination=43.2389,76.8897': (43.2389, 76.8897, ''),
+            'https://yandex.ru/maps/213/moscow/?ll=37.617635%2C55.755814&pt=37.611644%2C55.758310&z=17':
+                (55.75831, 37.611644, ''),
+            'https://yandex.kz/maps/?whatshere%5Bpoint%5D=76.889709%2C43.238949&z=17': (43.238949, 76.889709, ''),
+            'https://2gis.kz/almaty/geo/9430047375011839/76.889700,43.238900': (43.2389, 76.8897, ''),
+            'https://mapy.cz/zakladni?x=14.4378&y=50.0755&z=17': (50.0755, 14.4378, ''),
+            'https://www.openstreetmap.org/#map=17/50.07550/14.43780': (50.0755, 14.4378, ''),
+            'https://maps.apple.com/?ll=50.0755,14.4378&q=Kavárna': (50.0755, 14.4378, 'Kavárna'),
+        }
+        for url, (lat, lon, venue) in cases.items():
+            found = parse_map_url(url)
+            self.assertIsNotNone(found, url)
+            self.assertAlmostEqual(found['lat'], lat, places=5, msg=url)
+            self.assertAlmostEqual(found['lon'], lon, places=5, msg=url)
+            self.assertEqual(found['venue'], venue, url)
+
+    def test_rejects_non_map_hosts_and_garbage(self):
+        from Events.places import parse_map_url, resolve_map_url
+        for url in ('https://evil.example/maps?ll=1,2', 'http://127.0.0.1/?q=55,37', 'https://google.com.evil.io/@55,37',
+                    'javascript:alert(1)', 'not a link', 'https://www.google.com/maps/@0,0,3z'):
+            self.assertIsNone(parse_map_url(url), url)
+        with mock.patch('urllib.request.OpenerDirector.open') as opener:
+            self.assertIsNone(resolve_map_url('https://169.254.169.254/latest/meta-data'))
+            self.assertIsNone(resolve_map_url('http://maps.app.goo.gl/abc'))  # только https
+            opener.assert_not_called()
+
+    def test_redirect_to_other_host_is_blocked(self):
+        from Events.places import _SafeRedirects
+        import urllib.error
+        handler = _SafeRedirects()
+        with self.assertRaises(urllib.error.HTTPError):
+            handler.redirect_request(None, None, 302, 'Found', {}, 'https://169.254.169.254/')
+
+    def test_endpoint(self):
+        url = reverse('Events:map_link')
+        self.assertEqual(self.client.get(url, {'url': 'x'}).status_code, 302)  # только после входа
+        self.client.force_login(User.objects.create_user('host', 'h@example.test', 'Pass12345!x'))
+        response = self.client.get(url, {'url': 'https://mapy.cz/zakladni?x=14.4378&y=50.0755'})
+        self.assertEqual(response.json()['lat'], 50.0755)
+        with mock.patch('Events.places.resolve_map_url', return_value=None):
+            self.assertEqual(self.client.get(url, {'url': 'https://maps.app.goo.gl/x'}).status_code, 404)
+
+    def test_endpoint_is_rate_limited(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client.force_login(User.objects.create_user('host', 'h@example.test', 'Pass12345!x'))
+        url = reverse('Events:map_link')
+        with mock.patch('Events.places.resolve_map_url', return_value=None):
+            codes = [self.client.get(url, {'url': 'https://maps.app.goo.gl/x'}).status_code for _ in range(31)]
+        self.assertEqual(codes[-1], 429)
+
+
+class RecentPlacesTests(TestCase):
+    def test_recent_places_are_distinct_and_shown_on_form(self):
+        from Events.places import recent_places
+        owner = User.objects.create_user('host', 'h@example.test', 'Pass12345!x')
+        for name in ('A', 'B'):
+            Event.objects.create(name=name, creator=owner, venue_name='Лофт', location='ул. Ленина, 5',
+                                 latitude=55.75, longitude=37.61)
+        Event.objects.create(name='C', creator=owner, location='Тверская 7')
+        Event.objects.create(name='Other', creator=User.objects.create_user('x', 'x@example.test', 'Pass12345!x'),
+                             location='Чужой адрес')
+        places = recent_places(owner)
+        self.assertEqual([p['address'] for p in places], ['Тверская 7', 'ул. Ленина, 5'])
+        self.client.force_login(owner)
+        page = self.client.get(reverse('Events:create_event'))
+        self.assertContains(page, 'loc-recent-chip')
+        self.assertNotContains(page, 'Чужой адрес')

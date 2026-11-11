@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 125 тестов
+python manage.py test        # 134 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -69,12 +69,16 @@ python manage.py test        # 125 тестов
   («Название места») и `Event.directions` («Как найти», видно только организатору и участникам, есть в письмах, нет в .ics);
   `Event.place_title` — название + адрес. Кнопка «Маршрут» запоминает приложение (`localStorage['et-maps-app']`),
   ссылки Google/Яндекс/Apple сразу строят маршрут. Тесты — `Events/test_places.py`.
+  Затем: «Мои места» (`Events/places.py:recent_places`), центр карты — последнее место организатора → последняя точка
+  в браузере → город по часовому поясу; вставка ссылки Яндекс/Google/2ГИС/Mapy/OSM/Apple (`/Event/map-link/`,
+  короткие ссылки раскрываются на сервере, редиректы только на хосты карт, 30 запросов/мин); тёмная карта — CSS-фильтр
+  тайлов при `html.dark-mode`.
 - Письма-билеты: `emails/ticket_base.html` — рамка рисуется по секциям, прорези на линии отрыва (исправлено `12ce9ad`).
 
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 125 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 134 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.

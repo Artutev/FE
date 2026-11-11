@@ -1466,3 +1466,12 @@ html.dark-mode .ecard--other      { --cv-bg: #231E33; --cv-fg: #C9C5D8; }
     left: calc(50% + 6px);
     margin: 0;
 }
+
+/* ---------- Dark map tiles for the dark theme ----------
+   Обычные тайлы OSM, перекрашенные фильтром: без отдельного поставщика и ключей.
+   Метки и подписи Leaflet — в других слоях и не инвертируются. */
+html.dark-mode .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.8); }
+html.dark-mode .leaflet-container { background: #1b1726; }
+html.dark-mode .leaflet-control-attribution { background: rgba(23, 18, 36, 0.8); color: #b9b3c9; }
+html.dark-mode .leaflet-control-attribution a { color: #c4b5fd; }
+html.dark-mode .leaflet-bar a { background: #241d33; color: #ece8f5; border-color: #3a3150; }

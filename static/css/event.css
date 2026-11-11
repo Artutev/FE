@@ -696,3 +696,22 @@
 
 /* ---------- Field hints (venue name, directions) ---------- */
 .form-hint { display: block; margin-top: 6px; font-size: 0.85rem; color: var(--muted); }
+
+/* ---------- My places (recent venues of the organizer) ---------- */
+.loc-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 10px; }
+.loc-recent-label { font-size: 0.85rem; color: var(--muted); margin-right: 2px; }
+.loc-recent-chip {
+    max-width: 100%;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+.loc-recent-chip:hover { border-color: var(--primary); color: var(--primary-text); }

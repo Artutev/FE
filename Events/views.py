@@ -14,7 +14,9 @@ from Events.forms import EventForm, InvitationCardForm
 from Events import card_designs
 from Users.models import FriendRequest
 from Users.i18n import get_language, tr
-from Events import invites, notifications
+from Events import invites, notifications, places
+from django.http import JsonResponse
+from django.core.cache import cache
 from Users.emails import in_background, send_bulk
 
 def _has_access(request, event):
@@ -56,9 +58,27 @@ def create_event(request):
             return redirect(redirect_url)
     else:
         form = EventForm(language=language)
-    context = {'form': form}
+    context = {'form': form, 'recent_places': places.recent_places(request.user)}
 
     return render(request, 'Events/event.html', context)
+
+
+MAP_LINK_LIMIT = 30  # запросов в минуту на пользователя: сервер ходит во внешние сервисы
+
+
+@login_required(login_url='Users:login')
+def map_link(request):
+    """Точка из ссылки на Яндекс / Google / 2ГИС / Mapy.cz / OSM (короткие ссылки раскрываются на сервере)."""
+    url = (request.GET.get('url') or '').strip()[:2000]
+    key = f'map-link:{request.user.id}'
+    count = cache.get(key, 0)
+    if count >= MAP_LINK_LIMIT:
+        return JsonResponse({'error': 'rate_limited'}, status=429)
+    cache.set(key, count + 1, 60)
+    found = places.resolve_map_url(url) if url else None
+    if not found:
+        return JsonResponse({'error': 'not_found'}, status=404)
+    return JsonResponse(found)
 
 def event_list(request):
     # Показываем только мероприятия, которые еще не прошли
@@ -226,7 +246,9 @@ def edit_event(request, event_id):
     else:
         form = EventForm(instance=event, language=language)
 
-    return render(request, 'Events/eventEdit.html', {'form': form, 'event': event})
+    return render(request, 'Events/eventEdit.html', {
+        'form': form, 'event': event, 'recent_places': places.recent_places(request.user),
+    })
 
 
 @login_required(login_url='Users:login')

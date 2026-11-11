@@ -28,12 +28,46 @@ document.addEventListener('DOMContentLoaded', () => {
         pinned: etT('Точка на карте выбрана — её можно перетащить.', 'Pin placed — you can drag it.', 'Špendlík umístěn — můžete ho přetáhnout.'),
         locating: etT('Определяем местоположение…', 'Getting your location…', 'Zjišťujeme polohu…'),
         geoError: etT('Не удалось определить местоположение. Разрешите доступ к геолокации.', "Couldn't get your location. Allow location access.", 'Nepodařilo se zjistit polohu. Povolte přístup k poloze.'),
+        linkLooking: etT('Ищем точку по ссылке…', 'Reading the map link…', 'Hledáme bod podle odkazu…'),
+        linkFailed: etT('Не получилось найти точку в этой ссылке. Введите адрес или поставьте точку на карте.', "Couldn't find a place in this link. Type the address or drop a pin.", 'V odkazu jsme bod nenašli. Zadejte adresu nebo umístěte špendlík.'),
         offline: etT('Сервис адресов недоступен. Точку можно поставить на карте вручную.', 'Address service is unavailable. You can still drop a pin manually.', 'Služba adres není dostupná. Špendlík můžete umístit ručně.'),
     };
 
     // ---------- Map ----------
-    const DEFAULT_CENTER = lang === 'cs' ? [50.0755, 14.4378] : [43.2389, 76.8897];
-    const map = L.map(mapDiv, { scrollWheelZoom: false, zoomControl: true }).setView(DEFAULT_CENTER, 11);
+    // Где открыть карту, если точки ещё нет: последнее место организатора → последняя точка в этом браузере →
+    // город по часовому поясу → столица по языку. От центра зависят и подсказки адреса (ближние выше).
+    const recentPlaces = (() => {
+        const el = document.getElementById('recentPlaces');
+        try { return el ? JSON.parse(el.textContent) : []; } catch (error) { return []; }
+    })();
+    const CENTER_KEY = 'et-map-center';
+    const TZ_CITIES = {
+        'Europe/Moscow': [55.7558, 37.6173], 'Europe/Kaliningrad': [54.7104, 20.4522], 'Europe/Samara': [53.1959, 50.1002],
+        'Asia/Yekaterinburg': [56.8389, 60.6057], 'Asia/Novosibirsk': [55.0084, 82.9357], 'Asia/Krasnoyarsk': [56.0153, 92.8932],
+        'Asia/Irkutsk': [52.2870, 104.3050], 'Asia/Vladivostok': [43.1155, 131.8855], 'Europe/Minsk': [53.9006, 27.5590],
+        'Europe/Kyiv': [50.4501, 30.5234], 'Europe/Kiev': [50.4501, 30.5234], 'Asia/Almaty': [43.2389, 76.8897],
+        'Asia/Qostanay': [53.2144, 63.6246], 'Asia/Aqtobe': [50.2839, 57.1670], 'Asia/Tashkent': [41.2995, 69.2401],
+        'Asia/Bishkek': [42.8746, 74.5698], 'Asia/Tbilisi': [41.7151, 44.8271], 'Asia/Yerevan': [40.1792, 44.4991],
+        'Asia/Baku': [40.4093, 49.8671], 'Europe/Prague': [50.0755, 14.4378], 'Europe/Bratislava': [48.1486, 17.1077],
+        'Europe/Berlin': [52.5200, 13.4050], 'Europe/Vienna': [48.2082, 16.3738], 'Europe/Warsaw': [52.2297, 21.0122],
+        'Europe/London': [51.5072, -0.1276], 'Europe/Riga': [56.9496, 24.1052], 'Europe/Vilnius': [54.6872, 25.2797],
+        'Europe/Tallinn': [59.4370, 24.7536], 'Europe/Belgrade': [44.7866, 20.4489], 'Asia/Dubai': [25.2048, 55.2708],
+        'Europe/Istanbul': [41.0082, 28.9784],
+    };
+    function initialCenter() {
+        const last = recentPlaces.find((place) => place.lat != null && place.lon != null);
+        if (last) return [[last.lat, last.lon], 12];
+        try {
+            const saved = JSON.parse(localStorage.getItem(CENTER_KEY) || 'null');
+            if (Array.isArray(saved) && saved.length === 2) return [saved, 12];
+        } catch (error) { /* нет доступа к хранилищу */ }
+        let zone = '';
+        try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (error) { /* старый браузер */ }
+        if (TZ_CITIES[zone]) return [TZ_CITIES[zone], 11];
+        return [lang === 'cs' ? [50.0755, 14.4378] : [55.7558, 37.6173], 10];
+    }
+    const [startCenter, startZoom] = initialCenter();
+    const map = L.map(mapDiv, { scrollWheelZoom: false, zoomControl: true }).setView(startCenter, startZoom);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             // OSM требует Referer с адресом сайта, иначе отдаёт 403 «Access blocked»
             referrerPolicy: 'strict-origin-when-cross-origin',
@@ -79,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setCoords(lat, lon);
         if (pan) map.setView([lat, lon], Math.max(map.getZoom(), zoom));
         setStatus(T.pinned);
+        try { localStorage.setItem(CENTER_KEY, JSON.stringify([+lat.toFixed(4), +lon.toFixed(4)])); } catch (error) { /* не страшно */ }
     }
 
     function clearPin() {
@@ -258,11 +293,54 @@ document.addEventListener('DOMContentLoaded', () => {
     input.setAttribute('aria-controls', 'locSuggest');
     input.setAttribute('aria-expanded', 'false');
 
+    // ---------- Ссылка из Яндекс / Google / 2ГИС / Mapy.cz вместо адреса ----------
+    const mapLinkUrl = picker.dataset.mapLinkUrl;
+    const looksLikeLink = (text) => /^https?:\/\/\S+$/i.test(text);
+    async function useMapLink(link) {
+        closeSuggest();
+        picker.classList.add('is-loading');
+        setStatus(T.linkLooking);
+        try {
+            const response = await fetch(`${mapLinkUrl}?${new URLSearchParams({ url: link })}`, {
+                headers: { 'X-Requested-With': 'fetch' },
+            });
+            if (!response.ok) throw new Error('not found');
+            const place = await response.json();
+            if (place.venue && venueInput && !venueInput.value.trim()) venueInput.value = place.venue;
+            input.value = '';
+            autoFilled = true;
+            placePin(place.lat, place.lon, { zoom: 17 });
+            await fillFromPoint(place.lat, place.lon);
+        } catch (error) {
+            setStatus(T.linkFailed, true);
+        } finally {
+            picker.classList.remove('is-loading');
+        }
+    }
+
+    // ---------- Мои места ----------
+    document.querySelectorAll('.loc-recent-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+            const place = recentPlaces[Number(chip.dataset.placeIndex)];
+            if (!place) return;
+            if (venueInput) venueInput.value = place.venue || '';
+            input.value = place.address || '';
+            autoFilled = false; // это текст организатора — не затираем при перетаскивании метки
+            closeSuggest();
+            if (place.lat != null && place.lon != null) placePin(place.lat, place.lon, { zoom: 17 });
+            else clearPin();
+        });
+    });
+
     let typingTimer = null;
     input.addEventListener('input', () => {
         autoFilled = false;
         clearTimeout(typingTimer);
         const query = input.value.trim();
+        if (looksLikeLink(query)) {
+            useMapLink(query);
+            return;
+        }
         if (query.length < 3) {
             closeSuggest();
             picker.classList.remove('is-loading');

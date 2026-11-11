@@ -73,7 +73,7 @@
                 {{ form.venue_name }}
                 <span class="form-hint">{% lang "Необязательно. Так место будет проще узнать в приглашении и в письмах." "Optional. Makes the place easier to recognise in the invitation and emails." %}</span>
             </div>
-            <div class="form-group ef-span-2 loc-picker{% if form.location.errors %} has-error{% endif %}" id="locPicker">
+            <div class="form-group ef-span-2 loc-picker{% if form.location.errors %} has-error{% endif %}" id="locPicker" data-map-link-url="{% url 'Events:map_link' %}">
                 <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
                 <div class="loc-search">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -81,6 +81,16 @@
                     <span class="loc-spinner" aria-hidden="true"></span>
                     <ul class="loc-suggest" id="locSuggest" role="listbox" hidden></ul>
                 </div>
+                <p class="form-hint">{% lang "Можно вставить ссылку из Яндекс Карт, Google Maps, 2ГИС или Mapy.cz — точку поставим сами." "You can paste a link from Google Maps, Yandex Maps, 2GIS or Mapy.cz — we'll drop the pin for you." %}</p>
+                {% if recent_places %}
+                    <div class="loc-recent" id="locRecent">
+                        <span class="loc-recent-label">{% lang "Мои места:" "My places:" %}</span>
+                        {% for place in recent_places %}
+                            <button type="button" class="loc-recent-chip" data-place-index="{{ forloop.counter0 }}" title="{{ place.address }}">{% if place.venue %}{{ place.venue }}{% else %}{{ place.address|truncatechars:40 }}{% endif %}</button>
+                        {% endfor %}
+                    </div>
+                    {{ recent_places|json_script:"recentPlaces" }}
+                {% endif %}
                 <div class="loc-map-wrap">
                     <div id="locationMap" class="location-map-div" aria-label="{% lang "Карта для выбора места" "Map for picking a place" %}"></div>
                     <button type="button" class="btn btn-secondary loc-geo" id="locGeo">
@@ -146,4 +156,4 @@
 <script src="{% static 'js/photo-input.js' %}?v=2"></script>
 <script src="{% static 'js/date-time-picker.js' %}?v=3"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="{% static 'js/location-map.js' %}?v=7"></script>
+<script src="{% static 'js/location-map.js' %}?v=8"></script>
