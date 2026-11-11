@@ -240,6 +240,8 @@ CS = {
     'Guests reply right on the invitation card.': 'Hosté odpovídají přímo na pozvánce.',
     'At least 8 characters: Latin letters, digits and symbols, no spaces.': 'Alespoň 8 znaků: latinská písmena, číslice a symboly, bez mezer.',
     'A user with that username already exists.': 'Uživatel s tímto jménem už existuje.',
+    'This email is already registered. Log in or reset your password.': 'Tento e-mail je už zaregistrován. Přihlaste se nebo si obnovte heslo.',
+    "We couldn't send the code email, so the account was not created. Check the email and try again.": 'E-mail s kódem se nepodařilo odeslat, proto účet nebyl vytvořen. Zkontrolujte e-mail a zkuste to znovu.',
     'Enter a valid email address.': 'Zadejte platnou e-mailovou adresu.',
     'This password is too short. It must contain at least 8 characters.': 'Heslo je příliš krátké. Musí obsahovat alespoň 8 znaků.',
     'This password is too short. It must contain at least %(min_length)d characters.': 'Heslo je příliš krátké. Musí obsahovat alespoň %(min_length)d znaků.',

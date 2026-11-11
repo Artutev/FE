@@ -1,11 +1,13 @@
 import re
 from datetime import date, timedelta
+from unittest import mock
 from pathlib import Path
 
 from django.conf import settings
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from Events.models import Event
 from Users.i18n import CS, tr
@@ -139,6 +141,42 @@ class AuthTests(TestCase):
         self.client.get(reverse('Users:set_language', args=['en']))
         bad = 'Пароль12345!'
         self.assertContains(self._register(password1=bad, password2=bad), 'only contain Latin letters')
+
+    def test_failed_code_email_does_not_create_user(self):
+        with mock.patch('Users.views.send_confirmation_email', return_value=False):
+            response = self._register()
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'аккаунт не создан')
+        self.assertFalse(User.objects.filter(username='bob').exists())
+        self.assertEqual(self._register().status_code, 302)  # повторная попытка проходит
+        self.assertTrue(User.objects.filter(username='bob', is_active=False).exists())
+
+    def test_crash_while_sending_does_not_create_user(self):
+        with mock.patch('Users.views.send_confirmation_email', side_effect=RuntimeError('boom')):
+            self.assertEqual(self._register().status_code, 200)
+        self.assertFalse(User.objects.filter(username='bob').exists())
+
+    def test_unconfirmed_signup_can_be_redone_with_same_email(self):
+        self._register(email='typo@example.test')
+        self.assertEqual(self._register(email='typo@example.test', username='bob').status_code, 302)
+        self.assertEqual(User.objects.filter(username__iexact='bob').count(), 1)
+
+    def test_fresh_unconfirmed_signup_keeps_name_from_other_email(self):
+        self._register()
+        response = self._register(email='intruder@example.test')
+        self.assertContains(response, 'Пользователь с таким именем уже существует.')
+        self.assertEqual(User.objects.get(username='bob').email, 'bob@example.test')
+
+    def test_expired_unconfirmed_signup_frees_name(self):
+        self._register()
+        User.objects.filter(username='bob').update(email_confirmation_sent_at=timezone.now() - timedelta(hours=1))
+        self.assertEqual(self._register(email='new@example.test').status_code, 302)
+        self.assertEqual(User.objects.get(username='bob').email, 'new@example.test')
+
+    def test_confirmed_account_name_and_email_stay_taken(self):
+        response = self._register(username='Alice', email='ALICE@example.test')
+        self.assertContains(response, 'Пользователь с таким именем уже существует.')
+        self.assertContains(response, 'Этот email уже зарегистрирован')
 
     def test_confirmation_code_is_rate_limited(self):
         url = reverse('Users:confirm_email_code')

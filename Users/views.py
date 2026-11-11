@@ -1,8 +1,10 @@
 import json
+import logging
 import secrets
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.db import transaction
 from django.core.cache import cache
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.hashers import check_password, make_password
@@ -21,6 +23,8 @@ from django.views.decorators.http import require_POST
 from django.utils.http import url_has_allowed_host_and_scheme
 from Users.i18n import SUPPORTED_LANGUAGES, get_language, tr
 from Users.emails import send_email
+from Users import signup
+from Users.signup import CONFIRM_CODE_TTL_MINUTES
 from Users.images import process_image, replace_image
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -29,7 +33,7 @@ from django.core.paginator import Paginator
 from datetime import date, datetime
 from calendar import monthcalendar, month_name
 CONFIRM_CODE_MAX_ATTEMPTS = 5
-CONFIRM_CODE_TTL_MINUTES = 30
+logger = logging.getLogger(__name__)
 RESEND_COOLDOWN_SECONDS = 60
 CONFIRM_CODE_LOCK_SECONDS = 15 * 60
 
@@ -244,24 +248,36 @@ def registration(request):
         form = UserRegistrationForm(data=request.POST, language=get_language(request))
         if form.is_valid():
             language = get_language(request)
-            user = form.save(commit=False)
-            user.is_active = False
-            user.language = language
-            user.save()
+            # Всё или ничего: если письмо с кодом не ушло (или что-то упало), аккаунт не остаётся в базе —
+            # иначе он навсегда занимает имя, а войти в него нельзя.
+            sent = False
+            with transaction.atomic():
+                signup.replaceable_signups(
+                    username=form.cleaned_data['username'], email=form.cleaned_data['email'],
+                ).delete()
+                user = form.save(commit=False)
+                user.is_active = False
+                user.language = language
+                user.save()
+                try:
+                    sent = send_confirmation_email(request, user, language)
+                except Exception:
+                    logger.exception('Registration of %s failed', user.username)
+                if not sent:
+                    transaction.set_rollback(True)
 
-            if send_confirmation_email(request, user, language):
+            if sent:
                 messages.success(
                     request,
                     tr(language, 'Проверьте почту и подтвердите email.', 'Check your email and confirm your address.')
                 )
-            else:
-                messages.warning(request, tr(
-                    language,
-                    'Аккаунт создан, но письмо не отправилось. Нажмите «Отправить код ещё раз».',
-                    'Account created, but the email failed to send. Press "Send the code again".',
-                ))
-            confirm_url = reverse('Users:confirm_email_code')
-            return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": user.email})}')
+                confirm_url = reverse('Users:confirm_email_code')
+                return HttpResponseRedirect(f'{confirm_url}?{urlencode({"email": user.email})}')
+            form.add_error(None, tr(
+                language,
+                'Не удалось отправить письмо с кодом, поэтому аккаунт не создан. Проверьте email и попробуйте ещё раз.',
+                "We couldn't send the code email, so the account was not created. Check the email and try again.",
+            ))
     else:
         form = UserRegistrationForm(language=get_language(request))
     context = {'form': form}

@@ -190,13 +190,34 @@ class UserRegistrationForm(TranslatedErrorsMixin, UserCreationForm):
         })
 
     def clean_username(self):
-        """Имя занято, даже если отличается только регистром («Anna» при живой «anna»)."""
-        username = self.cleaned_data.get('username', '')
-        if User.objects.filter(username__iexact=username).exists():
-            raise forms.ValidationError(tr(
+        # Занятость имени проверяем в clean(): там уже известен email (см. Users/signup.py)
+        return self.cleaned_data.get('username', '')
+
+    def clean(self):
+        from Users import signup
+        data = super().clean()
+        username = data.get('username')
+        email = (data.get('email') or '').strip()
+        if email:
+            data['email'] = email
+        # Имя занято, даже если отличается только регистром («Anna» при живой «anna»).
+        # Незавершённая регистрация (почта не подтверждена) имя не держит — см. signup.replaceable_signups.
+        if username and signup.taken('username', username, email=email):
+            self.add_error('username', forms.ValidationError(tr(
                 self.language, 'Пользователь с таким именем уже существует.', 'A user with that username already exists.'
-            ), code='unique')
-        return username
+            ), code='unique'))
+        if email and signup.taken('email', email):
+            self.add_error('email', forms.ValidationError(tr(
+                self.language,
+                'Этот email уже зарегистрирован. Войдите или восстановите пароль.',
+                'This email is already registered. Log in or reset your password.',
+            ), code='unique'))
+        return data
+
+    def validate_unique(self):
+        # Уникальность имени проверена в clean() с учётом незавершённых регистраций,
+        # которые view удалит перед созданием нового аккаунта.
+        self.instance.validate_unique(exclude=['username'])
 
 
 class UserProfileForm(UserChangeForm):

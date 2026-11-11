@@ -17,13 +17,13 @@
     {% endif %}
     <div class="auth-grid">
         {% for field in form %}
-            <div class="auth-field{% if field.name == 'username' or field.name == 'email' %} auth-span-2{% endif %}{% if field.errors %} has-error{% endif %}">
+            <div class="auth-field{% if field.name == 'username' or field.name == 'email' or field.name == 'birthDate' %} auth-span-2{% endif %}{% if field.errors %} has-error{% endif %}">
                 {{ field.label_tag }}
                 {{ field }}
                 {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
-                {% if field.name == 'password1' and not field.errors %}<span class="auth-hint">{% lang "Не меньше 8 символов: латинские буквы, цифры и знаки, без пробелов." "At least 8 characters: Latin letters, digits and symbols, no spaces." %}</span>{% endif %}
             </div>
         {% endfor %}
+        <p class="auth-hint auth-span-2">{% lang "Не меньше 8 символов: латинские буквы, цифры и знаки, без пробелов." "At least 8 characters: Latin letters, digits and symbols, no spaces." %}</p>
     </div>
     <button type="submit" class="btn btn-primary btn-block">{% lang "Зарегистрироваться" "Register" %}</button>
 </form>
