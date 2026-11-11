@@ -16,7 +16,7 @@
 ## Локальный запуск
 ```
 python manage.py runserver   # http://127.0.0.1:8000/
-python manage.py test        # 112 тестов
+python manage.py test        # 118 тестов
 ```
 - Настройки читаются из `.env.local` (см. `.env.example`).
 - Если задан `POSTGRES_DB` — PostgreSQL (локально `postgresql-x64-17`, БД `fastevent`), иначе SQLite.
@@ -32,7 +32,7 @@ python manage.py test        # 112 тестов
 
 ## Ветка `feat/chat-photos` — НА ПРОДЕ (обновлено 2026-11-11)
 
-Прод (`/home/ubuntu/FE`, https://fastevent.duckdns.org) работает на `feat/chat-photos`, последний выкаченный коммит `9dcc21f` (2026-11-11, миграция Events.0015 применена; `media/cards/` создаст daphne при первой загрузке).
+Прод (`/home/ubuntu/FE`, https://fastevent.duckdns.org) работает на `feat/chat-photos`, последний выкаченный коммит `e854b97` (2026-11-11; миграция Events.0015 применена, `media/cards/` создаст daphne при первой загрузке).
 В `main` ещё не смержено. Выкладку делает сессия «Шурик — сервер (прод)» (прав sudo у неё нет — системные шаги делает Шеф).
 
 **Инфраструктура прода (сделано):** daphne вместо gunicorn (`fe.service`), Redis (`REDIS_URL`), nginx с `/ws/`, `/media/`,
@@ -56,7 +56,7 @@ python manage.py test        # 112 тестов
   событий ведёт на событие с токеном — так задумано, Шеф в курсе). Вёрстка — одна разметка `_invite_card.html`, вид — `static/css/invite_card.css`.
   PNG — `html-to-image@1.11.11` с jsdelivr, шрифты — Google Fonts.
 - Фото уменьшаются в браузере до загрузки (`static/js/photo-input.js`, 2000 px / аватар 1000 px), WebP `method=4`.
-- **Вход и регистрация** (`400d803`): `Users/backends.py` — имя без учёта регистра и пробелов по краям
+- **Вход и регистрация** (`400d803`, `e854b97` — регистрация в одной транзакции, незавершённые регистрации пересоздаются: `Users/signup.py`): `Users/backends.py` — имя без учёта регистра и пробелов по краям
   (при «близнецах» по регистру решает пароль); `UserLoginForm.clean` — ошибки «неверно», «email не подтверждён»
   (ссылка на код), лимит 10 неудачных попыток на имя / 15 мин (кэш `login-failures:<имя>`). Пароль — только ASCII 33–126
   (`Users/validators.py`), не обрезается. Имя пользователя может быть кириллицей (решение Шефа). Ошибки форм — ru/en/cs
@@ -69,7 +69,7 @@ python manage.py test        # 112 тестов
 **Как устроены письма:** `Events/notifications.py` (кто и когда) → `Users/emails.py` (`build_message` на языке получателя,
 `send_email`/`send_bulk`, `in_background`) → шаблоны `emails/<имя>.html` + `.txt` (`ticket_base.html` / `base.html`) → Gmail API.
 
-**Тесты:** `python manage.py test` — 112 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
+**Тесты:** `python manage.py test` — 118 тестов. `test_rate_limit` теперь ждёт 20 ответов (раньше бывал нестабильным).
 
 **Локальные тестовые данные:** пользователи из `.claude/dev_test_users.txt` (`chat_anna`, `chat_boris`); событие
 «[demo] Свадьба Анны и Максима» (id 36, организатор `chat_anna`) с пригласительным; заявка в друзья `demo_ui → chat_anna`.
