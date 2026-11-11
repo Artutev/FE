@@ -204,3 +204,18 @@ class OnlineAndCityTests(TestCase):
             call_command('fill_event_cities', stdout=StringIO())
         event.refresh_from_db()
         self.assertEqual((event.city, event.country), ('Praha', 'Česko'))
+
+
+class ReverseCityTests(TestCase):
+    def test_district_is_not_a_city(self):
+        import io, json
+        from Events.management.commands.fill_event_cities import reverse_city
+        def fake(props):
+            body = io.BytesIO(json.dumps({'features': [{'properties': props}]}).encode())
+            body.__enter__ = lambda *a: body
+            body.__exit__ = lambda *a: False
+            return body
+        with mock.patch('urllib.request.urlopen', return_value=fake({'county': 'Талғар ауданы', 'country': 'Қазақстан'})):
+            self.assertEqual(reverse_city(43.3, 77.2), ('', 'Қазақстан'))
+        with mock.patch('urllib.request.urlopen', return_value=fake({'town': 'Талғар', 'county': 'Талғар ауданы', 'country': 'Қазақстан'})):
+            self.assertEqual(reverse_city(43.3, 77.2), ('Талғар', 'Қазақстан'))

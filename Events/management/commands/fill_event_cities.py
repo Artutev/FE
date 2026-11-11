@@ -27,7 +27,9 @@ def reverse_city(lat, lon):
     if not features:
         return '', ''
     props = features[0].get('properties') or {}
-    city = props.get('city') or props.get('town') or props.get('village') or props.get('county') or ''
+    # Как в форме (static/js/location-map.js): только город / посёлок / село, без района или округа —
+    # иначе в фильтре появятся «Талғар ауданы» рядом с «Талғар». Названия — местные, как отдаёт Photon.
+    city = props.get('city') or props.get('town') or props.get('village') or ''
     return city[:100], (props.get('country') or '')[:100]
 
 
