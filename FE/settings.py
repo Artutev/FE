@@ -161,7 +161,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'Users.validators.LatinPasswordValidator',
+    },
 ]
+
+AUTHENTICATION_BACKENDS = ['Users.backends.CaseInsensitiveModelBackend']
 
 
 # Internationalization

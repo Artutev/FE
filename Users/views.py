@@ -102,19 +102,17 @@ def base(request):
 def login(request):
     language = get_language(request)
     if request.method == "POST":
-        form = UserLoginForm(data=request.POST, language=language)
+        form = UserLoginForm(request, data=request.POST, language=language)
         if form.is_valid():
-            username = request.POST['username']
-            password = request.POST['password']
-            user = auth.authenticate(username=username, password=password)
-            if user:
-                auth.login(request, user)
-                next_url = request.POST.get('next', '')
-                if not url_has_allowed_host_and_scheme(
-                    next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-                ):
-                    next_url = reverse('base')
-                return HttpResponseRedirect(next_url)
+            # Пользователь уже найден формой (имя без пробелов и регистра) — второй раз не проверяем:
+            # раньше повторная проверка по «сырому» имени с пробелом молча не пускала.
+            auth.login(request, form.get_user())
+            next_url = request.POST.get('next', '')
+            if not url_has_allowed_host_and_scheme(
+                next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+            ):
+                next_url = reverse('base')
+            return HttpResponseRedirect(next_url)
     else:
         form = UserLoginForm(language=language)
     context = {'form': form, 'next': request.POST.get('next') or request.GET.get('next', '')}

@@ -11,7 +11,10 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     {% if form.non_field_errors %}
-        <div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+        <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            {% if form.unconfirmed_email %}<a href="{% url 'Users:confirm_email_code' %}?email={{ form.unconfirmed_email|urlencode }}">{% lang "Подтвердить email" "Confirm email" %}</a>{% endif %}
+        </div>
     {% endif %}
     {% for field in form %}
         <div class="auth-field{% if field.errors %} has-error{% endif %}">

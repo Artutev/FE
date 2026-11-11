@@ -21,6 +21,7 @@
                 {{ field.label_tag }}
                 {{ field }}
                 {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                {% if field.name == 'password1' and not field.errors %}<span class="auth-hint">{% lang "Не меньше 8 символов: латинские буквы, цифры и знаки, без пробелов." "At least 8 characters: Latin letters, digits and symbols, no spaces." %}</span>{% endif %}
             </div>
         {% endfor %}
     </div>

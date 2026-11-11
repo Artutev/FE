@@ -1,12 +1,60 @@
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.forms import (
     AuthenticationForm, PasswordResetForm, SetPasswordForm, UserChangeForm, UserCreationForm,
 )
 from django.core.cache import cache
 from django.urls import reverse
 
+from Users.backends import find_users
 from Users.models import User
 from Users.i18n import CS, tr
+from Users.validators import PASSWORD_CHARS_MESSAGE
+
+LOGIN_MAX_FAILURES = 10
+LOGIN_LOCK_SECONDS = 15 * 60
+
+# Стандартные сообщения Django (LANGUAGE_CODE = 'ru') → английский; чешский берётся из словаря CS.
+ERROR_TRANSLATIONS = {
+    'Обязательное поле.': 'This field is required.',
+    'Пользователь с таким именем уже существует.': 'A user with that username already exists.',
+    'Введите корректный адрес электронной почты.': 'Enter a valid email address.',
+    'Введите правильный адрес электронной почты.': 'Enter a valid email address.',
+    'Введённый пароль слишком короткий. Он должен содержать как минимум 8 символов.': 'This password is too short. It must contain at least 8 characters.',
+    'Введённый пароль слишком короткий. Он должен содержать как минимум %(min_length)d символов.': 'This password is too short. It must contain at least %(min_length)d characters.',
+    'Введённый пароль слишком широко распространён.': 'This password is too common.',
+    'Введённый пароль состоит только из цифр.': 'This password is entirely numeric.',
+    'Введенные пароли не совпадают.': "The two password fields didn't match.",
+    'Введённый пароль слишком похож на %(verbose_name)s.': 'The password is too similar to the %(verbose_name)s.',
+    PASSWORD_CHARS_MESSAGE: 'The password may only contain Latin letters, digits and symbols, without spaces.',
+}
+
+
+class TranslatedErrorsMixin:
+    """Переводит стандартные ошибки Django на язык формы (self.language)."""
+
+    def full_clean(self):
+        super().full_clean()
+        language = getattr(self, 'language', 'ru')
+        if language == 'ru' or not self._errors:
+            return
+        for errors in self._errors.values():
+            for index, error in enumerate(errors.as_data()):
+                message = str(error.message)
+                if message not in ERROR_TRANSLATIONS:
+                    continue
+                translated = tr(language, message, ERROR_TRANSLATIONS[message])
+                if error.params:
+                    try:
+                        translated = translated % error.params
+                    except (KeyError, TypeError, ValueError):
+                        pass
+                errors[index] = translated
+
+
+def password_field(autocomplete):
+    """Пароль не обрезается по краям (обычный CharField молча срезал бы пробелы)."""
+    return forms.CharField(strip=False, widget=forms.PasswordInput(attrs={'autocomplete': autocomplete}))
 
 PLACEHOLDERS = {
     'ru': {
@@ -31,8 +79,11 @@ PLACEHOLDERS = {
 PLACEHOLDERS['cs'] = {key: CS.get(value, value) for key, value in PLACEHOLDERS['en'].items()}
 
 class UserLoginForm(AuthenticationForm):
-    username = forms.CharField(widget=forms.TextInput())
-    password = forms.CharField(widget=forms.PasswordInput())
+    """Вход: имя без учёта регистра и пробелов по краям, понятные ошибки, лимит попыток."""
+    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={
+        'autocomplete': 'username', 'autocapitalize': 'none', 'spellcheck': 'false',
+    }))
+    password = password_field('current-password')
 
     class Meta:
         model = User
@@ -41,11 +92,20 @@ class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, language='ru', **kwargs):
         kwargs.setdefault('label_suffix', '')
         self.language = language if language in PLACEHOLDERS else 'ru'
+        self.unconfirmed_email = ''
         super().__init__(*args, **kwargs)
         lang = self.language
-        self.error_messages['invalid_login'] = tr(
-            lang, 'Неверное имя пользователя или пароль.', 'Please enter a correct username and password.'
-        )
+        self.error_messages = {
+            **self.error_messages,
+            'invalid_login': tr(lang, 'Неверное имя пользователя или пароль.',
+                                'Please enter a correct username and password.'),
+            'inactive': tr(lang, 'Email ещё не подтверждён. Введите код из письма, чтобы войти.',
+                           'Your email is not confirmed yet. Enter the code from the email to sign in.'),
+            'rate_limited': tr(lang, 'Слишком много попыток входа. Попробуйте через 15 минут.',
+                               'Too many sign-in attempts. Try again in 15 minutes.'),
+        }
+        for name in ('username', 'password'):
+            self.fields[name].error_messages['required'] = tr(lang, 'Обязательное поле.', 'This field is required.')
         self.fields['username'].widget.attrs.update({
             'placeholder': PLACEHOLDERS[lang]['username']
         })
@@ -55,9 +115,37 @@ class UserLoginForm(AuthenticationForm):
             'placeholder': PLACEHOLDERS[lang]['password']
         })
 
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+        if not username or password is None:
+            return self.cleaned_data
 
-class UserRegistrationForm(UserCreationForm):
-    username = forms.CharField(widget=forms.TextInput())
+        failures_key = f'login-failures:{username.lower()}'
+        if cache.get(failures_key, 0) >= LOGIN_MAX_FAILURES:
+            raise forms.ValidationError(self.error_messages['rate_limited'], code='rate_limited')
+
+        self.user_cache = authenticate(self.request, username=username, password=password)
+        if self.user_cache is not None:
+            cache.delete(failures_key)
+            return self.cleaned_data
+
+        unconfirmed = next((
+            user for user in find_users(username)
+            if not user.is_active and user.check_password(password)
+        ), None)
+        if unconfirmed:
+            self.unconfirmed_email = unconfirmed.email
+            raise forms.ValidationError(self.error_messages['inactive'], code='inactive')
+
+        cache.set(failures_key, cache.get(failures_key, 0) + 1, LOGIN_LOCK_SECONDS)
+        raise forms.ValidationError(self.error_messages['invalid_login'], code='invalid_login')
+
+
+class UserRegistrationForm(TranslatedErrorsMixin, UserCreationForm):
+    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={
+        'autocomplete': 'username', 'autocapitalize': 'none', 'spellcheck': 'false',
+    }))
     email = forms.CharField(widget=forms.EmailInput())
     birthDate = forms.DateField(
         widget=forms.TextInput(attrs={
@@ -68,8 +156,8 @@ class UserRegistrationForm(UserCreationForm):
         }),
         input_formats=['%d.%m.%Y', '%Y-%m-%d']
     )
-    password1 = forms.CharField(widget=forms.PasswordInput())
-    password2 = forms.CharField(widget=forms.PasswordInput())
+    password1 = password_field('new-password')
+    password2 = password_field('new-password')
 
     class Meta:
         model = User
@@ -101,37 +189,29 @@ class UserRegistrationForm(UserCreationForm):
             'placeholder': PLACEHOLDERS[lang]['password2']
         })
 
-    def full_clean(self):
-        super().full_clean()
-        if self.language == 'en':
-            translations = {
-                'Обязательное поле.': 'This field is required.',
-                'Пользователь с таким именем уже существует.': 'A user with that username already exists.',
-                'Введите корректный адрес электронной почты.': 'Enter a valid email address.',
-                'Введите правильный адрес электронной почты.': 'Enter a valid email address.',
-                'Введённый пароль слишком короткий. Он должен содержать как минимум 8 символов.': 'This password is too short. It must contain at least 8 characters.',
-                'Введённый пароль слишком короткий. Он должен содержать как минимум %(min_length)d символов.': 'This password is too short. It must contain at least %(min_length)d characters.',
-                'Введённый пароль слишком широко распространён.': 'This password is too common.',
-                'Введённый пароль состоит только из цифр.': 'This password is entirely numeric.',
-                'Введенные пароли не совпадают.': "The two password fields didn't match.",
-            }
-            for field_name, errors in self._errors.items():
-                for index, error in enumerate(errors.as_data()):
-                    message = str(error.message)
-                    if message in translations:
-                        translated = translations[message]
-                        if error.params:
-                            translated = translated % error.params
-                        errors[index] = translated
+    def clean_username(self):
+        """Имя занято, даже если отличается только регистром («Anna» при живой «anna»)."""
+        username = self.cleaned_data.get('username', '')
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError(tr(
+                self.language, 'Пользователь с таким именем уже существует.', 'A user with that username already exists.'
+            ), code='unique')
+        return username
 
 
 class UserProfileForm(UserChangeForm):
-    username = forms.CharField(widget=forms.TextInput())
+    username = forms.CharField(max_length=150, widget=forms.TextInput())
     email = forms.CharField(widget=forms.EmailInput(attrs={'readonly': True}))
     birthDate = forms.DateField(widget=forms.DateInput(attrs={'readonly': True}))
     class Meta:
         model = User
         fields = ('username', 'email', 'birthDate', 'is_profile_private', 'email_notifications')
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '')
+        if User.objects.filter(username__iexact=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Пользователь с таким именем уже существует.', code='unique')
+        return username
 
 
 class EventTownPasswordResetForm(PasswordResetForm):
@@ -161,9 +241,10 @@ class EventTownPasswordResetForm(PasswordResetForm):
         )
 
 
-class EventTownSetPasswordForm(SetPasswordForm):
+class EventTownSetPasswordForm(TranslatedErrorsMixin, SetPasswordForm):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('label_suffix', '')
         super().__init__(*args, **kwargs)
+        self.language = getattr(self.user, 'language', '') or 'ru'
         for field in self.fields.values():
             field.widget.attrs.setdefault('autocomplete', 'new-password')

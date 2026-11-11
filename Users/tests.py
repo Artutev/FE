@@ -66,6 +66,80 @@ class AuthTests(TestCase):
         })
         self.assertEqual(response['Location'], reverse('base'))
 
+    def _login(self, username, password, **extra):
+        return self.client.post(reverse('Users:login'), {'username': username, 'password': password, **extra})
+
+    def test_login_ignores_case_and_surrounding_spaces(self):
+        response = self._login('  ALICE ', 'Pass12345!x')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.user.pk)
+
+    def test_wrong_password_shows_error(self):
+        response = self._login('alice', 'wrong-pass')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Неверное имя пользователя или пароль.')
+
+    def test_wrong_password_error_in_czech(self):
+        self.client.get(reverse('Users:set_language', args=['cs']))
+        self.assertContains(self._login('alice', 'nope'), 'Zadejte správné uživatelské jméno a heslo.')
+
+    def test_password_is_not_trimmed(self):
+        self.assertEqual(self._login('alice', ' Pass12345!x ').status_code, 200)
+
+    def test_unconfirmed_email_gets_explained(self):
+        self.user.is_active = False
+        self.user.save()
+        response = self._login('alice', 'Pass12345!x')
+        self.assertContains(response, 'Email ещё не подтверждён')
+        self.assertContains(response, reverse('Users:confirm_email_code') + '?email=alice%40example.test')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_unconfirmed_hint_needs_right_password(self):
+        self.user.is_active = False
+        self.user.save()
+        self.assertNotContains(self._login('alice', 'wrong'), 'Email ещё не подтверждён')
+
+    def test_case_twins_are_told_apart_by_password(self):
+        twin = User.objects.create_user('Alice', 'twin@example.test', 'Other12345!y')
+        self._login('alice', 'Other12345!y')
+        self.assertEqual(int(self.client.session['_auth_user_id']), twin.pk)
+
+    def test_login_is_rate_limited(self):
+        for _ in range(10):
+            self._login('alice', 'wrong')
+        response = self._login('ALICE', 'Pass12345!x')
+        self.assertContains(response, 'Слишком много попыток входа')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def _register(self, **overrides):
+        data = {
+            'username': 'bob', 'email': 'bob@example.test', 'birthDate': '01.01.1990',
+            'password1': 'Strong12345!z', 'password2': 'Strong12345!z', **overrides,
+        }
+        return self.client.post(reverse('Users:registration'), data)
+
+    def test_registration_trims_username(self):
+        self.assertEqual(self._register(username='  bob  ').status_code, 302)
+        self.assertTrue(User.objects.filter(username='bob').exists())
+
+    def test_registration_rejects_case_duplicate(self):
+        response = self._register(username='ALICE')
+        self.assertContains(response, 'Пользователь с таким именем уже существует.')
+
+    def test_registration_allows_cyrillic_username(self):
+        self.assertEqual(self._register(username='Борис').status_code, 302)
+
+    def test_registration_rejects_non_latin_password(self):
+        for bad in ('Пароль12345!', 'Strong 12345!', 'Strong12345! '):
+            response = self._register(password1=bad, password2=bad)
+            self.assertContains(response, 'только латинские буквы', msg_prefix=repr(bad))
+        self.assertFalse(User.objects.filter(username='bob').exists())
+
+    def test_registration_password_error_in_english(self):
+        self.client.get(reverse('Users:set_language', args=['en']))
+        bad = 'Пароль12345!'
+        self.assertContains(self._register(password1=bad, password2=bad), 'only contain Latin letters')
+
     def test_confirmation_code_is_rate_limited(self):
         url = reverse('Users:confirm_email_code')
         statuses = [
